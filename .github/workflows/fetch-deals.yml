@@ -1,0 +1,58 @@
+name: Fetch Deals
+
+on:
+  schedule:
+    - cron: '0 */4 * * *'   # Runs every 4 hours automatically
+  workflow_dispatch:          # Also lets you run it manually with one click
+
+jobs:
+  fetch-deals:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install requests keepa mailchimp-marketing twilio
+
+      - name: Run deal fetcher
+        env:
+          KEEPA_API_KEY:       ${{ secrets.KEEPA_API_KEY }}
+          AFFILIATE_TAG:       ${{ secrets.AFFILIATE_TAG }}
+          MAILCHIMP_API_KEY:   ${{ secrets.MAILCHIMP_API_KEY }}
+          MAILCHIMP_SERVER:    ${{ secrets.MAILCHIMP_SERVER }}
+          MAILCHIMP_LIST_ID:   ${{ secrets.MAILCHIMP_LIST_ID }}
+          TWILIO_ACCOUNT_SID:  ${{ secrets.TWILIO_ACCOUNT_SID }}
+          TWILIO_AUTH_TOKEN:   ${{ secrets.TWILIO_AUTH_TOKEN }}
+          TWILIO_FROM_NUMBER:  ${{ secrets.TWILIO_FROM_NUMBER }}
+          SITE_URL:            ${{ secrets.SITE_URL }}
+        run: python fetch_deals.py
+
+      - name: Run notifier
+        env:
+          KEEPA_API_KEY:       ${{ secrets.KEEPA_API_KEY }}
+          AFFILIATE_TAG:       ${{ secrets.AFFILIATE_TAG }}
+          MAILCHIMP_API_KEY:   ${{ secrets.MAILCHIMP_API_KEY }}
+          MAILCHIMP_SERVER:    ${{ secrets.MAILCHIMP_SERVER }}
+          MAILCHIMP_LIST_ID:   ${{ secrets.MAILCHIMP_LIST_ID }}
+          TWILIO_ACCOUNT_SID:  ${{ secrets.TWILIO_ACCOUNT_SID }}
+          TWILIO_AUTH_TOKEN:   ${{ secrets.TWILIO_AUTH_TOKEN }}
+          TWILIO_FROM_NUMBER:  ${{ secrets.TWILIO_FROM_NUMBER }}
+          SITE_URL:            ${{ secrets.SITE_URL }}
+        run: python notify.py
+
+      - name: Commit and push updated deals.json
+        run: |
+          git config user.name  "DealDrop Bot"
+          git config user.email "bot@dealdrop"
+          git add deals.json notified_deals.json
+          git diff --staged --quiet || git commit -m "Update deals $(date -u '+%Y-%m-%d %H:%M UTC')"
+          git push
