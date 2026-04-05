@@ -2,8 +2,11 @@ name: Fetch Deals
 
 on:
   schedule:
-    - cron: '0 */4 * * *'   # Runs every 4 hours automatically
-  workflow_dispatch:          # Also lets you run it manually with one click
+    - cron: '0 */4 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   fetch-deals:
@@ -12,8 +15,6 @@ jobs:
     steps:
       - name: Check out repo
         uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -21,12 +22,14 @@ jobs:
           python-version: '3.11'
 
       - name: Install dependencies
-        run: pip install requests keepa mailchimp-marketing twilio
+        run: pip install requests
 
       - name: Run deal fetcher
         env:
           KEEPA_API_KEY:       ${{ secrets.KEEPA_API_KEY }}
           AFFILIATE_TAG:       ${{ secrets.AFFILIATE_TAG }}
+          AMAZON_ACCESS_KEY:   ${{ secrets.AMAZON_ACCESS_KEY }}
+          AMAZON_SECRET_KEY:   ${{ secrets.AMAZON_SECRET_KEY }}
           MAILCHIMP_API_KEY:   ${{ secrets.MAILCHIMP_API_KEY }}
           MAILCHIMP_SERVER:    ${{ secrets.MAILCHIMP_SERVER }}
           MAILCHIMP_LIST_ID:   ${{ secrets.MAILCHIMP_LIST_ID }}
@@ -52,7 +55,7 @@ jobs:
       - name: Commit and push updated deals.json
         run: |
           git config user.name  "DealDrop Bot"
-          git config user.email "bot@dealdrop"
-          git add deals.json notified_deals.json
+          git config user.email "bot@dealdrop.com"
+          git add deals.json notified_deals.json || true
           git diff --staged --quiet || git commit -m "Update deals $(date -u '+%Y-%m-%d %H:%M UTC')"
           git push
