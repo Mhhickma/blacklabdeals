@@ -83,14 +83,42 @@ CATEGORY_EMOJI = {
 
 # ─── HELPERS ──────────────────────────────────────────────────────────────────
 
-def keepa_get(endpoint, params):
-    """Make a GET request to the Keepa API."""
-    params["key"] = KEEPA_API_KEY
-    print(f"    Calling Keepa: {KEEPA_BASE}/{endpoint}")
-    r = requests.get(f"{KEEPA_BASE}/{endpoint}", params=params, timeout=60)
+def keepa_deal_request(deal_params):
+    """
+    Call Keepa's deal endpoint using POST with JSON body.
+    The deal endpoint requires parameters as a JSON body, not query params.
+    """
+    url = f"{KEEPA_BASE}/deal"
+    params = {"key": KEEPA_API_KEY}
+    headers = {"Content-Type": "application/json"}
+
+    print(f"    POST {url}")
+    print(f"    Body: {json.dumps(deal_params)}")
+
+    r = requests.post(url, params=params, json=deal_params, headers=headers, timeout=60)
     print(f"    Status: {r.status_code}")
     if r.status_code != 200:
         print(f"    Response: {r.text[:500]}")
+    r.raise_for_status()
+    return r.json()
+
+def keepa_product_request(asins):
+    """
+    Call Keepa's product endpoint using GET with query params.
+    The product endpoint uses standard GET params.
+    """
+    url = f"{KEEPA_BASE}/product"
+    params = {
+        "key":      KEEPA_API_KEY,
+        "asin":     ",".join(asins),
+        "domainId": 1,
+        "stats":    90,
+        "history":  0,
+    }
+    r = requests.get(url, params=params, timeout=60)
+    print(f"    Product request status: {r.status_code}")
+    if r.status_code != 200:
+        print(f"    Response: {r.text[:300]}")
     r.raise_for_status()
     return r.json()
 
@@ -104,13 +132,13 @@ def get_category(product):
     title = (product.get("title") or "").lower()
     if any(w in title for w in ["laptop","phone","tablet","camera","headphone","speaker","monitor","tv","computer"]):
         return "Electronics"
-    if any(w in title for w in ["shirt","shoe","dress","jacket","pants","bag","watch","clothing"]):
+    if any(w in title for w in ["shirt","shoe","dress","jacket","pants","bag","watch"]):
         return "Clothing, Shoes & Jewelry"
-    if any(w in title for w in ["blender","vacuum","mattress","pillow","cookware","kitchen","home"]):
+    if any(w in title for w in ["blender","vacuum","mattress","pillow","cookware","kitchen"]):
         return "Home & Kitchen"
-    if any(w in title for w in ["protein","vitamin","supplement","fitness","yoga","health"]):
+    if any(w in title for w in ["protein","vitamin","supplement","fitness","yoga"]):
         return "Health & Household"
-    if any(w in title for w in ["toy","game","lego","puzzle","kids","children"]):
+    if any(w in title for w in ["toy","game","lego","puzzle","kids"]):
         return "Toys & Games"
     return "Electronics"
 
@@ -139,79 +167,54 @@ def parse_coupon(product):
 
 def fetch_keepa_asins():
     """
-    Use Keepa's Deal finder to get products with significant price drops.
-    Tries multiple parameter combinations to find one that works with your plan.
+    Use Keepa's Deal finder (POST with JSON body) to get products on deal.
     """
-    print("\n  [Keepa] Fetching deals...")
+    print("\n  [Keepa] Fetching deals via POST JSON...")
 
-    # Try different parameter sets — Keepa is picky about which params are allowed
-    param_sets = [
-        # Minimal params — most compatible
-        {
-            "page": 0,
-            "domainId": 1,
-            "priceType": 0,
-            "deltaPercent": MIN_DISCOUNT_PCT,
-            "interval": 10080,      # 7 days
-        },
-        # With date range
-        {
-            "page": 0,
-            "domainId": 1,
-            "priceType": 0,
-            "deltaPercent": MIN_DISCOUNT_PCT,
-            "interval": 10080,
-            "dateRange": 10080,
-        },
-        # With rating filter
-        {
-            "page": 0,
-            "domainId": 1,
-            "priceType": 0,
-            "deltaPercent": MIN_DISCOUNT_PCT,
-            "interval": 10080,
-            "minRating": 30,
-        },
-    ]
+    deal_request_body = {
+        "domainId":     1,
+        "priceType":    0,
+        "deltaPercent": MIN_DISCOUNT_PCT,
+        "interval":     10080,
+        "page":         0,
+        "minRating":    30,
+    }
 
     deal_asins = []
-    for i, params in enumerate(param_sets):
+    try:
+        data      = keepa_deal_request(deal_request_body)
+        deals_raw = data.get("deals", {}).get("dr", [])
+        deal_asins = [d.get("asin") for d in deals_raw if d.get("asin")]
+        print(f"  [Keepa] Got {len(deal_asins)} deal candidates")
+    except Exception as e:
+        print(f"  [Keepa] Deal request failed: {e}")
+        print("  [Keepa] Trying without minRating filter...")
         try:
-            print(f"    Trying parameter set {i+1}...")
-            data = keepa_get("deal", params)
-            deals_raw = data.get("deals", {}).get("dr", [])
+            del deal_request_body["minRating"]
+            data       = keepa_deal_request(deal_request_body)
+            deals_raw  = data.get("deals", {}).get("dr", [])
             deal_asins = [d.get("asin") for d in deals_raw if d.get("asin")]
             print(f"  [Keepa] Got {len(deal_asins)} deal candidates")
-            if deal_asins:
-                break
-        except Exception as e:
-            print(f"    Parameter set {i+1} failed: {e}")
-            time.sleep(1)
-            continue
+        except Exception as e2:
+            print(f"  [Keepa] Second attempt failed: {e2}")
 
     all_asins = list(dict.fromkeys(deal_asins))
     print(f"  [Keepa] {len(all_asins)} unique ASINs to process")
     return all_asins
 
 def fetch_keepa_product_details(asins):
-    """Get full product details including price history from Keepa."""
+    """Get full product details from Keepa."""
     if not asins:
         return []
     print(f"  [Keepa] Fetching product details ({len(asins)} ASINs)...")
     all_products = []
     for i in range(0, len(asins), 20):
-        batch  = asins[i:i+20]
-        params = {
-            "asin": ",".join(batch),
-            "domainId": 1,
-            "stats": 90,
-            "history": 0,
-        }
+        batch = asins[i:i+20]
         try:
-            data = keepa_get("product", params)
+            data     = keepa_product_request(batch)
             products = data.get("products", [])
             all_products.extend(products)
-            print(f"    Batch {i//20 + 1}: got {len(products)} products")
+            print(f"    Batch {i//20 + 1}: {len(products)} products")
             time.sleep(1)
         except Exception as e:
             print(f"  [Keepa] Batch error: {e}")
@@ -233,7 +236,7 @@ def get_aws_signing_key(secret, date_stamp, region, service):
 def fetch_amazon_live_data(asin_batch):
     """Fetch live prices and images from Amazon PA API."""
     if not AMAZON_ACCESS_KEY:
-        print("  [Amazon PA API] Not configured — skipping live prices.")
+        print("  [Amazon PA API] Not configured — skipping.")
         return {}
 
     service  = "ProductAdvertisingAPI"
@@ -268,25 +271,21 @@ def fetch_amazon_live_data(asin_batch):
     )
     signed_headers = "content-encoding;content-type;host;x-amz-date;x-amz-target"
     payload_hash   = hashlib.sha256(body.encode("utf-8")).hexdigest()
-
     canonical_request = "\n".join([
         "POST", path, "",
         canonical_headers, signed_headers, payload_hash,
     ])
-
     credential_scope = f"{date_stamp}/{AMAZON_REGION}/{service}/aws4_request"
     string_to_sign   = "\n".join([
         "AWS4-HMAC-SHA256", amz_date, credential_scope,
         hashlib.sha256(canonical_request.encode("utf-8")).hexdigest(),
     ])
-
     signing_key   = get_aws_signing_key(AMAZON_SECRET_KEY, date_stamp, AMAZON_REGION, service)
     signature     = hmac.new(signing_key, string_to_sign.encode("utf-8"), hashlib.sha256).hexdigest()
     authorization = (
         f"AWS4-HMAC-SHA256 Credential={AMAZON_ACCESS_KEY}/{credential_scope}, "
         f"SignedHeaders={signed_headers}, Signature={signature}"
     )
-
     headers = {
         "content-encoding": "amz-1.0",
         "content-type":     "application/json; charset=utf-8",
@@ -295,7 +294,6 @@ def fetch_amazon_live_data(asin_batch):
         "x-amz-target":     "com.amazon.paapi5.v1.ProductAdvertisingAPIv1.GetItems",
         "Authorization":    authorization,
     }
-
     try:
         r = requests.post(endpoint, headers=headers, data=body, timeout=15)
         r.raise_for_status()
@@ -314,7 +312,7 @@ def fetch_amazon_live_data(asin_batch):
                 "title":         title,
                 "prime":         prime,
             }
-        print(f"  [Amazon PA API] Got live data for {len(result)} products")
+        print(f"  [Amazon PA API] Got data for {len(result)} products")
         return result
     except Exception as e:
         print(f"  [Amazon PA API] ERROR: {e}")
@@ -325,28 +323,20 @@ def fetch_amazon_live_data(asin_batch):
 def build_deals_json():
     print(f"\n[{datetime.datetime.now().strftime('%H:%M:%S')}] Starting DealDrop deal fetch...\n")
 
-    # 1. Get ASINs from Keepa
     all_asins = fetch_keepa_asins()
 
     if not all_asins:
-        print("\n  No ASINs returned from Keepa.")
-        print("  Saving empty deals.json so site doesn't error out.")
+        print("\n  No ASINs returned from Keepa. Saving empty deals.json.")
         output = {
             "updatedAt":   datetime.datetime.utcnow().isoformat() + "Z",
-            "totalDeals":  0,
-            "hotDeals":    0,
-            "couponDeals": 0,
-            "deals":       [],
+            "totalDeals":  0, "hotDeals": 0, "couponDeals": 0, "deals": [],
         }
         with open(OUTPUT_FILE, "w") as f:
             json.dump(output, f, indent=2)
-        print("  Check your Keepa plan has Deal finder access enabled.")
         return
 
-    # 2. Get product details from Keepa
     keepa_products = fetch_keepa_product_details(all_asins[:MAX_DEALS + 20])
 
-    # 3. Filter qualifying deals
     keepa_deals = {}
     for p in keepa_products:
         try:
@@ -365,7 +355,6 @@ def build_deals_json():
             if current and avg90 and avg90 > 0 and current < avg90:
                 pct = round((1 - current / avg90) * 100)
 
-            # Include if discount OR coupon qualifies
             if pct < MIN_DISCOUNT_PCT and coupon is None:
                 continue
 
@@ -382,16 +371,13 @@ def build_deals_json():
     qualifying_asins = list(keepa_deals.keys())
     print(f"\n  {len(qualifying_asins)} qualifying deals after filtering")
 
-    # 4. Fetch live prices from Amazon PA API
     amazon_data = {}
-    if qualifying_asins:
-        for i in range(0, len(qualifying_asins), 10):
-            batch  = qualifying_asins[i:i+10]
-            result = fetch_amazon_live_data(batch)
-            amazon_data.update(result)
-            time.sleep(1)
+    for i in range(0, len(qualifying_asins), 10):
+        batch  = qualifying_asins[i:i+10]
+        result = fetch_amazon_live_data(batch)
+        amazon_data.update(result)
+        time.sleep(1)
 
-    # 5. Merge and format
     formatted = []
     deal_id   = 1
 
@@ -416,12 +402,9 @@ def build_deals_json():
                 effective_pct = min(99, pct + coupon["value"])
 
             parts = []
-            if pct >= MIN_DISCOUNT_PCT:
-                parts.append(f"{pct}% off recent price")
-            if coupon:
-                parts.append(coupon["display"])
-            if prime:
-                parts.append("Prime eligible")
+            if pct >= MIN_DISCOUNT_PCT: parts.append(f"{pct}% off recent price")
+            if coupon:                  parts.append(coupon["display"])
+            if prime:                   parts.append("Prime eligible")
             desc = " · ".join(parts)
 
             formatted.append({
