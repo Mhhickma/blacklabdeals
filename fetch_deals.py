@@ -394,4 +394,56 @@ def build_deals_json():
             emoji = CATEGORY_EMOJI.get(cat, "🛒")
 
             price_display = f"${current_price/100:.2f}"   if current_price   > 0 else ""
-            was_display   = f"${yesterday_price/100:.2f}" if ye
+            was_display   = f"${yesterday_price/100:.2f}" if yesterday_price > 0 else ""
+
+            new_deals.append({
+                "id":            deal_id,
+                "asin":          asin,
+                "cat":           cat,
+                "emoji":         emoji,
+                "title":         title[:80] + ("..." if len(title) > 80 else ""),
+                "desc":          f"{pct}% off yesterday's price",
+                "price":         price_display,
+                "was":           was_display,
+                "hasLivePrice":  bool(price_display),
+                "pct":           pct,
+                "effectivePct":  pct,
+                "hot":           pct >= HOT_DEAL_PCT,
+                "discount":      f"{pct}% off",
+                "hasCoupon":     False,
+                "couponDisplay": None,
+                "image":         image_url,
+                "prime":         False,
+                "link":          f"https://www.amazon.com/dp/{asin}?tag={AMAZON_PARTNER_TAG}",
+                "updatedAt":     datetime.datetime.utcnow().isoformat() + "Z",
+            })
+            deal_id += 1
+
+        except Exception as e:
+            print(f"  Skipping {p.get('asin','?')}: {e}")
+
+    print(f"\n  {len(new_deals)} new deals found this run")
+
+    all_deals = merge_with_memory(new_deals)
+    all_deals.sort(key=lambda d: -d.get("effectivePct", 0))
+    all_deals = all_deals[:DEALS_TO_SHOW]
+
+    for i, d in enumerate(all_deals):
+        d["id"] = i + 1
+
+    output = {
+        "updatedAt":   datetime.datetime.utcnow().isoformat() + "Z",
+        "totalDeals":  len(all_deals),
+        "hotDeals":    sum(1 for d in all_deals if d.get("hot")),
+        "couponDeals": 0,
+        "deals":       all_deals,
+    }
+    with open(OUTPUT_FILE, "w") as f:
+        json.dump(output, f, indent=2)
+
+    print(f"\n✓ Saved {len(all_deals)} deals to {OUTPUT_FILE}")
+    print(f"  Hot deals: {output['hotDeals']}")
+    print(f"  Updated:   {output['updatedAt']}")
+
+if __name__ == "__main__":
+    build_deals_json()
