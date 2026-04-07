@@ -146,4 +146,406 @@ KEYWORD_CATEGORIES = [
     (["diaper","baby wipe","baby lotion","baby shampoo","baby monitor","baby swing","baby bouncer","baby carrier","baby wrap","jogging stroller","travel system stroller","infant car seat","convertible car seat","crib","bassinet","pack and play","changing table","nursing pillow","breast pump","bottle warmer","baby bottle","sippy cup","pacifier","baby food","baby formula","high chair","baby gate","baby bathtub"], "Baby"),
     (["acoustic guitar","electric guitar","bass guitar","guitar amp","guitar pedal","guitar string","guitar strap","ukulele","banjo","violin","viola","cello","keyboard piano","digital piano","midi keyboard","drum set","drum kit","cymbal","drum stick","drum pad","electronic drum","trumpet","trombone","saxophone","clarinet","flute","harmonica","accordion","music stand","metronome","tuner clip","audio interface","studio monitor","xlr cable"], "Musical Instruments"),
     (["yoga mat","yoga block","foam roller","resistance band","pull up bar","dumbbell set","barbell","weight plate","kettlebell","weight bench","squat rack","power rack","treadmill","elliptical machine","stationary bike","rowing machine","jump rope","medicine ball","ab wheel","gym bag","gym gloves","weightlifting belt","knee sleeve","hiking boot","hiking pole","hydration pack","camping tent","sleeping bag","sleeping pad","camp stove","headlamp lantern","fishing rod","fishing reel","kayak paddle","life jacket","snorkel set","surfboard","skateboard","bike helmet","cycling jersey","bike lock","golf club","tennis racket","basketball hoop","swimming goggle","ski goggle","ski helmet","snowboard binding"], "Sports & Outdoors"),
-    (["lawn mower","riding mower","zero turn mower","push mower","string trimmer","weed eater","leaf blower","leaf vacuum","hedge trimmer","pol
+    (["lawn mower","riding mower","zero turn mower","push mower","string trimmer","weed eater","leaf blower","leaf vacuum","hedge trimmer","pole saw","pruning shear","loppers","garden hoe","garden rake","garden spade","garden trowel","wheelbarrow","garden cart","garden hose","soaker hose","drip irrigation","sprinkler head","hose reel","watering can","garden sprayer","fertilizer spreader","compost bin","raised garden bed","planter box","flower pot","garden edging","weed killer","bird feeder","bird bath","fire pit","chiminea","outdoor heater","bbq grill","charcoal grill","gas grill","pellet grill","smoker grill","griddle outdoor","grill cover","grill brush","patio chair","adirondack chair","patio table","patio umbrella","outdoor cushion","hammock","string light outdoor","solar pathway light","landscape light"], "Patio, Lawn & Garden"),
+    (["office chair","ergonomic chair","monitor stand","monitor arm","laptop stand","desk organizer","pencil holder","paper tray","file organizer","binder","hanging folder","file cabinet","label maker","laminator","paper shredder","stapler","hole punch","tape dispenser","whiteboard","cork board","dry erase marker","highlighter set","ballpoint pen","gel pen","mechanical pencil","notebook spiral","legal pad","index card","planner","desk calendar","badge holder","lanyard"], "Office Products"),
+    (["carry on luggage","checked luggage","hardside luggage","spinner luggage","rolling luggage","duffel bag","weekender bag","travel backpack","packing cube","toiletry bag","dopp kit","passport holder","travel wallet","luggage lock","luggage tag","luggage strap","travel pillow","neck pillow","eye mask travel","travel blanket","travel adapter","portable charger travel","travel umbrella","money belt","hidden wallet"], "Luggage & Travel"),
+    (["ground coffee","coffee bean","instant coffee","coffee pod","k cup","loose leaf tea","green tea matcha","protein bar","granola bar","trail mix","mixed nuts","beef jerky","protein shake","meal replacement shake","electrolyte drink","kombucha","apple cider vinegar","extra virgin olive oil","coconut oil","avocado oil","hot sauce","soy sauce","pasta sauce","salsa jar","hummus","peanut butter","almond butter","raw honey","maple syrup","dark chocolate","baking powder","baking soda","all purpose flour","rolled oats","granola","breakfast cereal","instant oatmeal","white rice","quinoa","dried lentil","canned chickpea","canned tomato","coconut milk","unsweetened almond milk","rice cake","microwave popcorn"], "Grocery & Gourmet Food"),
+    (["ps5 controller","ps4 controller","xbox series controller","nintendo switch game","switch lite","steam deck","gaming headset","pro controller","joy con","game cartridge","capture card","streaming deck","elgato","razer gaming","corsair gaming","logitech gaming","steelseries","hyperx"], "Video Games"),
+    (["blu ray disc","4k blu ray","dvd movie","complete tv series dvd","criterion collection","anime dvd","documentary blu ray"], "Movies & TV"),
+    (["vinyl record","lp album","music cd","greatest hits cd","box set music","cassette tape","record cleaner","turntable stylus","record storage"], "Music"),
+    (["windows 11 key","microsoft office","office 365","adobe creative cloud","photoshop license","antivirus software","norton security","mcafee","vpn subscription","quickbooks","turbotax","tax software","autocad","video editing software","photo editing software"], "Software"),
+    (["acrylic paint set","oil paint set","watercolor set","stretched canvas","canvas board","paint brush set","easel","sketchbook","drawing pad","charcoal pencil","pastel set","colored pencil set","copic marker","alcohol marker","calligraphy pen","brush pen","stamp pad","scrapbook kit","washi tape set","die cut machine","cricut maker","heat press machine","sublimation paper","embroidery hoop","embroidery thread","cross stitch kit","knitting needle set","crochet hook set","yarn skein","sewing machine","serger machine","sewing thread","fabric bolt","felt sheet","foam sheet craft","mod podge","resin kit","epoxy resin","silicone mold","air dry clay","polymer clay","sculpting tool","diamond painting kit","paint by number","string art kit"], "Arts, Crafts & Sewing"),
+    (["handmade","hand crafted","artisan made","hand poured candle","hand stamped","hand painted","hand sewn","hand knit","hand woven","custom engraved","personalized gift","monogrammed","made to order","small batch","cottage industry","folk art"], "Handmade Products"),
+]
+
+def get_category(product):
+    title = (product.get("title") or "").lower()
+    root = product.get("rootCategory")
+    if root and root in CATEGORY_NAMES:
+        cat = CATEGORY_NAMES[root]
+        if cat in ("Computers", "Electronics") and any(w in title for w in BAD_CATEGORY_WORDS):
+            pass
+        else:
+            return cat
+    for cat_id in (product.get("categories") or []):
+        if cat_id in CATEGORY_NAMES:
+            cat = CATEGORY_NAMES[cat_id]
+            if cat in ("Computers", "Electronics") and any(w in title for w in BAD_CATEGORY_WORDS):
+                pass
+            else:
+                return cat
+    for keywords, category in KEYWORD_CATEGORIES:
+        if any(w in title for w in keywords):
+            return category
+    return "Home & Kitchen"
+
+def get_price_at_time(history, minutes_ago):
+    if not history or len(history) < 2:
+        return -1
+    last_time = history[-2]
+    target_time = last_time - minutes_ago
+    i = len(history) - 2
+    while i >= 0:
+        t = history[i]
+        p = history[i + 1]
+        if t <= target_time:
+            return p
+        i -= 2
+    return history[1]
+
+# ─── 24-HOUR DEAL MEMORY ─────────────────────────────────────────────────────
+
+def load_memory():
+    try:
+        with open(MEMORY_FILE) as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {}
+
+def save_memory(memory):
+    with open(MEMORY_FILE, "w") as f:
+        json.dump(memory, f, indent=2)
+
+def is_expired(first_seen_str):
+    try:
+        first_seen = datetime.datetime.fromisoformat(first_seen_str.replace("Z", ""))
+        age_hours = (datetime.datetime.utcnow() - first_seen).total_seconds() / 3600
+        return age_hours >= DEAL_TTL_HOURS
+    except Exception:
+        return True
+
+def merge_with_memory(new_deals):
+    memory = load_memory()
+    now    = datetime.datetime.utcnow().isoformat() + "Z"
+    expired_count = 0
+    for asin in list(memory.keys()):
+        if is_expired(memory[asin].get("firstSeen", now)):
+            del memory[asin]
+            expired_count += 1
+    if expired_count > 0:
+        print(f"  Removed {expired_count} expired deals from memory")
+    new_count = 0
+    for deal in new_deals:
+        asin = deal["asin"]
+        if asin not in memory:
+            deal["firstSeen"] = now
+            memory[asin] = deal
+            new_count += 1
+        else:
+            first_seen = memory[asin]["firstSeen"]
+            memory[asin] = deal
+            memory[asin]["firstSeen"] = first_seen
+    print(f"  Added {new_count} new deals to memory")
+    print(f"  Total deals in memory: {len(memory)}")
+    save_memory(memory)
+    return list(memory.values())
+
+# ─── AMAZON PA API ────────────────────────────────────────────────────────────
+
+import hmac
+import hashlib
+
+def sign_aws(key, msg):
+    return hmac.new(key, msg.encode("utf-8"), hashlib.sha256).digest()
+
+def get_aws_signing_key(secret, date_stamp, region, service):
+    k = sign_aws(("AWS4" + secret).encode("utf-8"), date_stamp)
+    k = sign_aws(k, region)
+    k = sign_aws(k, service)
+    k = sign_aws(k, "aws4_request")
+    return k
+
+def fetch_amazon_live_data(asin_batch):
+    if not AMAZON_ACCESS_KEY:
+        print("  [Amazon PA API] Not configured — skipping.")
+        return {}
+    service  = "ProductAdvertisingAPI"
+    path     = "/paapi5/getitems"
+    endpoint = f"https://{AMAZON_HOST}{path}"
+    payload  = {
+        "ItemIds":     asin_batch,
+        "PartnerTag":  AMAZON_PARTNER_TAG,
+        "PartnerType": "Associates",
+        "Marketplace": "www.amazon.com",
+        "Resources": [
+            "Images.Primary.Large",
+            "ItemInfo.Title",
+            "Offers.Listings.Price",
+            "Offers.Listings.Availability.Message",
+            "Offers.Listings.DeliveryInfo.IsPrimeEligible",
+        ]
+    }
+    body = json.dumps(payload)
+    now        = datetime.datetime.utcnow()
+    amz_date   = now.strftime("%Y%m%dT%H%M%SZ")
+    date_stamp = now.strftime("%Y%m%d")
+    canonical_headers = (
+        f"content-encoding:amz-1.0\n"
+        f"content-type:application/json; charset=utf-8\n"
+        f"host:{AMAZON_HOST}\n"
+        f"x-amz-date:{amz_date}\n"
+        f"x-amz-target:com.amazon.paapi5.v1.ProductAdvertisingAPIv1.GetItems\n"
+    )
+    signed_headers    = "content-encoding;content-type;host;x-amz-date;x-amz-target"
+    payload_hash      = hashlib.sha256(body.encode("utf-8")).hexdigest()
+    canonical_request = "\n".join(["POST", path, "", canonical_headers, signed_headers, payload_hash])
+    credential_scope  = f"{date_stamp}/{AMAZON_REGION}/{service}/aws4_request"
+    string_to_sign    = "\n".join([
+        "AWS4-HMAC-SHA256", amz_date, credential_scope,
+        hashlib.sha256(canonical_request.encode("utf-8")).hexdigest(),
+    ])
+    signing_key   = get_aws_signing_key(AMAZON_SECRET_KEY, date_stamp, AMAZON_REGION, service)
+    signature     = hmac.new(signing_key, string_to_sign.encode("utf-8"), hashlib.sha256).hexdigest()
+    authorization = (
+        f"AWS4-HMAC-SHA256 Credential={AMAZON_ACCESS_KEY}/{credential_scope}, "
+        f"SignedHeaders={signed_headers}, Signature={signature}"
+    )
+    headers = {
+        "content-encoding": "amz-1.0",
+        "content-type":     "application/json; charset=utf-8",
+        "host":             AMAZON_HOST,
+        "x-amz-date":       amz_date,
+        "x-amz-target":     "com.amazon.paapi5.v1.ProductAdvertisingAPIv1.GetItems",
+        "Authorization":    authorization,
+    }
+    try:
+        r = requests.post(endpoint, headers=headers, data=body, timeout=15)
+        print(f"  [Amazon PA API] Status: {r.status_code}")
+        if r.status_code != 200:
+            print(f"  [Amazon PA API] Error: {r.text[:300]}")
+            return {}
+        items  = r.json().get("ItemsResult", {}).get("Items", [])
+        result = {}
+        for item in items:
+            asin      = item.get("ASIN")
+            listing   = (item.get("Offers", {}).get("Listings") or [{}])[0]
+            price_obj = listing.get("Price", {})
+            img_obj   = item.get("Images", {}).get("Primary", {}).get("Large", {})
+            title     = item.get("ItemInfo", {}).get("Title", {}).get("DisplayValue", "")
+            prime     = listing.get("DeliveryInfo", {}).get("IsPrimeEligible", False)
+            result[asin] = {
+                "price_display": price_obj.get("DisplayAmount", ""),
+                "image":         img_obj.get("URL", ""),
+                "title":         title,
+                "prime":         prime,
+            }
+        print(f"  [Amazon PA API] Got live data for {len(result)} products")
+        return result
+    except Exception as e:
+        print(f"  [Amazon PA API] ERROR: {e}")
+        return {}
+
+# ─── KEEPA DEAL FINDER ───────────────────────────────────────────────────────
+
+def fetch_deal_asins():
+    print("  Fetching deals from Keepa — 8 pages...")
+    url     = "https://api.keepa.com/deal"
+    params  = {"key": KEEPA_API_KEY}
+    headers = {"Content-Type": "application/json"}
+    all_asins = []
+    for page in range(8):
+        body = {
+            "domainId":     1,
+            "priceTypes":   [0],
+            "deltaPercent": MIN_DISCOUNT_PCT,
+            "interval":     10080,
+            "page":         page,
+        }
+        try:
+            r = requests.post(url, params=params, json=body, headers=headers, timeout=30)
+            print(f"    Page {page} status: {r.status_code}")
+            if r.status_code == 200:
+                data  = r.json()
+                deals = data.get("deals", {}).get("dr", [])
+                asins = [d.get("asin") for d in deals if d.get("asin")]
+                print(f"    Page {page}: {len(asins)} ASINs")
+                all_asins.extend(asins)
+                if len(asins) < 100:
+                    print(f"    Only {len(asins)} results — no more pages")
+                    break
+            else:
+                print(f"    Error: {r.text[:200]}")
+                break
+        except Exception as e:
+            print(f"    Page {page} failed: {e}")
+            break
+        time.sleep(1)
+    seen   = set()
+    unique = []
+    for a in all_asins:
+        if a not in seen:
+            seen.add(a)
+            unique.append(a)
+    print(f"  Total unique ASINs: {len(unique)}")
+    return unique
+
+def fetch_products(asins):
+    chunk_size   = 20
+    all_products = []
+    for i in range(0, len(asins), chunk_size):
+        chunk = asins[i:i+chunk_size]
+        url = (
+            f"https://api.keepa.com/product"
+            f"?key={KEEPA_API_KEY}"
+            f"&domain={DOMAIN_ID}"
+            f"&asin={','.join(chunk)}"
+            f"&stats=1"
+            f"&history=1"
+            f"&days=2"
+        )
+        print(f"    Fetching {len(chunk)} products...")
+        try:
+            r = requests.get(url, timeout=30)
+            print(f"    Status: {r.status_code}")
+            if r.status_code == 200:
+                data     = r.json()
+                products = data.get("products", [])
+                all_products.extend(products)
+                print(f"    Got {len(products)} products")
+            else:
+                print(f"    Error: {r.text[:200]}")
+            time.sleep(13)
+        except Exception as e:
+            print(f"    Request failed: {e}")
+    return all_products
+
+# ─── BUILD deals.json ─────────────────────────────────────────────────────────
+
+def build_deals_json():
+    print(f"\n[{datetime.datetime.now().strftime('%H:%M:%S')}] Starting DealDrop...\n")
+
+    deal_asins = fetch_deal_asins()
+    if not deal_asins:
+        print("  No deal ASINs.")
+
+    fetch_count = min(len(deal_asins), MAX_DEALS)
+    products    = []
+    if fetch_count > 0:
+        print(f"\n  Fetching details for {fetch_count} products...")
+        products = fetch_products(deal_asins[:fetch_count])
+        print(f"  Total products fetched: {len(products)}")
+
+    new_deals = []
+    deal_id   = 1
+
+    for p in products:
+        try:
+            asin  = p.get("asin", "")
+            title = p.get("title", "")
+            if not title or len(title) < 5:
+                continue
+
+            current_stats = p.get("stats", {}).get("current", [])
+            current_price = -1
+            price_type    = -1
+
+            if len(current_stats) > 18 and current_stats[18] > 0:
+                current_price = current_stats[18]; price_type = 18
+            elif len(current_stats) > 1 and current_stats[1] > 0:
+                current_price = current_stats[1];  price_type = 1
+            elif len(current_stats) > 0 and current_stats[0] > 0:
+                current_price = current_stats[0];  price_type = 0
+
+            yesterday_price = -1
+            csv_data        = p.get("csv", [])
+            if price_type != -1 and csv_data and len(csv_data) > price_type and csv_data[price_type]:
+                yesterday_price = get_price_at_time(csv_data[price_type], 24 * 60)
+            if yesterday_price == -1:
+                yesterday_price = current_price
+
+            pct = 0
+            if current_price > 0 and yesterday_price > 0:
+                drop = (yesterday_price - current_price) / yesterday_price
+                if drop > 0:
+                    pct = round(drop * 100)
+
+            if pct < MIN_DISCOUNT_PCT:
+                continue
+
+            image_url = ""
+            if p.get("imagesCSV"):
+                image_url = "https://images-na.ssl-images-amazon.com/images/I/" + p["imagesCSV"].split(",")[0]
+
+            cat   = get_category(p)
+            emoji = CATEGORY_EMOJI.get(cat, "🛒")
+
+            price_display = f"${current_price/100:.2f}" if current_price > 0 else ""
+            was_display   = f"${yesterday_price/100:.2f}" if yesterday_price > 0 else ""
+
+            new_deals.append({
+                "id":            deal_id,
+                "asin":          asin,
+                "cat":           cat,
+                "emoji":         emoji,
+                "title":         title[:80] + ("..." if len(title) > 80 else ""),
+                "desc":          f"{pct}% off yesterday's price",
+                "price":         price_display,
+                "was":           was_display,
+                "hasLivePrice":  bool(price_display),
+                "pct":           pct,
+                "effectivePct":  pct,
+                "hot":           pct >= HOT_DEAL_PCT,
+                "discount":      f"{pct}% off",
+                "hasCoupon":     False,
+                "couponDisplay": None,
+                "image":         image_url,
+                "prime":         False,
+                "link":          f"https://www.amazon.com/dp/{asin}?tag={AMAZON_PARTNER_TAG}",
+                "updatedAt":     datetime.datetime.utcnow().isoformat() + "Z",
+            })
+            deal_id += 1
+
+        except Exception as e:
+            print(f"  Skipping {p.get('asin','?')}: {e}")
+
+    print(f"\n  {len(new_deals)} new deals found this run")
+
+    # Fetch live prices from Amazon PA API
+    if new_deals and AMAZON_ACCESS_KEY:
+        print("\n  Fetching live prices from Amazon PA API...")
+        qualifying_asins = [d["asin"] for d in new_deals]
+        amazon_data = {}
+        for i in range(0, len(qualifying_asins), 10):
+            batch  = qualifying_asins[i:i+10]
+            result = fetch_amazon_live_data(batch)
+            amazon_data.update(result)
+            time.sleep(1)
+
+        # Update deals with live Amazon data
+        for deal in new_deals:
+            asin = deal["asin"]
+            if asin in amazon_data:
+                a = amazon_data[asin]
+                if a.get("price_display"):
+                    deal["price"] = a["price_display"]
+                    deal["hasLivePrice"] = True
+                if a.get("image"):
+                    deal["image"] = a["image"]
+                if a.get("title"):
+                    deal["title"] = a["title"][:80] + ("..." if len(a["title"]) > 80 else "")
+                deal["prime"] = a.get("prime", False)
+
+    # Merge with 24-hour memory
+    all_deals = merge_with_memory(new_deals)
+    all_deals.sort(key=lambda d: -d.get("effectivePct", 0))
+    all_deals = all_deals[:DEALS_TO_SHOW]
+
+    for i, d in enumerate(all_deals):
+        d["id"] = i + 1
+
+    output = {
+        "updatedAt":   datetime.datetime.utcnow().isoformat() + "Z",
+        "totalDeals":  len(all_deals),
+        "hotDeals":    sum(1 for d in all_deals if d.get("hot")),
+        "couponDeals": 0,
+        "deals":       all_deals,
+    }
+    with open(OUTPUT_FILE, "w") as f:
+        json.dump(output, f, indent=2)
+
+    print(f"\n✓ Saved {len(all_deals)} deals to {OUTPUT_FILE}")
+    print(f"  Hot deals: {output['hotDeals']}")
+    print(f"  Updated:   {output['updatedAt']}")
+
+if __name__ == "__main__":
+    build_deals_json()
