@@ -189,7 +189,7 @@ def fetch_deal_asins():
     for page in range(8):
         body = {
             "domainId":     1,
-            "priceTypes":   [0, 1, 18],
+            "priceTypes":   [0],
             "deltaPercent": MIN_DISCOUNT_PCT,
             "interval":     10080,
             "page":         page,
