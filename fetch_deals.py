@@ -13,7 +13,7 @@ KEEPA_API_KEY      = os.environ.get("KEEPA_API_KEY", "")
 AMAZON_PARTNER_TAG = os.environ.get("AFFILIATE_TAG", "")
 OUTPUT_FILE        = "deals.json"
 MAX_DEALS          = 50
-MIN_DISCOUNT_PCT   = 5
+MIN_DISCOUNT_PCT   = 10
 HOT_DEAL_PCT       = 50
 DOMAIN_ID          = "1"
 
@@ -53,33 +53,33 @@ CATEGORY_NAMES = {
 }
 
 CATEGORY_EMOJI = {
-    "Electronics":             "💻",
-    "Computers":               "🖥️",
+    "Electronics":               "💻",
+    "Computers":                 "🖥️",
     "Cell Phones & Accessories": "📱",
-    "Home & Kitchen":          "🏠",
-    "Kitchen & Dining":        "🍳",
+    "Home & Kitchen":            "🏠",
+    "Kitchen & Dining":          "🍳",
     "Clothing, Shoes & Jewelry": "👗",
-    "Beauty & Personal Care":  "💄",
-    "Health & Household":      "💊",
-    "Toys & Games":            "🧸",
-    "Sports & Outdoors":       "⚽",
-    "Automotive":              "🚗",
-    "Pet Supplies":            "🐾",
-    "Baby":                    "🍼",
-    "Patio, Lawn & Garden":    "🌱",
-    "Office Products":         "📎",
-    "Tools & Home Improvement":"🔧",
-    "Video Games":             "🎮",
-    "Books":                   "📚",
-    "Musical Instruments":     "🎸",
-    "Movies & TV":             "🎬",
-    "Music":                   "🎵",
-    "Software":                "💿",
-    "Grocery & Gourmet Food":  "🛒",
-    "Luggage & Travel":        "🧳",
-    "Industrial & Scientific": "🔩",
-    "Arts, Crafts & Sewing":   "🎨",
-    "Handmade Products":       "🤝",
+    "Beauty & Personal Care":    "💄",
+    "Health & Household":        "💊",
+    "Toys & Games":              "🧸",
+    "Sports & Outdoors":         "⚽",
+    "Automotive":                "🚗",
+    "Pet Supplies":              "🐾",
+    "Baby":                      "🍼",
+    "Patio, Lawn & Garden":      "🌱",
+    "Office Products":           "📎",
+    "Tools & Home Improvement":  "🔧",
+    "Video Games":               "🎮",
+    "Books":                     "📚",
+    "Musical Instruments":       "🎸",
+    "Movies & TV":               "🎬",
+    "Music":                     "🎵",
+    "Software":                  "💿",
+    "Grocery & Gourmet Food":    "🛒",
+    "Luggage & Travel":          "🧳",
+    "Industrial & Scientific":   "🔩",
+    "Arts, Crafts & Sewing":     "🎨",
+    "Handmade Products":         "🤝",
 }
 
 KEYWORD_CATEGORIES = [
@@ -182,28 +182,44 @@ def fetch_deal_asins():
     url     = "https://api.keepa.com/deal"
     params  = {"key": KEEPA_API_KEY}
     headers = {"Content-Type": "application/json"}
-    body    = {
-        "domainId":     1,
-        "priceTypes":   [0],
-        "deltaPercent": MIN_DISCOUNT_PCT,
-        "interval":     10080,
-        "page":         0,
-    }
-    try:
-        r = requests.post(url, params=params, json=body, headers=headers, timeout=30)
-        print(f"    Status: {r.status_code}")
-        if r.status_code == 200:
-            data   = r.json()
-            deals  = data.get("deals", {}).get("dr", [])
-            asins  = [d.get("asin") for d in deals if d.get("asin")]
-            print(f"    Got {len(asins)} deal ASINs")
-            return asins
-        else:
-            print(f"    Error: {r.text[:200]}")
-            return []
-    except Exception as e:
-        print(f"    Failed: {e}")
-        return []
+
+    all_asins = []
+
+    # Fetch 2 pages — page 0 and page 1 = up to 300 candidates
+    for page in range(2):
+        # priceTypes [0,1,18] = Amazon + Marketplace New + Buy Box
+        body = {
+            "domainId":     1,
+            "priceTypes":   [0, 1, 18],
+            "deltaPercent": MIN_DISCOUNT_PCT,
+            "interval":     10080,
+            "page":         page,
+        }
+        try:
+            r = requests.post(url, params=params, json=body, headers=headers, timeout=30)
+            print(f"    Page {page} status: {r.status_code}")
+            if r.status_code == 200:
+                data   = r.json()
+                deals  = data.get("deals", {}).get("dr", [])
+                asins  = [d.get("asin") for d in deals if d.get("asin")]
+                print(f"    Page {page}: {len(asins)} ASINs")
+                all_asins.extend(asins)
+            else:
+                print(f"    Error: {r.text[:200]}")
+        except Exception as e:
+            print(f"    Page {page} failed: {e}")
+        time.sleep(1)
+
+    # Deduplicate
+    seen = set()
+    unique = []
+    for a in all_asins:
+        if a not in seen:
+            seen.add(a)
+            unique.append(a)
+
+    print(f"  Total unique ASINs: {len(unique)}")
+    return unique
 
 def build_deals_json():
     print(f"\n[{datetime.datetime.now().strftime('%H:%M:%S')}] Starting DealDrop...\n")
