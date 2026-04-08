@@ -41,7 +41,6 @@ MIN_COUPON_PERCENT = 5
 DEAL_TTL_HOURS = 24
 
 # Keepa
-DOMAIN_ID = 1
 KEEPA_BASE = "https://api.keepa.com"
 
 # Amazon PA batch size
@@ -192,7 +191,6 @@ def keepa_product_request(asins: List[str]) -> Dict[str, Any]:
     url = f"{KEEPA_BASE}/product"
     params = {
         "key": KEEPA_API_KEY,
-        "domainId": DOMAIN_ID,
         "asin": ",".join(asins),
         "stats": 1,
         "history": 1,
@@ -253,7 +251,7 @@ def fetch_keepa_asins() -> List[str]:
     print("\n[Keepa] Fetching deal ASINs...")
 
     body = {
-        "domainId": DOMAIN_ID,
+        "domainId": 1,
         "priceTypes": [0],
         "deltaPercent": MIN_DISCOUNT_PCT,
         "interval": 10080,
@@ -269,7 +267,6 @@ def fetch_keepa_asins() -> List[str]:
         if asin:
             asins.append(asin)
 
-    # Unique while preserving order
     unique_asins = list(dict.fromkeys(asins))
     print(f"[Keepa] Got {len(unique_asins)} unique ASINs")
     return unique_asins[:MAX_DEALS]
@@ -282,8 +279,8 @@ def fetch_keepa_product_details(asins: List[str]) -> List[Dict[str, Any]]:
     print(f"\n[Keepa] Fetching {len(asins)} product details...")
     products: List[Dict[str, Any]] = []
 
-    for i in range(0, len(asins), 20):
-        batch = asins[i:i + 20]
+    for i in range(0, len(asins), 10):
+        batch = asins[i:i + 10]
         data = keepa_product_request(batch)
         batch_products = data.get("products", []) or []
         products.extend(batch_products)
@@ -487,12 +484,17 @@ def build_formatted_deals(
 ) -> List[Dict[str, Any]]:
     formatted: List[Dict[str, Any]] = []
     deal_id = 1
+    skipped_no_title = 0
 
     for asin, k in keepa_deals.items():
         a = amazon_data.get(asin, {})
 
         title = a.get("title") or k.get("title_fallback") or ""
+        if not title.strip():
+            title = f"Amazon Deal {asin}"
+
         if len(title.strip()) < 5:
+            skipped_no_title += 1
             continue
 
         pct = int(k.get("pct", 0))
@@ -538,6 +540,9 @@ def build_formatted_deals(
         })
         deal_id += 1
 
+    print(f"build_formatted_deals returned: {len(formatted)}")
+    print(f"Skipped for missing/short title: {skipped_no_title}")
+
     formatted.sort(key=lambda d: (not d["hot"], -d["effectivePct"], d["title"]))
     return formatted
 
@@ -572,8 +577,6 @@ def build_deals_json() -> None:
     keepa_products = fetch_keepa_product_details(asins)
     keepa_deals = build_keepa_deal_map(keepa_products)
 
-    # Remove deals still inside TTL memory if you only want "newer" rotation.
-    # If you want ALL current deals every run, comment this block out.
     filtered_keepa_deals = {}
     new_count = 0
     for asin, info in keepa_deals.items():
@@ -585,6 +588,8 @@ def build_deals_json() -> None:
             new_count += 1
 
     print(f"\n{new_count} new deals found this run")
+    print(f"keepa_deals count: {len(keepa_deals)}")
+    print(f"filtered_keepa_deals count: {len(filtered_keepa_deals)}")
     print("\nFetching live prices from Amazon PA API...")
 
     amazon_data: Dict[str, Dict[str, Any]] = {}
@@ -596,6 +601,8 @@ def build_deals_json() -> None:
         amazon_data.update(result)
         print(f"Fetched live data for batch {math.floor(i / PA_API_BATCH_SIZE) + 1}")
         time.sleep(REQUEST_SLEEP_SECONDS)
+
+    print(f"amazon_data count: {len(amazon_data)}")
 
     formatted = build_formatted_deals(filtered_keepa_deals, amazon_data)
 
