@@ -10,6 +10,7 @@ This version:
 - Pulls pages 0, 1, and 2 from Keepa
 - Uses domain on the Keepa product endpoint
 - Uses PA API price fallback so more cards show an Amazon price
+- Filters out books, magazines, manga, comics, journals, and similar items
 - Keeps zero-overwrite protection so bad runs do not wipe deals.json
 """
 
@@ -47,6 +48,31 @@ KEEPA_BASE         = "https://api.keepa.com"
 KEEPA_DEAL_DELTA_PERCENT = 8
 KEEPA_DEAL_INTERVAL      = 4320
 KEEPA_DEAL_PAGES         = 3
+
+# Book / magazine exclusions
+EXCLUDED_CATEGORY_NAMES = {
+    "Books",
+}
+
+EXCLUDED_TITLE_TERMS = [
+    " magazine",
+    " magazines",
+    " paperback",
+    " hardcover",
+    " audiobook",
+    " kindle",
+    " issue ",
+    " vol.",
+    " volume ",
+    " journal",
+    " workbook",
+    " textbook",
+    " study guide",
+    " comic",
+    " comics",
+    " manga",
+    " novel",
+]
 
 # ─── CATEGORY MAPPING ─────────────────────────────────────────────────────────
 
@@ -179,6 +205,18 @@ def get_category(product):
         return "Tools & Home Improvement"
 
     return "Electronics"
+
+def is_excluded_product(product, category_name):
+    title = f" {(product.get('title') or '').lower()} "
+
+    if category_name in EXCLUDED_CATEGORY_NAMES:
+        return True
+
+    for term in EXCLUDED_TITLE_TERMS:
+        if term in title:
+            return True
+
+    return False
 
 def parse_coupon(product):
     coupon_history = product.get("coupon")
@@ -422,9 +460,14 @@ def build_deals_json():
             if pct < MIN_DISCOUNT_PCT and coupon is None:
                 continue
 
+            category_name = get_category(p)
+
+            if is_excluded_product(p, category_name):
+                continue
+
             keepa_deals[asin] = {
                 "asin": asin,
-                "category": get_category(p),
+                "category": category_name,
                 "pct": pct,
                 "coupon": coupon,
                 "title_fallback": (p.get("title") or "")[:120],
