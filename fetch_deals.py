@@ -11,6 +11,7 @@ This version:
 - Uses domain on the Keepa product endpoint
 - Uses PA API price fallback so more cards show an Amazon price
 - Filters out books, magazines, manga, comics, journals, and similar items
+- Skips any deal that does not have a real Amazon API price
 - Keeps zero-overwrite protection so bad runs do not wipe deals.json
 """
 
@@ -499,7 +500,10 @@ def build_deals_json():
             if not title or len(title) < 5:
                 continue
 
-            price  = a.get("price_display", "")
+            price = a.get("price_display", "")
+            if not price:
+                continue
+
             image  = a.get("image", "")
             prime  = a.get("prime", False)
             coupon = k["coupon"]
@@ -529,7 +533,7 @@ def build_deals_json():
                 "desc": " · ".join(parts),
                 "price": price,
                 "was": was_display,
-                "hasLivePrice": bool(price),
+                "hasLivePrice": True,
                 "pct": pct,
                 "effectivePct": effective_pct,
                 "hot": effective_pct >= HOT_DEAL_PCT,
