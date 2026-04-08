@@ -9,6 +9,7 @@ This version:
 - Uses a broader Keepa deal search
 - Pulls pages 0, 1, and 2 from Keepa
 - Uses domain on the Keepa product endpoint
+- Uses PA API price fallback so more cards show an Amazon price
 - Keeps zero-overwrite protection so bad runs do not wipe deals.json
 """
 
@@ -298,6 +299,7 @@ def fetch_amazon_live_data(asin_batch):
             "Offers.Listings.Price",
             "Offers.Listings.Availability.Message",
             "Offers.Listings.DeliveryInfo.IsPrimeEligible",
+            "Offers.Summaries.LowestPrice",
         ]
     }
 
@@ -351,16 +353,26 @@ def fetch_amazon_live_data(asin_batch):
         for item in items:
             asin      = item.get("ASIN")
             listing   = (item.get("Offers", {}).get("Listings") or [{}])[0]
-            price_obj = listing.get("Price", {})
+            price_obj = listing.get("Price", {}) or {}
+
+            summaries = item.get("Offers", {}).get("Summaries") or []
+            lowest_price_obj = summaries[0].get("LowestPrice", {}) if summaries else {}
+
             img_obj   = item.get("Images", {}).get("Primary", {}).get("Large", {})
             title     = item.get("ItemInfo", {}).get("Title", {}).get("DisplayValue", "")
             prime     = listing.get("DeliveryInfo", {}).get("IsPrimeEligible", False)
 
+            price_display = price_obj.get("DisplayAmount") or lowest_price_obj.get("DisplayAmount", "")
+            price_amount  = price_obj.get("Amount") or lowest_price_obj.get("Amount")
+            currency      = price_obj.get("Currency") or lowest_price_obj.get("Currency")
+
             result[asin] = {
-                "price_display": price_obj.get("DisplayAmount", ""),
-                "image":         img_obj.get("URL", ""),
-                "title":         title,
-                "prime":         prime,
+                "price_display": price_display,
+                "price_amount": price_amount,
+                "currency": currency,
+                "image": img_obj.get("URL", ""),
+                "title": title,
+                "prime": prime,
             }
 
         print(f"[Amazon PA API] Got data for {len(result)} products")
