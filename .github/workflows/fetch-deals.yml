@@ -55,6 +55,7 @@ jobs:
           git config user.name  "DealDrop Bot"
           git config user.email "bot@dealdrop.com"
           git add -f deals.json || true
+          git add -f deals_memory.json || true
           git add notified_deals.json || true
           git status
           git diff --staged --quiet || git commit -m "Update deals $(date -u '+%Y-%m-%d %H:%M UTC')"
