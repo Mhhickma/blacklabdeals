@@ -23,7 +23,7 @@ MAX_DEALS          = 100
 MIN_DISCOUNT_PCT   = 10
 HOT_DEAL_PCT       = 50
 DOMAIN_ID          = "1"
-DEALS_TO_SHOW      = 50
+DEALS_TO_SHOW      = 200
 DEAL_TTL_HOURS     = 24
 
 CATEGORY_NAMES = {
@@ -240,7 +240,7 @@ def merge_with_memory(new_deals):
     save_memory(memory)
     return list(memory.values())
 
-# ─── AMAZON PA API ────────────────────────────────────────────────────────────
+# ─── AON PA API ────────────────────────────────────────────────────────────
 
 import hmac
 import hashlib
@@ -255,13 +255,13 @@ def get_aws_signing_key(secret, date_stamp, region, service):
     k = sign_aws(k, "aws4_request")
     return k
 
-def fetch_amazon_live_data(asin_batch):
-    if not AMAZON_ACCESS_KEY:
-        print("  [Amazon PA API] Not configured — skipping.")
+def fetch_aon_live_data(asin_batch):
+    if not AON_ACCESS_KEY:
+        print("  [Aon PA API] Not configured — skipping.")
         return {}
     service  = "ProductAdvertisingAPI"
     path     = "/paapi5/getitems"
-    endpoint = f"https://{AMAZON_HOST}{path}"
+    endpoint = f"https://{AON_HOST}{path}"
     payload  = {
         "ItemIds":     asin_batch,
         "PartnerTag":  AMAZON_PARTNER_TAG,
