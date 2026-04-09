@@ -11,7 +11,7 @@ This version:
 - Uses domain on the Keepa product endpoint
 - Uses PA API price fallback so more cards show an Amazon price
 - Filters out books, magazines, manga, comics, journals, and similar items
-- Skips any deal that does not have a real Amazon API price
+- Does NOT discard deals just because DisplayAmount is blank
 - Keeps zero-overwrite protection so bad runs do not wipe deals.json
 """
 
@@ -500,9 +500,23 @@ def build_deals_json():
             if not title or len(title) < 5:
                 continue
 
-            price = a.get("price_display", "")
+            price = (a.get("price_display") or "").strip()
+            price_amount = a.get("price_amount")
+            currency = a.get("currency")
+
+            if not price and price_amount is not None:
+                try:
+                    if currency == "USD":
+                        price = f"${float(price_amount):.2f}"
+                    else:
+                        price = f"{float(price_amount):.2f} {currency}" if currency else f"{float(price_amount):.2f}"
+                except Exception:
+                    pass
+
+            has_live_price = bool((a.get("price_display") or "").strip() or price_amount is not None)
+
             if not price:
-                continue
+                price = "See price on Amazon"
 
             image  = a.get("image", "")
             prime  = a.get("prime", False)
@@ -533,7 +547,7 @@ def build_deals_json():
                 "desc": " · ".join(parts),
                 "price": price,
                 "was": was_display,
-                "hasLivePrice": True,
+                "hasLivePrice": has_live_price,
                 "pct": pct,
                 "effectivePct": effective_pct,
                 "hot": effective_pct >= HOT_DEAL_PCT,
@@ -553,6 +567,14 @@ def build_deals_json():
                 **deal,
                 "firstSeen": existing.get("firstSeen", now_iso)
             }
+
+            print(
+                f"FORMAT {asin}: "
+                f"title={bool(title)} "
+                f"display={a.get('price_display')} "
+                f"amount={a.get('price_amount')} "
+                f"final_price={price}"
+            )
 
             deal_id += 1
 
