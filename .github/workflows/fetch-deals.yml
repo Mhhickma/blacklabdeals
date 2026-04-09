@@ -21,8 +21,13 @@ jobs:
         with:
           python-version: '3.11'
 
+      - name: Unzip Creators SDK
+        run: unzip -o creatorsapi-python-sdk.zip
+
       - name: Install dependencies
-        run: pip install requests keepa numpy python_dateutil setuptools "urllib3<2.1.0" pydantic "typing-extensions>=4.7.1"
+        run: |
+          pip install requests keepa numpy python_dateutil setuptools "urllib3<2.1.0" pydantic "typing-extensions>=4.7.1"
+          pip install ./creatorsapi-python-sdk
 
       - name: Run deal fetcher
         env:
