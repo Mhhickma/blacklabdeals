@@ -27,10 +27,10 @@ jobs:
       - name: Install dependencies
         run: |
           pip install requests keepa numpy python_dateutil setuptools "urllib3<2.1.0" pydantic "typing-extensions>=4.7.1"
-          find . -maxdepth 4 -type f | grep -E "setup.py|pyproject.toml" || true
 
       - name: Run deal fetcher
         env:
+          PYTHONPATH: ${{ github.workspace }}/creatorsapi-python-sdk
           KEEPA_API_KEY: ${{ secrets.KEEPA_API_KEY }}
           AFFILIATE_TAG: ${{ secrets.AFFILIATE_TAG }}
           AMAZON_ACCESS_KEY: ${{ secrets.AMAZON_ACCESS_KEY }}
