@@ -71,13 +71,41 @@
   .hot-price-was { font-size: 11px; color: var(--text-muted); text-decoration: line-through; }
   .hot-btn { display: block; width: 100%; padding: 8px; text-align: center; background: var(--red); color: white; border: none; border-radius: 7px; font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; transition: background 0.15s; margin-top: auto; }
   .hot-btn:hover { background: var(--red-mid); }
+
   .filters-wrap { max-width: 1100px; margin: 0 auto 28px; padding: 0 24px; }
   .filter-label { font-size: 12px; font-weight: 500; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; display: block; }
-  .filters-scroll { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
-  .filters-scroll::-webkit-scrollbar { display: none; }
-  .filter-btn { flex-shrink: 0; padding: 7px 16px; border: 1px solid var(--border); border-radius: 100px; background: var(--surface); font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; color: var(--text-secondary); cursor: pointer; transition: all 0.15s; white-space: nowrap; }
-  .filter-btn:hover { border-color: var(--accent); color: var(--accent); }
-  .filter-btn.active { background: var(--accent); border-color: var(--accent); color: white; }
+  .filters-scroll {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding-bottom: 4px;
+  }
+  .filter-btn {
+    width: 100%;
+    text-align: left;
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: normal;
+  }
+  .filter-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--accent-light);
+  }
+  .filter-btn.active {
+    background: var(--accent-light);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
   .deals-section { max-width: 1100px; margin: 0 auto; padding: 0 24px 100px; }
   .section-header { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 20px; }
   .section-title { font-size: 14px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.08em; }
@@ -102,13 +130,16 @@
   .coupon-badge { font-size: 11px; font-weight: 600; background: var(--blue-light); color: var(--blue-text); padding: 3px 9px; border-radius: 100px; display: inline-flex; align-items: center; gap: 3px; }
   .btn-deal { display: block; margin-top: 12px; padding: 9px; text-align: center; background: var(--accent); color: white; border: none; border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; cursor: pointer; width: 100%; transition: background 0.15s; }
   .btn-deal:hover { background: var(--accent-mid); }
+
   #back-to-top { position: fixed; bottom: 28px; right: 24px; width: 48px; height: 48px; background: var(--accent); color: white; border: none; border-radius: 50%; font-size: 20px; cursor: pointer; box-shadow: 0 4px 16px rgba(42,96,65,0.35); display: flex; align-items: center; justify-content: center; opacity: 0; transform: translateY(16px); transition: opacity 0.25s, transform 0.25s, background 0.15s; pointer-events: none; z-index: 200; }
   #back-to-top.visible { opacity: 1; transform: translateY(0); pointer-events: auto; }
   #back-to-top:hover { background: var(--accent-mid); }
+
   footer { background: var(--surface); border-top: 1px solid var(--border); padding: 32px 24px; text-align: center; }
   footer p { font-size: 13px; color: var(--text-muted); }
   footer a { color: var(--accent); text-decoration: none; }
   .disclaimer { max-width: 600px; margin: 8px auto 0; font-size: 11px; color: var(--text-muted); line-height: 1.6; }
+
   @media (max-width: 700px) {
     .hero { grid-template-columns: 1fr; gap: 24px; padding: 28px 16px 20px; }
     .stats-bar { gap: 0; padding: 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
@@ -145,7 +176,7 @@
 <section class="hero">
   <div class="hero-text">
     <h1>The best deals,<br>curated for you.</h1>
-    <p>Top Amazon discounts across every category — updated hourly automatically.</p>
+    <p>Top Amazon discounts across home, tech, tools, kitchen, apparel, and more — updated hourly automatically.</p>
   </div>
   <div class="signup-box">
     <h3>Never miss a deal</h3>
@@ -368,7 +399,7 @@ function esc(s) {
   return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-setInterval(loadDeals, 30 * 60 * 1000);
+setInterval(loadDeals, 5 * 60 * 1000);
 loadDeals();
 </script>
 </body>
