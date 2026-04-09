@@ -1,11 +1,12 @@
 """
 DealDrop — fetch_deals.py
-Provider-based transition version
+LOW TOKEN TEST VERSION
 
 Purpose:
 - Keep Keepa for deal discovery
-- Isolate Amazon enrichment behind one provider interface
-- Make it easy to replace PA API with Creators API next
+- Use far fewer Keepa tokens while testing
+- Keep Amazon enrichment behind one provider interface
+- Leave room for Creators API next
 """
 
 import json
@@ -25,16 +26,15 @@ AMAZON_PARTNER_TAG = os.environ.get("AFFILIATE_TAG", "")
 AMAZON_HOST        = "webservices.amazon.com"
 AMAZON_REGION      = "us-east-1"
 
-# Transition switch:
-# "paapi" for current production path
-# "creators" for future Creators API path
+# Provider switch
 AMAZON_PROVIDER    = os.environ.get("AMAZON_PROVIDER", "paapi").lower()
 
 OUTPUT_FILE        = "deals.json"
 MEMORY_FILE        = "deals_memory.json"
 
-MAX_DEALS          = 200
-DEALS_TO_SHOW      = 200
+# Lower counts for testing
+MAX_DEALS          = 60
+DEALS_TO_SHOW      = 60
 MIN_DISCOUNT_PCT   = 10
 HOT_DEAL_PCT       = 50
 MIN_COUPON_VALUE   = 3
@@ -43,10 +43,14 @@ DEAL_TTL_HOURS     = 24
 
 KEEPA_BASE         = "https://api.keepa.com"
 
-# Broader Keepa request settings
-KEEPA_DEAL_DELTA_PERCENT = 8
+# LOW TOKEN TEST SETTINGS
+KEEPA_DEAL_DELTA_PERCENT = 12
 KEEPA_DEAL_INTERVAL      = 4320
-KEEPA_DEAL_PAGES         = 3
+KEEPA_DEAL_PAGES         = 1
+KEEPA_MAX_CANDIDATE_ASINS = 70
+KEEPA_BATCH_SIZE         = 10
+KEEPA_BATCH_SLEEP_SEC    = 2.5
+AMAZON_BATCH_SLEEP_SEC   = 1.0
 
 EXCLUDED_CATEGORY_NAMES = {
     "Books",
@@ -266,14 +270,15 @@ def fetch_keepa_asins():
             page_asins = [str(d.get("asin")).strip().upper() for d in deals_raw if d.get("asin")]
             print(f"[Keepa] Page {page}: {len(page_asins)} candidates")
             all_candidates.extend(page_asins)
-            time.sleep(0.4)
+            time.sleep(0.5)
         except Exception as e:
             print(f"[Keepa] Deal request failed on page {page}: {e}")
 
     all_asins = list(dict.fromkeys(all_candidates))
     print(f"[Keepa] Got {len(all_candidates)} total candidates across pages")
     print(f"[Keepa] {len(all_asins)} unique ASINs")
-    return all_asins[:MAX_DEALS + 40]
+    print(f"[Keepa] Limiting to first {KEEPA_MAX_CANDIDATE_ASINS} ASINs for testing")
+    return all_asins[:KEEPA_MAX_CANDIDATE_ASINS]
 
 def fetch_keepa_product_details(asins):
     if not asins:
@@ -282,18 +287,22 @@ def fetch_keepa_product_details(asins):
     print(f"\n[Keepa] Fetching product details ({len(asins)} ASINs)...")
     all_products = []
 
-    for i in range(0, len(asins), 10):
-        batch = asins[i:i+10]
+    for i in range(0, len(asins), KEEPA_BATCH_SIZE):
+        batch = asins[i:i+KEEPA_BATCH_SIZE]
         try:
             data = keepa_product_request(batch)
             products = data.get("products", [])
             all_products.extend(products)
-            print(f"    Progress: {min(i+10, len(asins))}/{len(asins)} ({len(all_products)} successful)")
-            time.sleep(0.6)
+            print(f"    Progress: {min(i+KEEPA_BATCH_SIZE, len(asins))}/{len(asins)} ({len(all_products)} successful)")
+            time.sleep(KEEPA_BATCH_SLEEP_SEC)
         except Exception as e:
-            print(f"[Keepa] Error on batch {batch}: {e}")
+            msg = str(e)
+            print(f"[Keepa] Error on batch {batch}: {msg}")
+            if "429" in msg:
+                print("[Keepa] Hit rate limit. Stopping product fetch early to save tokens.")
+                break
 
-        if len(all_products) >= MAX_DEALS + 40:
+        if len(all_products) >= MAX_DEALS:
             break
 
     print(f"[Keepa] Total: {len(all_products)} products")
@@ -332,7 +341,7 @@ def fetch_amazon_live_data(asin_batch):
     return fetch_amazon_live_data_paapi(asin_batch)
 
 
-# ─── PA API IMPLEMENTATION (CURRENT) ──────────────────────────────────────────
+# ─── PA API IMPLEMENTATION ────────────────────────────────────────────────────
 
 def sign_aws(key, msg):
     return hmac.new(key, msg.encode("utf-8"), hashlib.sha256).digest()
@@ -440,25 +449,9 @@ def fetch_amazon_live_data_paapi(asin_batch):
         return {}
 
 
-# ─── CREATORS API IMPLEMENTATION (NEXT STEP PLACEHOLDER) ─────────────────────
+# ─── CREATORS API PLACEHOLDER ─────────────────────────────────────────────────
 
 def fetch_amazon_live_data_creators(asin_batch):
-    """
-    Placeholder for Creators API implementation.
-
-    Return shape must match normalize_amazon_item() output:
-    {
-      asin: {
-        "asin": ...,
-        "title": ...,
-        "image": ...,
-        "price_display": ...,
-        "price_amount": ...,
-        "currency": ...,
-        "prime": ...
-      }
-    }
-    """
     print("[Amazon Creators API] Not implemented yet.")
     return {}
 
@@ -524,7 +517,7 @@ def build_deals_json():
     for i in range(0, len(qualifying_asins), 10):
         batch = qualifying_asins[i:i+10]
         amazon_data.update(fetch_amazon_live_data(batch))
-        time.sleep(1)
+        time.sleep(AMAZON_BATCH_SLEEP_SEC)
 
     formatted = []
     deal_id = 1
@@ -637,7 +630,6 @@ def build_deals_json():
     print(f"Hot deals:    {output['hotDeals']}")
     print(f"Coupon deals: {output['couponDeals']}")
     print(f"Updated:      {output['updatedAt']}")
-
 
 if __name__ == "__main__":
     build_deals_json()
