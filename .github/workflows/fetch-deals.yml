@@ -24,10 +24,16 @@ jobs:
       - name: Unzip Creators SDK
         run: unzip -o creatorsapi-python-sdk.zip
 
+      - name: Inspect SDK folders
+        run: |
+          pwd
+          ls -la
+          find creatorsapi-python-sdk -maxdepth 3 -type f | head -100
+
       - name: Install dependencies
         run: |
           pip install requests keepa numpy python_dateutil setuptools "urllib3<2.1.0" pydantic "typing-extensions>=4.7.1"
-          pip install ./creatorsapi-python-sdk
+          pip install ./creatorsapi-python-sdk/python
 
       - name: Run deal fetcher
         env:
