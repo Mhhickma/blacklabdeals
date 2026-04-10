@@ -5,12 +5,14 @@ Two-API pipeline:
   1. Keepa API     — finds deals using recent price movement + coupon detection
   2. Amazon PA API — fetches live prices, images, titles (TOS compliant to display)
 
-This version improves variety by:
-- pulling multiple Keepa deal pages
-- filtering out books by default
-- limiting overrepresented categories like clothing/shoes
-- using a simple Keepa product request
-- keeping Amazon PA API as the display source for compliance
+This version:
+- pulls multiple Keepa deal pages
+- filters out books by default
+- limits overrepresented categories like clothing/shoes
+- uses a simple Keepa product request
+- treats 10%+ as a deal
+- treats 30%+ as a hot deal
+- keeps Amazon PA API as the display source for compliance
 """
 
 import json
@@ -34,21 +36,18 @@ AMAZON_REGION      = "us-east-1"
 
 OUTPUT_FILE        = "deals.json"
 
-# Final number of deals shown on site
 MAX_DEALS          = 150
 
-# Keepa search controls
 KEEPA_PAGES        = 3
 PAGE_DELAY_SEC     = 1.2
 PRODUCT_DELAY_SEC  = 0.5
 
 # Deal thresholds
-MIN_DISCOUNT_PCT   = 20
-HOT_DEAL_PCT       = 50
+MIN_DISCOUNT_PCT   = 10
+HOT_DEAL_PCT       = 30
 MIN_COUPON_VALUE   = 3
 MIN_COUPON_PCT     = 5
 
-# Variety controls
 EXCLUDED_CATEGORIES = {
     "Books",
 }
@@ -130,10 +129,7 @@ def keepa_deal_request(deal_params):
 def keepa_product_request(asins):
     """
     Simple Keepa product request.
-    Uses the known-good minimal pattern:
-    GET + key + domain + asin
-
-    No attempt 1 / attempt 2 logic.
+    Uses GET + key + domain + asin only.
     """
     url = f"{KEEPA_BASE}/product"
 
