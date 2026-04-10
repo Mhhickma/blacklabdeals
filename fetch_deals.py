@@ -40,7 +40,7 @@ AMAZON_PROVIDER = os.environ.get("AMAZON_PROVIDER", "creators").lower()
 OUTPUT_FILE        = "deals.json"
 MEMORY_FILE        = "deals_memory.json"
 
-MAX_DEALS          = 100
+MAX_DEALS          = 150
 DEALS_TO_SHOW      = 100
 MIN_DISCOUNT_PCT   = 15
 HOT_DEAL_PCT       = 50
@@ -50,12 +50,13 @@ DEAL_TTL_HOURS     = 24
 
 KEEPA_BASE         = "https://api.keepa.com"
 
+# Increased Keepa pull settings for 300 tokens/hour
 KEEPA_DEAL_DELTA_PERCENT  = 12
 KEEPA_DEAL_INTERVAL       = 4320
-KEEPA_DEAL_PAGES          = 1
-KEEPA_MAX_CANDIDATE_ASINS = 120
+KEEPA_DEAL_PAGES          = 2
+KEEPA_MAX_CANDIDATE_ASINS = 180
 KEEPA_BATCH_SIZE          = 10
-KEEPA_BATCH_SLEEP_SEC     = 2.5
+KEEPA_BATCH_SLEEP_SEC     = 2.0
 AMAZON_BATCH_SLEEP_SEC    = 1.0
 
 EXCLUDED_CATEGORY_NAMES = {
@@ -623,7 +624,6 @@ def build_deals_json():
             price_amount = a.get("price_amount")
             currency = a.get("currency")
 
-            # 1) Try Amazon / Creators API first
             if not price and price_amount is not None:
                 try:
                     if currency == "USD":
@@ -633,7 +633,6 @@ def build_deals_json():
                 except Exception:
                     pass
 
-            # 2) If Amazon price is missing, fall back to Keepa current tracked price
             used_keepa_fallback = False
             if not price:
                 keepa_current = k.get("current_price")
@@ -642,7 +641,6 @@ def build_deals_json():
                     used_keepa_fallback = True
                     print(f"[Keepa] Using fallback price for ASIN {asin}: {price}")
 
-            # 3) If still no price, skip it
             if not price:
                 print(f"[Price] No visible Amazon or Keepa price for ASIN {asin} - skipping")
                 continue
