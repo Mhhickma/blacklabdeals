@@ -7,6 +7,7 @@ Creators API transition version
 - Default provider is Creators API
 - Falls back to Keepa current tracked price if Amazon price is missing
 - Skips item only if both Amazon and Keepa price are missing
+- Keeps older deals visible by rebuilding deals.json from memory
 """
 
 import json
@@ -46,11 +47,10 @@ MIN_DISCOUNT_PCT   = 15
 HOT_DEAL_PCT       = 50
 MIN_COUPON_VALUE   = 3
 MIN_COUPON_PCT     = 5
-DEAL_TTL_HOURS     = 24
+DEAL_TTL_HOURS     = 48
 
 KEEPA_BASE         = "https://api.keepa.com"
 
-# Increased Keepa pull settings for 300 tokens/hour
 KEEPA_DEAL_DELTA_PERCENT  = 12
 KEEPA_DEAL_INTERVAL       = 4320
 KEEPA_DEAL_PAGES          = 2
@@ -703,28 +703,38 @@ def build_deals_json():
             print(f"Skipping formatted deal {asin}: {e}")
 
     formatted.sort(key=lambda d: (not d["hot"], -d["effectivePct"]))
-    formatted = formatted[:DEALS_TO_SHOW]
 
-    print(f"\nFinal qualifying deals before save: {len(formatted)}")
+    print(f"\nCurrent run qualifying deals before merge: {len(formatted)}")
 
-    if len(formatted) == 0:
-        print("No formatted deals found. Keeping existing deals.json and not overwriting.")
+    memory = prune_memory(memory)
+    save_memory(memory)
+
+    merged_deals = list(memory.values())
+
+    for d in merged_deals:
+        d.pop("firstSeen", None)
+
+    merged_deals.sort(key=lambda d: (not d.get("hot", False), -d.get("effectivePct", 0)))
+    merged_deals = merged_deals[:DEALS_TO_SHOW]
+
+    print(f"Final merged deals before save: {len(merged_deals)}")
+
+    if len(merged_deals) == 0:
+        print("No merged deals found. Keeping existing deals.json and not overwriting.")
         return
-
-    save_memory(prune_memory(memory))
 
     output = {
         "updatedAt": now_iso,
-        "totalDeals": len(formatted),
-        "hotDeals": sum(1 for d in formatted if d["hot"]),
-        "couponDeals": sum(1 for d in formatted if d["hasCoupon"]),
-        "deals": formatted,
+        "totalDeals": len(merged_deals),
+        "hotDeals": sum(1 for d in merged_deals if d.get("hot")),
+        "couponDeals": sum(1 for d in merged_deals if d.get("hasCoupon")),
+        "deals": merged_deals,
     }
 
     with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
         json.dump(output, f, indent=2)
 
-    print(f"\nSaved {len(formatted)} deals to {OUTPUT_FILE}")
+    print(f"\nSaved {len(merged_deals)} deals to {OUTPUT_FILE}")
     print(f"Hot deals:    {output['hotDeals']}")
     print(f"Coupon deals: {output['couponDeals']}")
     print(f"Updated:      {output['updatedAt']}")
