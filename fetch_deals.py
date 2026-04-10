@@ -5,7 +5,8 @@ Creators API transition version
 - Keepa finds candidate deals
 - Amazon enrichment can use Creators API or PA API
 - Default provider is Creators API
-- SKIPS items with no visible live price
+- Falls back to Keepa current tracked price if Amazon price is missing
+- Skips item only if both Amazon and Keepa price are missing
 """
 
 import json
@@ -16,7 +17,6 @@ import hashlib
 import datetime
 import requests
 
-# Creators API SDK
 from creatorsapi_python_sdk.api_client import ApiClient
 from creatorsapi_python_sdk.api.default_api import DefaultApi
 from creatorsapi_python_sdk.models.get_items_request_content import GetItemsRequestContent
@@ -30,22 +30,19 @@ AMAZON_PARTNER_TAG  = os.environ.get("AFFILIATE_TAG", "")
 AMAZON_HOST         = "webservices.amazon.com"
 AMAZON_REGION       = "us-east-1"
 
-# Creators API credentials
 CREATORS_CREDENTIAL_ID      = os.environ.get("CREATORS_CREDENTIAL_ID", "")
 CREATORS_CREDENTIAL_SECRET  = os.environ.get("CREATORS_CREDENTIAL_SECRET", "")
 CREATORS_CREDENTIAL_VERSION = os.environ.get("CREATORS_CREDENTIAL_VERSION", "")
 CREATORS_MARKETPLACE        = os.environ.get("CREATORS_MARKETPLACE", "www.amazon.com")
 
-# creators = preferred now
-# paapi = fallback if needed
 AMAZON_PROVIDER = os.environ.get("AMAZON_PROVIDER", "creators").lower()
 
 OUTPUT_FILE        = "deals.json"
 MEMORY_FILE        = "deals_memory.json"
 
-MAX_DEALS          = 60
-DEALS_TO_SHOW      = 60
-MIN_DISCOUNT_PCT   = 10
+MAX_DEALS          = 100
+DEALS_TO_SHOW      = 100
+MIN_DISCOUNT_PCT   = 15
 HOT_DEAL_PCT       = 50
 MIN_COUPON_VALUE   = 3
 MIN_COUPON_PCT     = 5
@@ -53,11 +50,10 @@ DEAL_TTL_HOURS     = 24
 
 KEEPA_BASE         = "https://api.keepa.com"
 
-# Keepa test-safe settings
 KEEPA_DEAL_DELTA_PERCENT  = 12
 KEEPA_DEAL_INTERVAL       = 4320
 KEEPA_DEAL_PAGES          = 1
-KEEPA_MAX_CANDIDATE_ASINS = 70
+KEEPA_MAX_CANDIDATE_ASINS = 120
 KEEPA_BATCH_SIZE          = 10
 KEEPA_BATCH_SLEEP_SEC     = 2.5
 AMAZON_BATCH_SLEEP_SEC    = 1.0
@@ -596,6 +592,7 @@ def build_deals_json():
                 "coupon": coupon,
                 "title_fallback": (p.get("title") or "")[:120],
                 "avg90_price": avg90,
+                "current_price": current,
             }
         except Exception as e:
             print(f"Skipping product: {e}")
@@ -626,6 +623,7 @@ def build_deals_json():
             price_amount = a.get("price_amount")
             currency = a.get("currency")
 
+            # 1) Try Amazon / Creators API first
             if not price and price_amount is not None:
                 try:
                     if currency == "USD":
@@ -635,12 +633,20 @@ def build_deals_json():
                 except Exception:
                     pass
 
-            # SKIP items with no visible price
+            # 2) If Amazon price is missing, fall back to Keepa current tracked price
+            used_keepa_fallback = False
             if not price:
-                print(f"[Amazon] No visible price for ASIN {asin} - skipping")
+                keepa_current = k.get("current_price")
+                if keepa_current is not None:
+                    price = f"${keepa_current:.2f}"
+                    used_keepa_fallback = True
+                    print(f"[Keepa] Using fallback price for ASIN {asin}: {price}")
+
+            # 3) If still no price, skip it
+            if not price:
+                print(f"[Price] No visible Amazon or Keepa price for ASIN {asin} - skipping")
                 continue
 
-            has_live_price = True
             image = a.get("image", "")
             prime = a.get("prime", False)
             coupon = k["coupon"]
@@ -658,6 +664,8 @@ def build_deals_json():
                 parts.append(coupon["display"])
             if prime:
                 parts.append("Prime eligible")
+            if used_keepa_fallback:
+                parts.append("Price from Keepa")
 
             was_display = f"${k['avg90_price']:.2f}" if k.get("avg90_price") else ""
 
@@ -670,7 +678,7 @@ def build_deals_json():
                 "desc": " · ".join(parts),
                 "price": price,
                 "was": was_display,
-                "hasLivePrice": has_live_price,
+                "hasLivePrice": True,
                 "pct": pct,
                 "effectivePct": effective_pct,
                 "hot": effective_pct >= HOT_DEAL_PCT,
