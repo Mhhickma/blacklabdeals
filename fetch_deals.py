@@ -37,7 +37,7 @@ AMAZON_REGION      = "us-east-1"
 OUTPUT_FILE        = "deals.json"
 
 # Final number of deals shown on site
-MAX_DEALS          = 60
+MAX_DEALS          = 300
 
 # Keepa search controls
 KEEPA_PAGES        = 3          # pages 0,1,2
