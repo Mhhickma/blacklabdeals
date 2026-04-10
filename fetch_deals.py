@@ -1,13 +1,18 @@
 """
 DealDrop — fetch_deals.py
-Creators API transition version
+--------------------------
+Two-API pipeline:
+  1. Keepa API     — finds deals using recent price movement + coupon detection
+  2. Amazon PA API — fetches live prices, images, titles (TOS compliant to display)
 
-- Keepa finds candidate deals
-- Amazon enrichment can use Creators API or PA API
-- Default provider is Creators API
-- Falls back to Keepa current tracked price if Amazon price is missing
-- Skips item only if both Amazon and Keepa price are missing
-- Keeps older deals visible by rebuilding deals.json from memory
+This version improves variety by:
+- pulling multiple Keepa deal pages
+- filtering out books by default
+- limiting overrepresented categories like clothing/shoes
+- keeping Amazon PA API as the display source for compliance
+
+Requirements:
+    pip install requests
 """
 
 import json
@@ -16,72 +21,53 @@ import time
 import hmac
 import hashlib
 import datetime
-import requests
+from collections import Counter
 
-from creatorsapi_python_sdk.api_client import ApiClient
-from creatorsapi_python_sdk.api.default_api import DefaultApi
-from creatorsapi_python_sdk.models.get_items_request_content import GetItemsRequestContent
+import requests
 
 # ─── CONFIG ───────────────────────────────────────────────────────────────────
 
-KEEPA_API_KEY       = os.environ.get("KEEPA_API_KEY", "")
-AMAZON_ACCESS_KEY   = os.environ.get("AMAZON_ACCESS_KEY", "")
-AMAZON_SECRET_KEY   = os.environ.get("AMAZON_SECRET_KEY", "")
-AMAZON_PARTNER_TAG  = os.environ.get("AFFILIATE_TAG", "")
-AMAZON_HOST         = "webservices.amazon.com"
-AMAZON_REGION       = "us-east-1"
-
-CREATORS_CREDENTIAL_ID      = os.environ.get("CREATORS_CREDENTIAL_ID", "")
-CREATORS_CREDENTIAL_SECRET  = os.environ.get("CREATORS_CREDENTIAL_SECRET", "")
-CREATORS_CREDENTIAL_VERSION = os.environ.get("CREATORS_CREDENTIAL_VERSION", "")
-CREATORS_MARKETPLACE        = os.environ.get("CREATORS_MARKETPLACE", "www.amazon.com")
-
-AMAZON_PROVIDER = os.environ.get("AMAZON_PROVIDER", "creators").lower()
+KEEPA_API_KEY      = os.environ.get("KEEPA_API_KEY", "")
+AMAZON_ACCESS_KEY  = os.environ.get("AMAZON_ACCESS_KEY", "")
+AMAZON_SECRET_KEY  = os.environ.get("AMAZON_SECRET_KEY", "")
+AMAZON_PARTNER_TAG = os.environ.get("AFFILIATE_TAG", "")
+AMAZON_HOST        = "webservices.amazon.com"
+AMAZON_REGION      = "us-east-1"
 
 OUTPUT_FILE        = "deals.json"
-MEMORY_FILE        = "deals_memory.json"
 
-MAX_DEALS          = 150
-DEALS_TO_SHOW      = 100
-MIN_DISCOUNT_PCT   = 15
+# Final number of deals shown on site
+MAX_DEALS          = 60
+
+# Keepa search controls
+KEEPA_PAGES        = 3          # pages 0,1,2
+PAGE_DELAY_SEC     = 1.2
+PRODUCT_DELAY_SEC  = 0.35
+
+# Deal thresholds
+MIN_DISCOUNT_PCT   = 20
 HOT_DEAL_PCT       = 50
 MIN_COUPON_VALUE   = 3
 MIN_COUPON_PCT     = 5
-DEAL_TTL_HOURS     = 48
 
-KEEPA_BASE         = "https://api.keepa.com"
-
-KEEPA_DEAL_DELTA_PERCENT  = 12
-KEEPA_DEAL_INTERVAL       = 4320
-KEEPA_DEAL_PAGES          = 2
-KEEPA_MAX_CANDIDATE_ASINS = 180
-KEEPA_BATCH_SIZE          = 10
-KEEPA_BATCH_SLEEP_SEC     = 2.0
-AMAZON_BATCH_SLEEP_SEC    = 1.0
-
-EXCLUDED_CATEGORY_NAMES = {
+# Variety controls
+EXCLUDED_CATEGORIES = {
     "Books",
 }
 
-EXCLUDED_TITLE_TERMS = [
-    " magazine",
-    " magazines",
-    " paperback",
-    " hardcover",
-    " audiobook",
-    " kindle",
-    " issue ",
-    " vol.",
-    " volume ",
-    " journal",
-    " workbook",
-    " textbook",
-    " study guide",
-    " comic",
-    " comics",
-    " manga",
-    " novel",
-]
+# Limit category dominance in final results
+CATEGORY_LIMITS = {
+    "Clothing, Shoes & Jewelry": 6,
+    "Home & Kitchen": 8,
+    "Electronics": 8,
+    "Tools & Home Improvement": 10,
+}
+
+DEFAULT_CATEGORY_LIMIT = 5
+
+KEEPA_BASE = "https://api.keepa.com"
+
+# ─── CATEGORY MAPPING ─────────────────────────────────────────────────────────
 
 CATEGORY_NAMES = {
     281052:      "Electronics",
@@ -127,65 +113,45 @@ CATEGORY_EMOJI = {
     "Luggage & Travel":          "🧳",
 }
 
-# ─── MEMORY HELPERS ───────────────────────────────────────────────────────────
-
-def load_memory():
-    try:
-        with open(MEMORY_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except (FileNotFoundError, json.JSONDecodeError):
-        return {}
-
-def save_memory(memory):
-    with open(MEMORY_FILE, "w", encoding="utf-8") as f:
-        json.dump(memory, f, indent=2)
-
-def prune_memory(memory):
-    cutoff = datetime.datetime.utcnow() - datetime.timedelta(hours=DEAL_TTL_HOURS)
-    pruned = {}
-    for asin, item in memory.items():
-        first_seen = item.get("firstSeen")
-        if not first_seen:
-            continue
-        try:
-            seen_dt = datetime.datetime.fromisoformat(first_seen.replace("Z", ""))
-            if seen_dt >= cutoff:
-                pruned[asin] = item
-        except Exception:
-            continue
-    return pruned
-
-# ─── KEEPA HELPERS ────────────────────────────────────────────────────────────
+# ─── KEEPA DEAL REQUEST ───────────────────────────────────────────────────────
 
 def keepa_deal_request(deal_params):
+    """Call Keepa deal endpoint — POST with JSON body."""
     url = f"{KEEPA_BASE}/deal"
     params = {"key": KEEPA_API_KEY}
     headers = {"Content-Type": "application/json"}
 
     r = requests.post(url, params=params, json=deal_params, headers=headers, timeout=60)
-    print(f"    Deal status: {r.status_code}")
     if r.status_code != 200:
-        print(f"    Deal response: {r.text[:500]}")
+        print(f"    Deal request failed: {r.status_code}")
+        print(f"    Response: {r.text[:500]}")
     r.raise_for_status()
     return r.json()
+
+# ─── KEEPA PRODUCT REQUEST ────────────────────────────────────────────────────
 
 def keepa_product_request(asins):
+    """
+    Keepa product lookup.
+    We intentionally use small batches for reliability.
+    """
     url = f"{KEEPA_BASE}/product"
-    params = {
-        "key": KEEPA_API_KEY,
-        "domain": 1,
-        "asin": ",".join(asins),
-        "history": 1,
-        "rating": 0,
-        "stats": 90,
-    }
 
-    r = requests.get(url, params=params, timeout=60)
-    print(f"    Product status: {r.status_code}")
-    if r.status_code != 200:
-        print(f"    Product response: {r.text[:500]}")
-    r.raise_for_status()
-    return r.json()
+    param_sets = [
+        {"key": KEEPA_API_KEY, "asin": ",".join(asins)},
+        {"key": KEEPA_API_KEY, "asin": ",".join(asins), "domainId": 1},
+    ]
+
+    for i, params in enumerate(param_sets):
+        try:
+            r = requests.get(url, params=params, timeout=60)
+            if r.status_code == 200:
+                return r.json()
+            print(f"    Product attempt {i+1} failed: {r.status_code} {r.text[:250]}")
+        except Exception as e:
+            print(f"    Product attempt {i+1} error: {e}")
+
+    return {"products": []}
 
 def get_category(product):
     root = product.get("rootCategory")
@@ -197,34 +163,19 @@ def get_category(product):
             return CATEGORY_NAMES[cat_id]
 
     title = (product.get("title") or "").lower()
+
     if any(w in title for w in ["laptop", "phone", "tablet", "camera", "headphone", "speaker", "monitor", "tv"]):
         return "Electronics"
-    if any(w in title for w in ["shirt", "shoe", "dress", "jacket", "pants", "bag", "watch"]):
+    if any(w in title for w in ["shirt", "shoe", "dress", "jacket", "pants", "bag", "watch", "bra", "sandal", "sneaker", "slipper", "mule"]):
         return "Clothing, Shoes & Jewelry"
-    if any(w in title for w in ["blender", "vacuum", "mattress", "pillow", "cookware", "kitchen"]):
+    if any(w in title for w in ["blender", "vacuum", "mattress", "pillow", "cookware", "kitchen", "rug", "ottoman", "tumbler"]):
         return "Home & Kitchen"
     if any(w in title for w in ["protein", "vitamin", "supplement", "fitness", "yoga"]):
         return "Health & Household"
     if any(w in title for w in ["toy", "game", "lego", "puzzle", "kids"]):
         return "Toys & Games"
-    if any(w in title for w in ["tool", "drill", "saw", "router", "sander", "clamp", "blade", "bit"]):
-        return "Tools & Home Improvement"
-    if any(w in title for w in ["brake", "control arm", "suspension", "wheel hub", "engine", "filter", "spark plug"]):
-        return "Automotive"
 
     return "Electronics"
-
-def is_excluded_product(product, category_name):
-    title = f" {(product.get('title') or '').lower()} "
-
-    if category_name in EXCLUDED_CATEGORY_NAMES:
-        return True
-
-    for term in EXCLUDED_TITLE_TERMS:
-        if term in title:
-            return True
-
-    return False
 
 def parse_coupon(product):
     coupon_history = product.get("coupon")
@@ -245,7 +196,7 @@ def parse_coupon(product):
                         "value": val,
                         "display": f"{val}% off coupon",
                     }
-                elif val < 0:
+                if val < 0:
                     dollars = abs(val) / 100.0
                     if dollars >= MIN_COUPON_VALUE:
                         return {
@@ -258,186 +209,74 @@ def parse_coupon(product):
 
     return None
 
-def fetch_keepa_asins():
-    print("\n[Keepa] Fetching deal ASINs...")
-    all_candidates = []
+# ─── STEP 1: KEEPA — FIND DEAL ASINS ──────────────────────────────────────────
 
-    for page in range(KEEPA_DEAL_PAGES):
+def fetch_keepa_asins():
+    print("\n  [Keepa] Fetching deals across multiple pages...")
+
+    all_asins = []
+    seen = set()
+
+    for page in range(KEEPA_PAGES):
         body = {
             "domainId": 1,
             "priceTypes": [0],
-            "deltaPercent": KEEPA_DEAL_DELTA_PERCENT,
-            "interval": KEEPA_DEAL_INTERVAL,
+            "deltaPercent": MIN_DISCOUNT_PCT,
+            "interval": 10080,
             "page": page,
         }
 
         try:
             data = keepa_deal_request(body)
             deals_raw = data.get("deals", {}).get("dr", [])
-            page_asins = [str(d.get("asin")).strip().upper() for d in deals_raw if d.get("asin")]
-            print(f"[Keepa] Page {page}: {len(page_asins)} candidates")
-            all_candidates.extend(page_asins)
-            time.sleep(0.5)
-        except Exception as e:
-            print(f"[Keepa] Deal request failed on page {page}: {e}")
+            page_asins = [d.get("asin") for d in deals_raw if d.get("asin")]
 
-    all_asins = list(dict.fromkeys(all_candidates))
-    print(f"[Keepa] Got {len(all_candidates)} total candidates across pages")
-    print(f"[Keepa] {len(all_asins)} unique ASINs")
-    print(f"[Keepa] Limiting to first {KEEPA_MAX_CANDIDATE_ASINS} ASINs for testing")
-    return all_asins[:KEEPA_MAX_CANDIDATE_ASINS]
+            new_count = 0
+            for asin in page_asins:
+                if asin not in seen:
+                    seen.add(asin)
+                    all_asins.append(asin)
+                    new_count += 1
+
+            print(f"  [Keepa] Page {page}: {len(page_asins)} candidates, {new_count} new unique")
+        except Exception as e:
+            print(f"  [Keepa] Page {page} failed: {e}")
+
+        time.sleep(PAGE_DELAY_SEC)
+
+    print(f"  [Keepa] {len(all_asins)} unique ASINs across {KEEPA_PAGES} pages")
+    return all_asins
+
+# ─── STEP 2: KEEPA — PRODUCT DETAILS ──────────────────────────────────────────
 
 def fetch_keepa_product_details(asins):
     if not asins:
         return []
 
-    print(f"\n[Keepa] Fetching product details ({len(asins)} ASINs)...")
+    print(f"  [Keepa] Fetching product details for {len(asins)} ASINs...")
+
     all_products = []
+    success = 0
 
-    for i in range(0, len(asins), KEEPA_BATCH_SIZE):
-        batch = asins[i:i+KEEPA_BATCH_SIZE]
+    for i, asin in enumerate(asins, start=1):
         try:
-            data = keepa_product_request(batch)
+            data = keepa_product_request([asin])
             products = data.get("products", [])
-            all_products.extend(products)
-            print(f"    Progress: {min(i+KEEPA_BATCH_SIZE, len(asins))}/{len(asins)} ({len(all_products)} successful)")
-            time.sleep(KEEPA_BATCH_SLEEP_SEC)
+            if products:
+                all_products.extend(products)
+                success += 1
+
+            if i % 20 == 0 or i == len(asins):
+                print(f"    Progress: {i}/{len(asins)} ({success} successful)")
         except Exception as e:
-            msg = str(e)
-            print(f"[Keepa] Error on batch {batch}: {msg}")
-            if "429" in msg:
-                print("[Keepa] Hit rate limit. Stopping product fetch early to save tokens.")
-                break
+            print(f"    Error on {asin}: {e}")
 
-        if len(all_products) >= MAX_DEALS:
-            break
+        time.sleep(PRODUCT_DELAY_SEC)
 
-    print(f"[Keepa] Total: {len(all_products)} products")
+    print(f"  [Keepa] Total products returned: {len(all_products)}")
     return all_products
 
-# ─── AMAZON PROVIDER INTERFACE ────────────────────────────────────────────────
-
-def normalize_amazon_item(
-    *,
-    asin: str,
-    title: str = "",
-    image: str = "",
-    price_display: str = "",
-    price_amount=None,
-    currency: str = "",
-    prime: bool = False,
-):
-    return {
-        "asin": asin,
-        "title": title or "",
-        "image": image or "",
-        "price_display": price_display or "",
-        "price_amount": price_amount,
-        "currency": currency or "",
-        "prime": bool(prime),
-    }
-
-def fetch_amazon_live_data(asin_batch):
-    provider = AMAZON_PROVIDER
-    print(f"[Amazon] Provider: {provider}")
-
-    if provider == "creators":
-        return fetch_amazon_live_data_creators(asin_batch)
-
-    return fetch_amazon_live_data_paapi(asin_batch)
-
-# ─── CREATORS API IMPLEMENTATION ──────────────────────────────────────────────
-
-def fetch_amazon_live_data_creators(asin_batch):
-    if not CREATORS_CREDENTIAL_ID or not CREATORS_CREDENTIAL_SECRET or not CREATORS_CREDENTIAL_VERSION:
-        print("[Amazon Creators API] Missing credentials — skipping.")
-        return {}
-
-    try:
-        api_client = ApiClient(
-            credential_id=CREATORS_CREDENTIAL_ID,
-            credential_secret=CREATORS_CREDENTIAL_SECRET,
-            version=CREATORS_CREDENTIAL_VERSION,
-        )
-        api = DefaultApi(api_client)
-
-        resources = [
-            "images.primary.medium",
-            "itemInfo.title",
-            "offersV2.listings.price",
-            "offersV2.listings.availability",
-            "offersV2.listings.condition",
-            "offersV2.listings.merchantInfo",
-        ]
-
-        request_body = GetItemsRequestContent(
-            partner_tag=AMAZON_PARTNER_TAG,
-            item_ids=asin_batch,
-            resources=resources,
-        )
-
-        response = api.get_items(
-            x_marketplace=CREATORS_MARKETPLACE,
-            get_items_request_content=request_body,
-        )
-
-        response_dict = response.to_dict() if hasattr(response, "to_dict") else {}
-        items = ((response_dict.get("itemsResult") or {}).get("items")) or []
-
-        result = {}
-
-        for item in items:
-            asin = item.get("asin") or ""
-            if not asin:
-                continue
-
-            title = (((item.get("itemInfo") or {}).get("title") or {}).get("displayValue")) or ""
-
-            image = ""
-            images = item.get("images") or {}
-            primary = images.get("primary") or {}
-            medium = primary.get("medium") or {}
-            large = primary.get("large") or {}
-            image = medium.get("url") or large.get("url") or ""
-
-            offers_v2 = item.get("offersV2") or {}
-            listings = offers_v2.get("listings") or []
-
-            price_display = ""
-            price_amount = None
-            currency = ""
-            prime = False
-
-            if listings:
-                listing = listings[0] or {}
-                price_obj = listing.get("price") or {}
-
-                price_display = price_obj.get("displayAmount") or ""
-                price_amount = price_obj.get("amount")
-                currency = price_obj.get("currency") or ""
-
-                availability = listing.get("availability") or {}
-                availability_type = availability.get("type") or ""
-                prime = "prime" in str(availability_type).lower()
-
-            result[asin] = normalize_amazon_item(
-                asin=asin,
-                title=title,
-                image=image,
-                price_display=price_display,
-                price_amount=price_amount,
-                currency=currency,
-                prime=prime,
-            )
-
-        print(f"[Amazon Creators API] Got data for {len(result)} products")
-        return result
-
-    except Exception as e:
-        print(f"[Amazon Creators API] ERROR: {e}")
-        return {}
-
-# ─── PA API FALLBACK ──────────────────────────────────────────────────────────
+# ─── STEP 3: AMAZON PA API ────────────────────────────────────────────────────
 
 def sign_aws(key, msg):
     return hmac.new(key, msg.encode("utf-8"), hashlib.sha256).digest()
@@ -449,9 +288,9 @@ def get_aws_signing_key(secret, date_stamp, region, service):
     k = sign_aws(k, "aws4_request")
     return k
 
-def fetch_amazon_live_data_paapi(asin_batch):
+def fetch_amazon_live_data(asin_batch):
     if not AMAZON_ACCESS_KEY:
-        print("[Amazon PA API] Not configured — skipping.")
+        print("  [Amazon PA API] Not configured — skipping.")
         return {}
 
     service = "ProductAdvertisingAPI"
@@ -467,7 +306,7 @@ def fetch_amazon_live_data_paapi(asin_batch):
             "Images.Primary.Large",
             "ItemInfo.Title",
             "Offers.Listings.Price",
-            "Offers.Summaries.LowestPrice",
+            "Offers.Listings.Availability.Message",
             "Offers.Listings.DeliveryInfo.IsPrimeEligible",
         ],
     }
@@ -487,7 +326,6 @@ def fetch_amazon_live_data_paapi(asin_batch):
     signed_headers = "content-encoding;content-type;host;x-amz-date;x-amz-target"
     payload_hash = hashlib.sha256(body.encode("utf-8")).hexdigest()
     canonical_request = "\n".join(["POST", path, "", canonical_headers, signed_headers, payload_hash])
-
     credential_scope = f"{date_stamp}/{AMAZON_REGION}/{service}/aws4_request"
     string_to_sign = "\n".join([
         "AWS4-HMAC-SHA256",
@@ -495,10 +333,8 @@ def fetch_amazon_live_data_paapi(asin_batch):
         credential_scope,
         hashlib.sha256(canonical_request.encode("utf-8")).hexdigest(),
     ])
-
     signing_key = get_aws_signing_key(AMAZON_SECRET_KEY, date_stamp, AMAZON_REGION, service)
     signature = hmac.new(signing_key, string_to_sign.encode("utf-8"), hashlib.sha256).hexdigest()
-
     authorization = (
         f"AWS4-HMAC-SHA256 Credential={AMAZON_ACCESS_KEY}/{credential_scope}, "
         f"SignedHeaders={signed_headers}, Signature={signature}"
@@ -514,48 +350,137 @@ def fetch_amazon_live_data_paapi(asin_batch):
     }
 
     try:
-        r = requests.post(endpoint, headers=headers, data=body, timeout=20)
+        r = requests.post(endpoint, headers=headers, data=body, timeout=15)
         r.raise_for_status()
+
         items = r.json().get("ItemsResult", {}).get("Items", [])
         result = {}
 
         for item in items:
             asin = item.get("ASIN")
             listing = (item.get("Offers", {}).get("Listings") or [{}])[0]
-            price_obj = listing.get("Price", {}) or {}
-            summaries = item.get("Offers", {}).get("Summaries") or []
-            lowest_price_obj = summaries[0].get("LowestPrice", {}) if summaries else {}
+            price_obj = listing.get("Price", {})
+            img_obj = item.get("Images", {}).get("Primary", {}).get("Large", {})
+            title = item.get("ItemInfo", {}).get("Title", {}).get("DisplayValue", "")
+            prime = listing.get("DeliveryInfo", {}).get("IsPrimeEligible", False)
 
-            result[asin] = normalize_amazon_item(
-                asin=asin,
-                title=item.get("ItemInfo", {}).get("Title", {}).get("DisplayValue", ""),
-                image=item.get("Images", {}).get("Primary", {}).get("Large", {}).get("URL", ""),
-                price_display=price_obj.get("DisplayAmount") or lowest_price_obj.get("DisplayAmount", ""),
-                price_amount=price_obj.get("Amount") or lowest_price_obj.get("Amount"),
-                currency=price_obj.get("Currency") or lowest_price_obj.get("Currency"),
-                prime=listing.get("DeliveryInfo", {}).get("IsPrimeEligible", False),
-            )
+            result[asin] = {
+                "price_display": price_obj.get("DisplayAmount", ""),
+                "image": img_obj.get("URL", ""),
+                "title": title,
+                "prime": prime,
+            }
 
-        print(f"[Amazon PA API] Got data for {len(result)} products")
+        print(f"  [Amazon PA API] Got data for {len(result)} products")
         return result
 
     except Exception as e:
-        print(f"[Amazon PA API] ERROR: {e}")
+        print(f"  [Amazon PA API] ERROR: {e}")
         return {}
 
-# ─── BUILD deals.json ─────────────────────────────────────────────────────────
+# ─── SCORING / VARIETY ────────────────────────────────────────────────────────
+
+def category_limit_for(category):
+    return CATEGORY_LIMITS.get(category, DEFAULT_CATEGORY_LIMIT)
+
+def compute_sort_score(deal):
+    """
+    Higher score = better candidate.
+    Prioritize hot deals, then stronger discount, then coupons, then prime.
+    Penalize clothing to keep variety broader.
+    """
+    score = 0
+
+    effective_pct = deal.get("effectivePct", 0)
+    pct = deal.get("pct", 0)
+
+    score += effective_pct * 10
+    score += pct * 4
+
+    if deal.get("hot"):
+        score += 250
+    if deal.get("hasCoupon"):
+        score += 60
+    if deal.get("prime"):
+        score += 12
+    if deal.get("hasLivePrice"):
+        score += 20
+
+    cat = deal.get("cat", "")
+    if cat == "Clothing, Shoes & Jewelry":
+        score -= 90
+    elif cat == "Home & Kitchen":
+        score -= 10
+
+    return score
+
+def apply_variety_limits(deals):
+    """
+    Keep the best deals while preventing one category from taking over.
+    """
+    sorted_deals = sorted(
+        deals,
+        key=lambda d: (
+            -compute_sort_score(d),
+            d.get("cat", ""),
+            d.get("title", ""),
+        )
+    )
+
+    selected = []
+    counts = Counter()
+
+    for deal in sorted_deals:
+        cat = deal.get("cat", "Other")
+
+        if cat in EXCLUDED_CATEGORIES:
+            continue
+
+        if counts[cat] >= category_limit_for(cat):
+            continue
+
+        selected.append(deal)
+        counts[cat] += 1
+
+        if len(selected) >= MAX_DEALS:
+            break
+
+    # Backfill if limits were too strict
+    if len(selected) < MAX_DEALS:
+        selected_asins = {d.get("asin") for d in selected}
+        for deal in sorted_deals:
+            asin = deal.get("asin")
+            if asin in selected_asins:
+                continue
+            if deal.get("cat") in EXCLUDED_CATEGORIES:
+                continue
+
+            selected.append(deal)
+            selected_asins.add(asin)
+
+            if len(selected) >= MAX_DEALS:
+                break
+
+    return selected
+
+# ─── STEP 4: BUILD deals.json ─────────────────────────────────────────────────
 
 def build_deals_json():
     print(f"\n[{datetime.datetime.now().strftime('%H:%M:%S')}] Starting DealDrop deal fetch...\n")
 
-    if not KEEPA_API_KEY:
-        raise RuntimeError("Missing KEEPA_API_KEY")
-
-    memory = prune_memory(load_memory())
-
     all_asins = fetch_keepa_asins()
+
     if not all_asins:
-        print("No ASINs returned. Keeping existing deals.json.")
+        print("\n  No ASINs returned. Saving empty deals.json.")
+        output = {
+            "updatedAt": datetime.datetime.utcnow().isoformat() + "Z",
+            "totalDeals": 0,
+            "hotDeals": 0,
+            "couponDeals": 0,
+            "deals": [],
+        }
+        with open(OUTPUT_FILE, "w") as f:
+            json.dump(output, f, indent=2)
         return
 
     keepa_products = fetch_keepa_product_details(all_asins)
@@ -571,45 +496,43 @@ def build_deals_json():
             def to_d(v):
                 return v / 100.0 if v and v > 0 else None
 
-            current = to_d(cur_raw[0] if cur_raw and len(cur_raw) > 0 else None)
-            avg90 = to_d(avg_raw[0] if avg_raw and len(avg_raw) > 0 else None)
+            current = to_d(cur_raw[0] if cur_raw and cur_raw[0] and cur_raw[0] > 0 else None)
+            avg90 = to_d(avg_raw[0] if avg_raw and avg_raw[0] and avg_raw[0] > 0 else None)
             coupon = parse_coupon(p)
-
             pct = 0
+
             if current and avg90 and avg90 > 0 and current < avg90:
                 pct = round((1 - current / avg90) * 100)
 
             if pct < MIN_DISCOUNT_PCT and coupon is None:
                 continue
 
-            category_name = get_category(p)
-            if is_excluded_product(p, category_name):
+            category = get_category(p)
+            if category in EXCLUDED_CATEGORIES:
                 continue
 
             keepa_deals[asin] = {
                 "asin": asin,
-                "category": category_name,
+                "category": category,
                 "pct": pct,
                 "coupon": coupon,
                 "title_fallback": (p.get("title") or "")[:120],
-                "avg90_price": avg90,
-                "current_price": current,
             }
         except Exception as e:
-            print(f"Skipping product: {e}")
+            print(f"  Skipping Keepa product: {e}")
 
     qualifying_asins = list(keepa_deals.keys())
-    print(f"\n{len(qualifying_asins)} qualifying deals")
+    print(f"\n  {len(qualifying_asins)} qualifying deals after Keepa filtering")
 
     amazon_data = {}
     for i in range(0, len(qualifying_asins), 10):
         batch = qualifying_asins[i:i+10]
-        amazon_data.update(fetch_amazon_live_data(batch))
-        time.sleep(AMAZON_BATCH_SLEEP_SEC)
+        result = fetch_amazon_live_data(batch)
+        amazon_data.update(result)
+        time.sleep(1)
 
     formatted = []
     deal_id = 1
-    now_iso = datetime.datetime.utcnow().isoformat() + "Z"
 
     for asin in qualifying_asins:
         try:
@@ -620,38 +543,14 @@ def build_deals_json():
             if not title or len(title) < 5:
                 continue
 
-            price = (a.get("price_display") or "").strip()
-            price_amount = a.get("price_amount")
-            currency = a.get("currency")
-
-            if not price and price_amount is not None:
-                try:
-                    if currency == "USD":
-                        price = f"${float(price_amount):.2f}"
-                    else:
-                        price = f"{float(price_amount):.2f} {currency}" if currency else f"{float(price_amount):.2f}"
-                except Exception:
-                    pass
-
-            used_keepa_fallback = False
-            if not price:
-                keepa_current = k.get("current_price")
-                if keepa_current is not None:
-                    price = f"${keepa_current:.2f}"
-                    used_keepa_fallback = True
-                    print(f"[Keepa] Using fallback price for ASIN {asin}: {price}")
-
-            if not price:
-                print(f"[Price] No visible Amazon or Keepa price for ASIN {asin} - skipping")
-                continue
-
+            price = a.get("price_display", "")
             image = a.get("image", "")
             prime = a.get("prime", False)
             coupon = k["coupon"]
             pct = k["pct"]
             cat = k["category"]
-            effective_pct = pct
 
+            effective_pct = pct
             if coupon and coupon["kind"] == "percent":
                 effective_pct = min(99, pct + coupon["value"])
 
@@ -662,82 +561,59 @@ def build_deals_json():
                 parts.append(coupon["display"])
             if prime:
                 parts.append("Prime eligible")
-            if used_keepa_fallback:
-                parts.append("Price from Keepa")
 
-            was_display = f"${k['avg90_price']:.2f}" if k.get("avg90_price") else ""
-
-            deal = {
+            formatted.append({
                 "id": deal_id,
                 "asin": asin,
                 "cat": cat,
                 "emoji": CATEGORY_EMOJI.get(cat, "🛒"),
-                "title": title[:120] + ("..." if len(title) > 120 else ""),
+                "title": title[:90] + ("..." if len(title) > 90 else ""),
                 "desc": " · ".join(parts),
                 "price": price,
-                "was": was_display,
-                "hasLivePrice": True,
+                "was": "",
+                "hasLivePrice": bool(price),
                 "pct": pct,
                 "effectivePct": effective_pct,
                 "hot": effective_pct >= HOT_DEAL_PCT,
-                "discount": f"{pct}% off" if pct > 0 else (coupon["display"] if coupon else "Deal"),
+                "discount": f"{pct}% off",
                 "hasCoupon": coupon is not None,
                 "couponDisplay": coupon["display"] if coupon else None,
                 "image": image,
                 "prime": prime,
                 "link": f"https://www.amazon.com/dp/{asin}?tag={AMAZON_PARTNER_TAG}",
-                "updatedAt": now_iso,
-            }
-
-            formatted.append(deal)
-
-            existing = memory.get(asin, {})
-            memory[asin] = {
-                **deal,
-                "firstSeen": existing.get("firstSeen", now_iso),
-            }
-
+                "updatedAt": datetime.datetime.utcnow().isoformat() + "Z",
+            })
             deal_id += 1
 
         except Exception as e:
-            print(f"Skipping formatted deal {asin}: {e}")
+            print(f"  Skipping formatted deal {asin}: {e}")
 
-    formatted.sort(key=lambda d: (not d["hot"], -d["effectivePct"]))
+    final_deals = apply_variety_limits(formatted)
 
-    print(f"\nCurrent run qualifying deals before merge: {len(formatted)}")
-
-    memory = prune_memory(memory)
-    save_memory(memory)
-
-    merged_deals = list(memory.values())
-
-    for d in merged_deals:
-        d.pop("firstSeen", None)
-
-    merged_deals.sort(key=lambda d: (not d.get("hot", False), -d.get("effectivePct", 0)))
-    merged_deals = merged_deals[:DEALS_TO_SHOW]
-
-    print(f"Final merged deals before save: {len(merged_deals)}")
-
-    if len(merged_deals) == 0:
-        print("No merged deals found. Keeping existing deals.json and not overwriting.")
-        return
+    # Re-number after variety filtering
+    for idx, deal in enumerate(final_deals, start=1):
+        deal["id"] = idx
 
     output = {
-        "updatedAt": now_iso,
-        "totalDeals": len(merged_deals),
-        "hotDeals": sum(1 for d in merged_deals if d.get("hot")),
-        "couponDeals": sum(1 for d in merged_deals if d.get("hasCoupon")),
-        "deals": merged_deals,
+        "updatedAt": datetime.datetime.utcnow().isoformat() + "Z",
+        "totalDeals": len(final_deals),
+        "hotDeals": sum(1 for d in final_deals if d["hot"]),
+        "couponDeals": sum(1 for d in final_deals if d["hasCoupon"]),
+        "deals": final_deals,
     }
 
-    with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
+    with open(OUTPUT_FILE, "w") as f:
         json.dump(output, f, indent=2)
 
-    print(f"\nSaved {len(merged_deals)} deals to {OUTPUT_FILE}")
-    print(f"Hot deals:    {output['hotDeals']}")
-    print(f"Coupon deals: {output['couponDeals']}")
-    print(f"Updated:      {output['updatedAt']}")
+    print(f"\n✓ Saved {len(final_deals)} deals to {OUTPUT_FILE}")
+    print(f"  Hot deals:    {output['hotDeals']}")
+    print(f"  Coupon deals: {output['couponDeals']}")
+    print(f"  Updated:      {output['updatedAt']}")
+
+    by_cat = Counter(d["cat"] for d in final_deals)
+    print("  Category mix:")
+    for cat, count in by_cat.most_common():
+        print(f"    {cat}: {count}")
 
 if __name__ == "__main__":
     build_deals_json()
