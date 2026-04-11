@@ -21,7 +21,7 @@ AMAZON_REGION      = "us-east-1"
 
 OUTPUT_FILE        = "deals.json"
 
-MAX_DEALS          = 150
+MAX_DEALS          = 400
 KEEPA_PAGES        = 3
 PAGE_DELAY_SEC     = 1.2
 PRODUCT_DELAY_SEC  = 0.35
