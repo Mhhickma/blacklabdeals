@@ -10,12 +10,12 @@ CREDENTIAL_ID = os.getenv("CREATORS_CREDENTIAL_ID")
 CREDENTIAL_SECRET = os.getenv("CREATORS_CREDENTIAL_SECRET")
 CREDENTIAL_VERSION = os.getenv("CREATORS_CREDENTIAL_VERSION", "v3.1")
 MARKETPLACE = os.getenv("CREATORS_MARKETPLACE", "www.amazon.com")
-CREATOR_URL = os.getenv("CREATOR_API_URL", "https://creators-api-na.amazon.com").rstrip("/")
+CREATOR_URL = os.getenv("CREATOR_API_URL", "https://creators-api.amazon.com").rstrip("/")
 
 AFFILIATE_TAG = os.getenv("AFFILIATE_TAG")
 KEEPA_API_KEY = os.getenv("KEEPA_API_KEY")
 
-# v3.1 NA token endpoint
+# NA v3.1 token endpoint
 TOKEN_URL = "https://api.amazon.com/auth/o2/token"
 
 OUTPUT_FILE = "deals.json"
@@ -242,7 +242,8 @@ def build_deals():
             "pct": pct,
             "hot": pct >= HOT_DEAL_PCT,
             "discount": f"{pct}% off",
-            "desc": " · ".join(desc_parts)
+            "desc": " · ".join(desc_parts),
+            "priceUpdatedAt": time.strftime("%Y-%m-%dT%H:%M:%SZ"),
         })
 
         if len(deals) >= MAX_DEALS:
