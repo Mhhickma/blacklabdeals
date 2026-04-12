@@ -1,26 +1,50 @@
 import requests
 import json
-import time
 import os
+import time
 
-KEEPA_API_KEY = os.getenv("KEEPA_API_KEY")
+# ENV VARS
+CLIENT_ID = os.getenv("CREATOR_CLIENT_ID")
+CLIENT_SECRET = os.getenv("CREATOR_CLIENT_SECRET")
 AFFILIATE_TAG = os.getenv("AFFILIATE_TAG")
+KEEPA_API_KEY = os.getenv("KEEPA_API_KEY")
 
-CREATOR_API_KEY = os.getenv("CREATOR_API_KEY")
-CREATOR_API_SECRET = os.getenv("CREATOR_API_SECRET")
-
-CREATOR_ENDPOINT = "https://creators-api-na.amazon.com"
-
-OUTPUT_FILE = "deals.json"
+TOKEN_URL = "https://creatorsapi.auth.us-east-1.amazoncognito.com/oauth2/token"
+CREATOR_URL = "https://creators-api-na.amazon.com/getitems"
 
 MAX_DEALS = 150
-MIN_DISCOUNT = 10
 
 
-# -------------------------------
-# KEEP A SIMPLE KEEPA FETCH
-# -------------------------------
-def get_keepa_deals():
+# --------------------------
+# 1. GET ACCESS TOKEN
+# --------------------------
+def get_access_token():
+    print("[Auth] Getting token...")
+
+    payload = {
+        "grant_type": "client_credentials",
+        "client_id": CLIENT_ID,
+        "client_secret": CLIENT_SECRET,
+        "scope": "creators::api"
+    }
+
+    headers = {
+        "Content-Type": "application/x-www-form-urlencoded"
+    }
+
+    r = requests.post(TOKEN_URL, data=payload, headers=headers)
+    r.raise_for_status()
+
+    token = r.json()["access_token"]
+
+    print("[Auth] Token received")
+    return token
+
+
+# --------------------------
+# 2. GET KEEPA ASINS
+# --------------------------
+def get_keepa_asins():
     print("[Keepa] Fetching deals...")
 
     url = "https://api.keepa.com/deal"
@@ -29,34 +53,35 @@ def get_keepa_deals():
     body = {
         "domainId": 1,
         "priceTypes": [0],
-        "deltaPercent": MIN_DISCOUNT,
+        "deltaPercent": 10
     }
 
     r = requests.post(url, params=params, json=body)
     r.raise_for_status()
 
-    deals = r.json().get("deals", {}).get("dr", [])
+    deals = r.json()["deals"]["dr"]
+
     asins = [d["asin"] for d in deals[:MAX_DEALS]]
 
     print(f"[Keepa] Found {len(asins)} ASINs")
     return asins
 
 
-# -------------------------------
-# CREATORS API CALL
-# -------------------------------
-def fetch_creator_data(asins):
+# --------------------------
+# 3. CALL CREATORS API
+# --------------------------
+def fetch_creator_data(asins, token):
     print("[Creator API] Fetching product data...")
 
-    url = f"{CREATOR_ENDPOINT}/getitems"
-
     headers = {
+        "Authorization": f"Bearer {token}, Version 2.1",
         "Content-Type": "application/json",
-        "Authorization": f"Bearer {CREATOR_API_KEY}"
+        "x-marketplace": "www.amazon.com"
     }
 
     payload = {
         "itemIds": asins,
+        "itemIdType": "ASIN",
         "marketplace": "www.amazon.com",
         "partnerTag": AFFILIATE_TAG,
         "resources": [
@@ -66,10 +91,11 @@ def fetch_creator_data(asins):
         ]
     }
 
-    r = requests.post(url, headers=headers, json=payload)
+    r = requests.post(CREATOR_URL, headers=headers, json=payload)
     r.raise_for_status()
 
     data = r.json()
+
     items = data.get("itemResults", {}).get("items", [])
 
     results = {}
@@ -97,22 +123,24 @@ def fetch_creator_data(asins):
     return results
 
 
-# -------------------------------
-# BUILD DEALS JSON
-# -------------------------------
+# --------------------------
+# 4. BUILD DEALS
+# --------------------------
 def build_deals():
-    asins = get_keepa_deals()
-    creator_data = fetch_creator_data(asins)
+    token = get_access_token()
+    asins = get_keepa_asins()
+    creator_data = fetch_creator_data(asins, token)
 
     deals = []
 
     for asin in asins:
         data = creator_data.get(asin)
+
         if not data:
             continue
 
         if not data["price"]:
-            continue  # skip no price
+            continue
 
         deals.append({
             "asin": asin,
@@ -120,18 +148,15 @@ def build_deals():
             "image": data["image"],
             "price": data["price"],
             "link": f"https://www.amazon.com/dp/{asin}?tag={AFFILIATE_TAG}",
-            "pct": 15  # placeholder until we re-add Keepa %
+            "pct": 15
         })
-
-        if len(deals) >= MAX_DEALS:
-            break
 
     return deals
 
 
-# -------------------------------
+# --------------------------
 # MAIN
-# -------------------------------
+# --------------------------
 def main():
     print("Starting DealDrop fetch...")
 
@@ -145,7 +170,7 @@ def main():
         "deals": deals
     }
 
-    with open(OUTPUT_FILE, "w") as f:
+    with open("deals.json", "w") as f:
         json.dump(output, f, indent=2)
 
     print(f"Saved {len(deals)} deals")
