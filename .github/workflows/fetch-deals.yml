@@ -31,14 +31,14 @@ jobs:
         run: pip install requests keepa numpy
 
       - name: Run deal fetcher
-        env:
-          KEEPA_API_KEY: ${{ secrets.KEEPA_API_KEY }}
-          AFFILIATE_TAG: ${{ secrets.AFFILIATE_TAG }}
-          CREATORS_CREDENTIAL_ID: ${{ secrets.CREATORS_CREDENTIAL_ID }}
-          CREATORS_CREDENTIAL_SECRET: ${{ secrets.CREATORS_CREDENTIAL_SECRET }}
-          CREATORS_CREDENTIAL_VERSION: ${{ secrets.CREATORS_CREDENTIAL_VERSION }}
-          CREATORS_MARKETPLACE: ${{ secrets.CREATORS_MARKETPLACE }}
-          CREATOR_API_URL: ${{ secrets.CREATOR_API_URL }}
+       env:
+  KEEPA_API_KEY: ${{ secrets.KEEPA_API_KEY }}
+  AFFILIATE_TAG: ${{ secrets.AFFILIATE_TAG }}
+  CREATORS_CREDENTIAL_ID: ${{ secrets.CREATORS_CREDENTIAL_ID }}
+  CREATORS_CREDENTIAL_SECRET: ${{ secrets.CREATORS_CREDENTIAL_SECRET }}
+  CREATORS_CREDENTIAL_VERSION: ${{ secrets.CREATORS_CREDENTIAL_VERSION }}
+  CREATORS_MARKETPLACE: ${{ secrets.CREATORS_MARKETPLACE }}
+  CREATOR_API_URL: ${{ secrets.CREATOR_API_URL }}
         run: python fetch_deals.py
 
       - name: Run notifier
