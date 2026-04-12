@@ -9,7 +9,7 @@ import requests
 CREDENTIAL_ID = os.getenv("CREATORS_CREDENTIAL_ID")
 CREDENTIAL_SECRET = os.getenv("CREATORS_CREDENTIAL_SECRET")
 CREDENTIAL_VERSION = os.getenv("CREATORS_CREDENTIAL_VERSION", "v3.1")
-CREATORS_SCOPE = os.getenv("CREATORS_SCOPE", "")
+CREATORS_SCOPE = os.getenv("CREATORS_SCOPE", "advertising::campaign_management")
 MARKETPLACE = os.getenv("CREATORS_MARKETPLACE", "www.amazon.com")
 CREATOR_URL = os.getenv("CREATOR_API_URL", "https://creators-api.amazon.com").rstrip("/")
 
@@ -27,12 +27,13 @@ HOT_DEAL_PCT = 30
 # =========================
 # AUTH
 # =========================
-def get_access_token():
+def get_access_token() -> str:
     print("[Auth] Getting token...")
     print(f"[Auth] Credential ID present: {bool(CREDENTIAL_ID)}")
     print(f"[Auth] Credential Secret present: {bool(CREDENTIAL_SECRET)}")
     print(f"[Auth] Credential Version: {CREDENTIAL_VERSION}")
     print(f"[Auth] Scope present: {bool(CREATORS_SCOPE)}")
+    print(f"[Auth] Scope value: {CREATORS_SCOPE}")
 
     payload = {
         "grant_type": "client_credentials",
@@ -61,7 +62,7 @@ def get_access_token():
 # =========================
 # KEEPA DEAL FETCH
 # =========================
-def get_keepa_deals():
+def get_keepa_deals() -> list[dict]:
     print("[Keepa] Fetching deals...")
 
     url = "https://api.keepa.com/deal"
@@ -107,7 +108,7 @@ def get_keepa_deals():
 # =========================
 # CREATORS API
 # =========================
-def fetch_creator_data(asins, token):
+def fetch_creator_data(asins: list[str], token: str) -> dict:
     print("[Creator API] Fetching product data...")
     print(f"[Creator API] Marketplace: {MARKETPLACE}")
     print(f"[Creator API] Base URL: {CREATOR_URL}")
@@ -193,7 +194,7 @@ def fetch_creator_data(asins, token):
 # =========================
 # BUILD DEALS
 # =========================
-def build_deals():
+def build_deals() -> list[dict]:
     token = get_access_token()
     keepa_deals = get_keepa_deals()
 
@@ -201,7 +202,7 @@ def build_deals():
     creator_data = {}
 
     for i in range(0, len(asin_list), 10):
-        batch = asin_list[i:i+10]
+        batch = asin_list[i:i + 10]
         batch_data = fetch_creator_data(batch, token)
         creator_data.update(batch_data)
         time.sleep(0.5)
@@ -256,7 +257,7 @@ def build_deals():
 # =========================
 # MAIN
 # =========================
-def main():
+def main() -> None:
     print("Starting DealDrop fetch...")
 
     deals = build_deals()
