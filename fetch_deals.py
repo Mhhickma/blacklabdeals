@@ -37,7 +37,7 @@ FETCH_ASINS       = 280
 MAX_DISPLAY       = 500
 DEAL_TTL_HOURS    = 24
 AMAZON_BATCH_SIZE = 10
-MIN_DISCOUNT_PCT  = 10    # Minimum % off to include a deal
+MIN_DISCOUNT_PCT  = 10
 
 # Keepa root category IDs to exclude
 EXCLUDED_CATEGORIES = [
@@ -81,10 +81,11 @@ def save_memory(memory):
 
 def purge_expired(memory):
     cutoff = datetime.now(timezone.utc) - timedelta(hours=DEAL_TTL_HOURS)
+    now_str = datetime.now(timezone.utc).isoformat()
     before = len(memory)
     memory = {
         asin: deal for asin, deal in memory.items()
-        if datetime.fromisoformat(deal["seen_at"]) > cutoff
+        if datetime.fromisoformat(deal.get("seen_at", now_str)) > cutoff
     }
     purged = before - len(memory)
     if purged:
@@ -127,8 +128,7 @@ def get_keepa_deals(api_key, fetch_asins):
             print(f"    Deal finder also failed: {e}")
             return [], {}
 
-    # Pull Keepa price history for these ASINs in batches of 10
-    # This gives us the 90-day high so we can calculate true % off
+    # Pull Keepa price history in batches of 10
     print(f"    Fetching Keepa price history for {len(asins)} ASINs...")
     keepa_prices = {}
 
@@ -143,15 +143,13 @@ def get_keepa_deals(api_key, fetch_asins):
 
                 stats = product.get("stats", {})
 
-                # Current Amazon price (in cents, divide by 100)
                 current_raw = stats.get("current", [None] * 10)
                 current_price = None
                 if isinstance(current_raw, list) and len(current_raw) > 0:
-                    val = current_raw[0]  # index 0 = AMAZON price
+                    val = current_raw[0]
                     if val and val > 0:
                         current_price = val / 100.0
 
-                # 90-day high price (index 0 = AMAZON)
                 high_raw = stats.get("max90", [None] * 10)
                 high_price = None
                 if isinstance(high_raw, list) and len(high_raw) > 0:
@@ -159,7 +157,6 @@ def get_keepa_deals(api_key, fetch_asins):
                     if val and val > 0:
                         high_price = val / 100.0
 
-                # 90-day average price
                 avg_raw = stats.get("avg90", [None] * 10)
                 avg_price = None
                 if isinstance(avg_raw, list) and len(avg_raw) > 0:
@@ -168,9 +165,9 @@ def get_keepa_deals(api_key, fetch_asins):
                         avg_price = val / 100.0
 
                 keepa_prices[asin] = {
-                    "current":   current_price,
-                    "high_90d":  high_price,
-                    "avg_90d":   avg_price,
+                    "current":  current_price,
+                    "high_90d": high_price,
+                    "avg_90d":  avg_price,
                 }
         except Exception as e:
             print(f"    Warning: Keepa history batch failed — {e}")
@@ -236,20 +233,12 @@ def is_excluded_category(category):
 # HELPER: Calculate % off and was price
 # ─────────────────────────────────────────────
 def calculate_discount(current_price, keepa_data):
-    """
-    Calculate the true % off using:
-    1. Amazon Creators API current price vs Keepa 90-day high
-    2. Fall back to Keepa 90-day average if no high available
-    Returns (was_price, pct_off, discount_label)
-    """
     if not current_price or not keepa_data:
         return None, None, ""
 
-    # Use 90-day high as the "was" price, fall back to avg
     was_price = keepa_data.get("high_90d") or keepa_data.get("avg_90d")
 
     if not was_price or was_price <= current_price:
-        # If no valid "was" price or current is higher, no discount to show
         return None, None, ""
 
     pct_off = round(((was_price - current_price) / was_price) * 100)
@@ -257,7 +246,7 @@ def calculate_discount(current_price, keepa_data):
     if pct_off < MIN_DISCOUNT_PCT:
         return None, None, ""
 
-    was_display   = f"${was_price:.2f}"
+    was_display    = f"${was_price:.2f}"
     discount_label = f"-{pct_off}%"
 
     return was_display, pct_off, discount_label
