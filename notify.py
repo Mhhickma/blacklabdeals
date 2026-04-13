@@ -73,7 +73,7 @@ def load_hot_deals():
     try:
         with open("deals.json") as f:
             data = json.load(f)
-        return [d for d in data.get("deals", []) if d.get("pct", 0) >= HOT_DEAL_PCT]
+        return [d for d in data.get("deals", []) if (d.get("pct") or 0) >= HOT_DEAL_PCT]
     except (FileNotFoundError, json.JSONDecodeError) as e:
         print(f"  Could not load deals.json: {e}")
         return []
