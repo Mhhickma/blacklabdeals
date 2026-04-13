@@ -1,29 +1,22 @@
 name: Fetch Deals
-
 on:
   schedule:
     - cron: '0 * * * *'
   workflow_dispatch:
-
 permissions:
   contents: write
-
 jobs:
   fetch-deals:
     runs-on: ubuntu-latest
-
     steps:
       - name: Check out repo
         uses: actions/checkout@v4
-
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-
       - name: Install dependencies
-        run: pip install requests keepa numpy amazon-creatorsapi
-
+        run: pip install requests keepa numpy python-amazon-paapi
       - name: Run deal fetcher
         env:
           KEEPA_API_KEY:                     ${{ secrets.KEEPA_API_KEY }}
@@ -39,7 +32,6 @@ jobs:
           TWILIO_FROM_NUMBER:                ${{ secrets.TWILIO_FROM_NUMBER }}
           SITE_URL:                          ${{ secrets.SITE_URL }}
         run: python fetch_deals.py
-
       - name: Run notifier
         env:
           MAILCHIMP_API_KEY:   ${{ secrets.MAILCHIMP_API_KEY }}
@@ -50,7 +42,6 @@ jobs:
           TWILIO_FROM_NUMBER:  ${{ secrets.TWILIO_FROM_NUMBER }}
           SITE_URL:            ${{ secrets.SITE_URL }}
         run: python notify.py
-
       - name: Commit and push updated deals.json
         run: |
           git config user.name  "DealDrop Bot"
