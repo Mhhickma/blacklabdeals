@@ -123,6 +123,7 @@ def get_keepa_deals(api_key, fetch_asins):
         "current_COUNT_REVIEWS_gte": 15,
         "categories_include":        INCLUDED_CATEGORIES,
         "categories_exclude":        EXCLUDED_CATEGORIES,
+        "availabilityAmazon":        [0],  # New items only
     }
 
     try:
@@ -314,6 +315,15 @@ def build_and_merge(asins, amazon_items, keepa_prices, memory):
             price_amount  = None
             price_display = None
             currency      = None
+
+        # Skip used items
+        try:
+            condition = listing.condition.value
+            if condition and condition.lower() != "new":
+                print(f"    Skipping {asin} — condition: {condition}")
+                continue
+        except:
+            pass
 
         try:
             availability = listing.availability.type
