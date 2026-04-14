@@ -116,15 +116,17 @@ def get_keepa_deals(api_key, fetch_asins):
     print(f"    Keepa tokens available: {api.tokens_left}")
 
     product_params = {
-        "sort":                      [["deltaPercent7_AMAZON", "asc"]],
-        "productType":               [0],
-        "deltaPercent7_AMAZON_lte":  -10,
-        "current_AMAZON_gte":        1,
-        "current_COUNT_REVIEWS_gte": 15,
-        "categories_include":        INCLUDED_CATEGORIES,
-        "categories_exclude":        EXCLUDED_CATEGORIES,
-        "availabilityAmazon":        [0],  # New items only
-    }
+    "sort":                        [["deltaPercent7_AMAZON", "asc"]],
+    "productType":                 [0],
+    "deltaPercent7_AMAZON_lte":    -10,        # 10%+ drop over 7 days
+    "current_AMAZON_gte":          1,           # Must have a price
+    "current_COUNT_REVIEWS_gte":   15,          # At least 15 reviews
+    "current_RATING_gte":          40,          # 4.0+ rating (Keepa uses x10)
+    "categories_include":          INCLUDED_CATEGORIES,
+    "categories_exclude":          EXCLUDED_CATEGORIES,
+    "availabilityAmazon":          [0],         # New, in stock on Amazon
+    "isPrimeEligible":             1,           # Prime eligible only
+}
 
     try:
         asins = api.product_finder(product_params, n_products=fetch_asins)
