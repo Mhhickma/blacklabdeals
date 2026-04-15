@@ -665,6 +665,41 @@
 
   .hot-btn:hover { background: var(--red-mid); }
 
+  .search-wrap { max-width: 1100px; margin: 0 auto 20px; padding: 0 24px; display: none; }
+
+  .search-inner { position: relative; display: flex; align-items: center; }
+
+  .search-inner input {
+    width: 100%;
+    padding: 12px 44px 12px 18px;
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    color: var(--text-primary);
+    background: var(--surface);
+    outline: none;
+    box-shadow: var(--shadow);
+    transition: border-color 0.15s;
+  }
+
+  .search-inner input:focus { border-color: var(--accent); }
+  .search-inner input::placeholder { color: var(--text-muted); }
+
+  .search-clear {
+    position: absolute;
+    right: 14px;
+    background: none;
+    border: none;
+    font-size: 14px;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 4px;
+    display: none;
+  }
+
+  .search-clear:hover { color: var(--text-primary); }
+
   .filters-wrap { max-width: 1100px; margin: 0 auto 28px; padding: 0 24px; }
 
   .filter-label {
@@ -883,7 +918,7 @@
     .mobile-stat-num { display: block; font-size: 18px; font-weight: 700; line-height: 1; }
     .mobile-stat-label { display: block; font-size: 10px; margin-top: 4px; text-transform: uppercase; letter-spacing: 0.05em; color: rgba(255,255,255,0.85); }
 
-    .loading-bar, .error-msg, .hot-section, .filters-wrap, .deals-section { padding-left: 16px; padding-right: 16px; }
+    .loading-bar, .error-msg, .hot-section, .search-wrap, .filters-wrap, .deals-section { padding-left: 16px; padding-right: 16px; }
     .loading-bar { margin-top: 2px; }
     .hot-section { margin-bottom: 20px; }
     .hot-header { display: none; }
@@ -901,6 +936,7 @@
     .hot-price-was { font-size: 12px; }
     .hot-btn { padding: 10px; font-size: 13px; border-radius: 9px; background: linear-gradient(135deg, var(--red) 0%, var(--red-dark) 100%); }
 
+    .search-wrap { margin-bottom: 14px; }
     .filters-wrap { margin-bottom: 18px; }
     .filter-label { font-size: 11px; margin-bottom: 8px; }
     .deals-section { padding-bottom: 88px; }
@@ -1019,14 +1055,14 @@
 </nav>
 
 <div class="disclosure-bar">
-  <span>🔗 As an Amazon Associate we earn from qualifying purchases. Prices and availability are accurate at time of posting. &nbsp;·&nbsp; Trusted deal source since 2023.</span>>
+  <span>🔗 As an Amazon Associate we earn from qualifying purchases. Prices and availability are accurate at time of posting. &nbsp;·&nbsp; Trusted deal source since 2023.</span>
 </div>
 
 <section class="hero">
   <div class="hero-text">
     <h1>The best deals,<br>curated for you.</h1>
     <p>Top Amazon discounts across every category — updated every hour automatically.</p>
-<p style="margin-top:10px;font-size:13px;color:var(--text-muted);">🏅 Trusted deal source since 2023</p>
+    <p style="margin-top:10px;font-size:13px;color:var(--text-muted);">🏅 Trusted deal source since 2023</p>
   </div>
   <div class="signup-box" id="alerts-box">
     <h3>Never miss a deal</h3>
@@ -1065,7 +1101,7 @@
   <div class="stat"><span class="stat-num" id="stat-hot">—</span><span class="stat-label">Hot deals</span></div>
   <div class="stat"><span class="stat-num" id="stat-coupons">—</span><span class="stat-label">Coupons</span></div>
   <div class="stat"><span class="stat-num" id="stat-updated">—</span><span class="stat-label">Last updated</span></div>
-<div class="stat"><span class="stat-num">2023</span><span class="stat-label">Posting since</span></div>
+  <div class="stat"><span class="stat-num">2023</span><span class="stat-label">Posting since</span></div>
 </div>
 
 <div class="divider"></div>
@@ -1092,6 +1128,13 @@
   </div>
 </div>
 
+<div class="search-wrap" id="search-wrap">
+  <div class="search-inner">
+    <input type="text" id="search-input" placeholder="Search deals by name, brand or category..." oninput="handleSearch()" />
+    <button class="search-clear" id="search-clear" onclick="clearSearch()">✕</button>
+  </div>
+</div>
+
 <div class="filters-wrap" id="filters-wrap" style="display:none;">
   <span class="filter-label">Browse by Amazon category:</span>
   <div class="filters-scroll" id="filter-row"></div>
@@ -1107,7 +1150,7 @@
 
 <footer>
   <p>Made with care by <strong>DealDrop</strong> · <a href="#">About</a> · <a href="#">Contact</a> · <a href="#">Privacy</a></p>
-<p style="margin-top:6px;font-size:12px;color:var(--text-muted);">Trusted deal source since 2023 · Updated every hour</p>
+  <p style="margin-top:6px;font-size:12px;color:var(--text-muted);">Trusted deal source since 2023 · Updated every hour</p>
   <p class="disclaimer">As an Amazon Associate I earn from qualifying purchases. Prices sourced live from Amazon. Some deals include clippable coupons on the Amazon product page.</p>
 </footer>
 
@@ -1185,6 +1228,7 @@ CATEGORIES.forEach(cat => {
 
 let allDeals = [];
 let lastUpdatedISO = null;
+let searchQuery = '';
 
 function formatUpdatedTime(isoString) {
   if (!isoString) return '—';
@@ -1227,6 +1271,7 @@ async function loadDeals() {
     document.getElementById('loading-bar').style.display   = 'none';
     document.getElementById('error-msg').classList.remove('show');
     document.getElementById('hot-section').style.display   = '';
+    document.getElementById('search-wrap').style.display   = 'block';
     document.getElementById('filters-wrap').style.display  = '';
     document.getElementById('deals-section').style.display = '';
 
@@ -1298,11 +1343,18 @@ function renderHotDropdown() {
 }
 
 function renderDeals(cat) {
-  const filtered = cat === 'All' ? allDeals : allDeals.filter(d => d.cat === cat);
+  let filtered = cat === 'All' ? allDeals : allDeals.filter(d => d.cat === cat);
+  if (searchQuery) {
+    filtered = filtered.filter(d =>
+      (d.title || '').toLowerCase().includes(searchQuery) ||
+      (d.brand || '').toLowerCase().includes(searchQuery) ||
+      (d.cat   || '').toLowerCase().includes(searchQuery)
+    );
+  }
   document.getElementById('count-label').textContent = filtered.length + ' deal' + (filtered.length !== 1 ? 's' : '');
 
   document.getElementById('deals-grid').innerHTML = filtered.length === 0
-    ? `<div style="grid-column:1/-1;padding:48px;text-align:center;color:var(--text-muted);">No deals in this category right now — check back soon!</div>`
+    ? `<div style="grid-column:1/-1;padding:48px;text-align:center;color:var(--text-muted);">${searchQuery ? 'No deals found for "' + esc(searchQuery) + '" — try a different search.' : 'No deals in this category right now — check back soon!'}</div>`
     : filtered.map(d => `
       <a class="deal-card" href="${escUrl(d.link || '#')}" target="_blank" rel="noopener sponsored">
         <div class="card-img">${img(d.image, d.emoji, 'card')}</div>
@@ -1325,6 +1377,26 @@ function renderDeals(cat) {
         </div>
       </a>
     `).join('');
+}
+
+function handleSearch() {
+  const input = document.getElementById('search-input');
+  const clear  = document.getElementById('search-clear');
+  searchQuery  = input.value.trim().toLowerCase();
+  clear.style.display = searchQuery ? 'block' : 'none';
+  renderDeals(getCurrentCategory());
+}
+
+function clearSearch() {
+  document.getElementById('search-input').value = '';
+  document.getElementById('search-clear').style.display = 'none';
+  searchQuery = '';
+  renderDeals(getCurrentCategory());
+}
+
+function getCurrentCategory() {
+  const active = document.querySelector('.filter-btn.active');
+  return active ? active.dataset.cat : 'All';
 }
 
 function filterDeals(cat, btn) {
