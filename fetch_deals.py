@@ -64,9 +64,13 @@ INCLUDED_CATEGORIES = [
 # Explicitly exclude these Keepa category IDs
 EXCLUDED_CATEGORIES = [
     283155,       # Books
+    1036592,      # Clothing, Shoes & Jewelry
+    7141123011,   # Clothing & Fashion
+    679337011,    # Shoes
+    2476901011,   # Luggage & Travel Gear
 ]
 
-# Still filter out at Amazon category name level as safety net
+# Filter out at Amazon category name level as safety net
 EXCLUDED_CATEGORY_NAMES = [
     "apparel", "clothing", "shoes", "shoe", "jewelry", "jewellery",
     "luggage", "handbag", "wallet", "fashion", "dress", "shirt",
@@ -108,24 +112,25 @@ def purge_expired(memory):
 
 
 # ─────────────────────────────────────────────
-# STEP 1: Pull price drop ASINs + price history
+# STEP 1: Pull price drop ASINs from Keepa
 # ─────────────────────────────────────────────
-def get_keepa_deals(api_key, fetch_asins):
+def get_keepa_deals(api_key, fetch_asins, cached_asins):
     print("\n[1/3] Fetching price drops from Keepa...")
     api = keepa.Keepa(api_key)
-    print(f"    Keepa tokens available: {api.tokens_left}")
+    tokens_before = api.tokens_left
+    print(f"    Keepa tokens available: {tokens_before}")
 
     product_params = {
-    "sort":                        [["deltaPercent7_AMAZON", "asc"]],
-    "productType":                 [0],
-    "deltaPercent7_AMAZON_lte":    -10,
-    "current_AMAZON_gte":          1,
-    "current_COUNT_REVIEWS_gte":   15,
-    "current_RATING_gte":          40,
-    "categories_include":          INCLUDED_CATEGORIES,
-    "categories_exclude":          EXCLUDED_CATEGORIES,
-    "availabilityAmazon":          [0],
-}
+        "sort":                        [["deltaPercent7_AMAZON", "asc"]],
+        "productType":                 [0],
+        "deltaPercent7_AMAZON_lte":    -10,
+        "current_AMAZON_gte":          1,
+        "current_COUNT_REVIEWS_gte":   15,
+        "current_RATING_gte":          40,
+        "categories_include":          INCLUDED_CATEGORIES,
+        "categories_exclude":          EXCLUDED_CATEGORIES,
+        "availabilityAmazon":          [0],
+    }
 
     try:
         asins = api.product_finder(product_params, n_products=fetch_asins)
@@ -145,52 +150,63 @@ def get_keepa_deals(api_key, fetch_asins):
             print(f"    Deal finder also failed: {e}")
             return [], {}
 
-    # Pull Keepa price history in batches of 10
-    print(f"    Fetching Keepa price history for {len(asins)} ASINs...")
+    # ── Only fetch Keepa price history for NEW ASINs not already in memory ──
+    new_asins = [a for a in asins if a not in cached_asins]
+    cached_count = len(asins) - len(new_asins)
+    print(f"    {len(new_asins)} new ASINs need Keepa history "
+          f"({cached_count} already cached — skipping Keepa query for those).")
+
     keepa_prices = {}
 
-    for i in range(0, len(asins), 10):
-        batch = asins[i:i + 10]
-        try:
-            products = api.query(batch, stats=90, history=False)
-            for product in products:
-                asin = product.get("asin")
-                if not asin:
-                    continue
+    if new_asins:
+        print(f"    Fetching Keepa price history for {len(new_asins)} new ASINs...")
+        for i in range(0, len(new_asins), 10):
+            batch = new_asins[i:i + 10]
+            try:
+                products = api.query(batch, stats=90, history=False)
+                for product in products:
+                    asin = product.get("asin")
+                    if not asin:
+                        continue
 
-                stats = product.get("stats", {})
+                    stats = product.get("stats", {})
 
-                current_raw = stats.get("current", [None] * 10)
-                current_price = None
-                if isinstance(current_raw, list) and len(current_raw) > 0:
-                    val = current_raw[0]
-                    if val and val > 0:
-                        current_price = val / 100.0
+                    current_raw = stats.get("current", [None] * 10)
+                    current_price = None
+                    if isinstance(current_raw, list) and len(current_raw) > 0:
+                        val = current_raw[0]
+                        if val and val > 0:
+                            current_price = val / 100.0
 
-                high_raw = stats.get("max90", [None] * 10)
-                high_price = None
-                if isinstance(high_raw, list) and len(high_raw) > 0:
-                    val = high_raw[0]
-                    if val and val > 0:
-                        high_price = val / 100.0
+                    high_raw = stats.get("max90", [None] * 10)
+                    high_price = None
+                    if isinstance(high_raw, list) and len(high_raw) > 0:
+                        val = high_raw[0]
+                        if val and val > 0:
+                            high_price = val / 100.0
 
-                avg_raw = stats.get("avg90", [None] * 10)
-                avg_price = None
-                if isinstance(avg_raw, list) and len(avg_raw) > 0:
-                    val = avg_raw[0]
-                    if val and val > 0:
-                        avg_price = val / 100.0
+                    avg_raw = stats.get("avg90", [None] * 10)
+                    avg_price = None
+                    if isinstance(avg_raw, list) and len(avg_raw) > 0:
+                        val = avg_raw[0]
+                        if val and val > 0:
+                            avg_price = val / 100.0
 
-                keepa_prices[asin] = {
-                    "current":  current_price,
-                    "high_90d": high_price,
-                    "avg_90d":  avg_price,
-                }
-        except Exception as e:
-            print(f"    Warning: Keepa history batch failed — {e}")
-        time.sleep(0.5)
+                    keepa_prices[asin] = {
+                        "current":  current_price,
+                        "high_90d": high_price,
+                        "avg_90d":  avg_price,
+                    }
+            except Exception as e:
+                print(f"    Warning: Keepa history batch failed — {e}")
+            time.sleep(0.5)
 
-    print(f"    Got price history for {len(keepa_prices)} ASINs.")
+        print(f"    Got price history for {len(keepa_prices)} new ASINs.")
+
+    tokens_after = api.tokens_left
+    print(f"    Tokens used this step: {tokens_before - tokens_after} "
+          f"(remaining: {tokens_after})")
+
     return asins, keepa_prices
 
 
@@ -276,6 +292,7 @@ def build_and_merge(asins, amazon_items, keepa_prices, memory):
     print("\n[3/3] Building and merging deals...")
     now = datetime.now(timezone.utc).isoformat()
     new_count = 0
+    skip_count = 0
 
     for asin in asins:
         item = amazon_items.get(asin)
@@ -299,6 +316,7 @@ def build_and_merge(asins, amazon_items, keepa_prices, memory):
 
         if is_excluded_category(category):
             print(f"    Skipping {asin} — excluded category: {category}")
+            skip_count += 1
             continue
 
         try:
@@ -322,6 +340,7 @@ def build_and_merge(asins, amazon_items, keepa_prices, memory):
             condition = listing.condition.value
             if condition and condition.lower() != "new":
                 print(f"    Skipping {asin} — condition: {condition}")
+                skip_count += 1
                 continue
         except:
             pass
@@ -387,6 +406,7 @@ def build_and_merge(asins, amazon_items, keepa_prices, memory):
         memory[asin] = deal
 
     print(f"    {new_count} new deals added to memory.")
+    print(f"    {skip_count} deals skipped (excluded category or condition).")
     return memory
 
 
@@ -400,7 +420,10 @@ def main():
     memory = purge_expired(memory)
     print(f"    Memory: {len(memory)} deals after purge.")
 
-    asins, keepa_prices = get_keepa_deals(KEEPA_API_KEY, FETCH_ASINS)
+    # Pass cached ASINs into Keepa step so it skips history lookups for them
+    cached_asins = set(memory.keys())
+
+    asins, keepa_prices = get_keepa_deals(KEEPA_API_KEY, FETCH_ASINS, cached_asins)
 
     if not asins:
         print("No ASINs found from Keepa.")
@@ -421,9 +444,10 @@ def main():
 
     save_memory(memory)
 
+    # Sort by updated_at so freshest deals appear first
     all_deals = sorted(
         memory.values(),
-        key=lambda d: d.get("seen_at", ""),
+        key=lambda d: d.get("updated_at", d.get("seen_at", "")),
         reverse=True
     )[:MAX_DISPLAY]
 
