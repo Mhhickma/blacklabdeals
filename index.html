@@ -564,6 +564,94 @@
   .btn-sub:hover { background: var(--accent-mid); }
   .signup-note { font-size: 11px; color: var(--text-muted); margin-top: 10px; }
 
+  /* ── Mobile-only signup section ── */
+  .mobile-signup-section {
+    display: none;
+    padding: 0 16px 16px;
+  }
+
+  .mobile-signup-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: var(--shadow);
+  }
+
+  .mobile-signup-box h3 {
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 3px;
+    color: var(--text-primary);
+  }
+
+  .mobile-signup-box > p {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-bottom: 14px;
+  }
+
+  .mobile-signup-tabs {
+    display: flex;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 12px;
+  }
+
+  .mobile-tab-btn {
+    flex: 1;
+    padding: 9px;
+    font-size: 13px;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 500;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-secondary);
+    transition: all 0.15s;
+  }
+
+  .mobile-tab-btn.active { background: var(--accent); color: white; }
+
+  .mobile-signup-field { display: flex; gap: 8px; }
+
+  .mobile-signup-field input {
+    flex: 1;
+    padding: 11px 14px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    color: var(--text-primary);
+    background: var(--bg);
+    outline: none;
+    transition: border-color 0.15s;
+    min-width: 0;
+  }
+
+  .mobile-signup-field input:focus { border-color: var(--accent); }
+  .mobile-signup-field input::placeholder { color: var(--text-muted); }
+
+  .mobile-btn-sub {
+    padding: 11px 16px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .mobile-btn-sub:hover { background: var(--accent-mid); }
+  .mobile-signup-note { font-size: 11px; color: var(--text-muted); margin-top: 10px; }
+  /* ── end mobile signup ── */
+
   .stats-bar {
     max-width: 1100px;
     margin: 0 auto 32px;
@@ -917,7 +1005,8 @@
     .stats-bar { display: none; }
     .divider { display: none; }
     .disclosure-bar { font-size: 10px; padding: 12px 16px; }
-    .mobile-hot-hero { display: block; padding: 16px; }
+    .mobile-hot-hero { display: block; padding: 16px 16px 0; }
+    .mobile-signup-section { display: block; }
 
     .mobile-hot-hero-inner {
       position: relative;
@@ -1018,7 +1107,7 @@
       <img src="https://raw.githubusercontent.com/Mhhickma/dealdrop/main/logo.png" alt="Black Lab Deals" />
       <div class="drawer-title">Black Lab <span>Deals</span></div>
     </div>
-    <button class="drawer-close" onclick="closeMobileMenu()" aria-label="Close menu">✕</button>
+    <button class="drawer-close" onclick="closeMobileMenu()" aria-label="Close menu">&#x2715;</button>
   </div>
   <div class="drawer-content">
     <div class="drawer-alert">
@@ -1028,12 +1117,12 @@
     </div>
     <div class="drawer-links">
       <button onclick="closeMobileMenu(); scrollToTop();">Home</button>
-      <button onclick="closeMobileMenu(); scrollToHotDeals();">🔥 Hot Deals</button>
+      <button onclick="closeMobileMenu(); scrollToHotDeals();">&#x1F525; Hot Deals</button>
       <button onclick="closeMobileMenu(); scrollToAllDeals();">All Deals</button>
       <div class="drawer-cat-section">
         <button class="drawer-cat-toggle" id="drawer-cat-toggle" onclick="toggleDrawerCats()">
-          📂 Browse Categories
-          <span class="drawer-cat-toggle-arrow">▼</span>
+          &#x1F4C2; Browse Categories
+          <span class="drawer-cat-toggle-arrow">&#x25BC;</span>
         </button>
         <div class="drawer-cat-list" id="drawer-cat-list"></div>
       </div>
@@ -1044,7 +1133,7 @@
   </div>
 </aside>
 
-<button id="back-to-top" onclick="scrollToTop()" aria-label="Back to top">↑</button>
+<button id="back-to-top" onclick="scrollToTop()" aria-label="Back to top">&#x2191;</button>
 
 <nav>
   <div class="nav-inner">
@@ -1060,12 +1149,12 @@
         <a href="#" onclick="scrollToTop(); return false;">Home</a>
         <div class="nav-dropdown" id="dropdown-hot">
           <button class="nav-dropdown-trigger" onclick="toggleDropdown('hot')" id="trigger-hot">
-            🔥 Hot Deals <span class="nav-dropdown-arrow">▼</span>
+            &#x1F525; Hot Deals <span class="nav-dropdown-arrow">&#x25BC;</span>
           </button>
           <div class="dropdown-menu hot-dropdown" id="menu-hot">
             <div class="hot-dropdown-header">
-              <span class="hot-dropdown-title">🔥 Hot Deals — 30%+ off</span>
-              <button class="hot-dropdown-see-all" onclick="closeAllDropdowns(); scrollToHotDeals();">See all →</button>
+              <span class="hot-dropdown-title">&#x1F525; Hot Deals &mdash; 30%+ off</span>
+              <button class="hot-dropdown-see-all" onclick="closeAllDropdowns(); scrollToHotDeals();">See all &rarr;</button>
             </div>
             <div class="hot-dropdown-grid" id="hot-dropdown-grid">
               <div class="hot-dropdown-empty">Loading...</div>
@@ -1074,7 +1163,7 @@
         </div>
         <div class="nav-dropdown" id="dropdown-categories">
           <button class="nav-dropdown-trigger" onclick="toggleDropdown('categories')" id="trigger-categories">
-            📂 Categories <span class="nav-dropdown-arrow">▼</span>
+            &#x1F4C2; Categories <span class="nav-dropdown-arrow">&#x25BC;</span>
           </button>
           <div class="dropdown-menu" id="menu-categories" style="min-width:240px;"></div>
         </div>
@@ -1099,24 +1188,25 @@
 </nav>
 
 <div class="disclosure-bar">
-  <span>🔗 As an Amazon Associate we earn from qualifying purchases. Prices and availability are accurate at time of posting. &nbsp;·&nbsp; Trusted deal source since 2023.</span>
+  <span>&#x1F517; As an Amazon Associate we earn from qualifying purchases. Prices and availability are accurate at time of posting. &nbsp;&middot;&nbsp; Trusted deal source since 2023.</span>
 </div>
 
+<!-- Desktop hero (hidden on mobile via CSS) -->
 <section class="hero">
   <div class="hero-text">
     <div class="hero-pill">
       <span id="hero-pill-text">Loading deals...</span>
     </div>
     <h1>The best deals,<br>curated for you.</h1>
-    <p>Top Amazon discounts across every category — updated every hour automatically.</p>
-    <p style="margin-top:10px;font-size:13px;color:var(--text-muted);">🐾 Sniffed out hourly by Black Lab Deals</p>
+    <p>Top Amazon discounts across every category &mdash; updated every 30 minutes automatically.</p>
+    <p style="margin-top:10px;font-size:13px;color:var(--text-muted);">&#x1F43E; Sniffed out hourly by Black Lab Deals</p>
   </div>
   <div class="signup-box" id="alerts-box">
     <h3>Never miss a deal</h3>
     <p>Get alerts the moment new deals drop.</p>
     <div class="signup-tabs">
-      <button class="tab-btn active" id="tab-email" onclick="switchTab('email')">📧 Email</button>
-      <button class="tab-btn" id="tab-sms" onclick="switchTab('sms')">💬 Text</button>
+      <button class="tab-btn active" id="tab-email" onclick="switchTab('email')">&#x1F4E7; Email</button>
+      <button class="tab-btn" id="tab-sms" onclick="switchTab('sms')">&#x1F4AC; Text</button>
     </div>
     <div class="signup-field">
       <input type="email" id="signup-input" placeholder="your@email.com" onkeydown="if(event.key==='Enter') handleSignup()" />
@@ -1126,9 +1216,10 @@
   </div>
 </section>
 
+<!-- Mobile hero banner -->
 <section class="mobile-hot-hero">
   <div class="mobile-hot-hero-inner">
-    <span class="mobile-hot-kicker">🔥 Live Deal Feed</span>
+    <span class="mobile-hot-kicker">&#x1F525; Live Deal Feed</span>
     <h2>HOT DEALS<br>RIGHT NOW</h2>
     <p>Fresh drops, strong discounts, and the best deals pushed to the top first.</p>
     <div class="mobile-hero-actions">
@@ -1136,19 +1227,36 @@
       <button class="mobile-hero-btn mobile-hero-btn-secondary" onclick="scrollToHotDeals()">See Hot Deals</button>
     </div>
     <div class="mobile-hot-quickstats">
-      <div class="mobile-stat"><span class="mobile-stat-num" id="mobile-stat-total">—</span><span class="mobile-stat-label">Deals</span></div>
-      <div class="mobile-stat"><span class="mobile-stat-num" id="mobile-stat-hot">—</span><span class="mobile-stat-label">Hot</span></div>
-      <div class="mobile-stat"><span class="mobile-stat-num" id="mobile-stat-coupons">—</span><span class="mobile-stat-label">Coupons</span></div>
+      <div class="mobile-stat"><span class="mobile-stat-num" id="mobile-stat-total">&mdash;</span><span class="mobile-stat-label">Deals</span></div>
+      <div class="mobile-stat"><span class="mobile-stat-num" id="mobile-stat-hot">&mdash;</span><span class="mobile-stat-label">Hot</span></div>
+      <div class="mobile-stat"><span class="mobile-stat-num" id="mobile-stat-coupons">&mdash;</span><span class="mobile-stat-label">Coupons</span></div>
     </div>
   </div>
 </section>
 
+<!-- Mobile signup box — shown only on mobile, scroll target for bell icon -->
+<section class="mobile-signup-section" id="mobile-alerts-box">
+  <div class="mobile-signup-box">
+    <h3>&#x1F514; Never miss a deal</h3>
+    <p>Get alerts the moment new deals drop.</p>
+    <div class="mobile-signup-tabs">
+      <button class="mobile-tab-btn active" id="mobile-tab-email" onclick="mobileSwitchTab('email')">&#x1F4E7; Email</button>
+      <button class="mobile-tab-btn" id="mobile-tab-sms" onclick="mobileSwitchTab('sms')">&#x1F4AC; Text</button>
+    </div>
+    <div class="mobile-signup-field">
+      <input type="email" id="mobile-signup-input" placeholder="your@email.com" onkeydown="if(event.key==='Enter') handleMobileSignup()" />
+      <button class="mobile-btn-sub" onclick="handleMobileSignup()">Notify me</button>
+    </div>
+    <p class="mobile-signup-note" id="mobile-signup-msg">No spam, ever. Unsubscribe anytime.</p>
+  </div>
+</section>
+
 <div class="stats-bar">
-  <div class="stat"><span class="stat-num" id="stat-total">—</span><span class="stat-label">Active deals</span></div>
-  <div class="stat"><span class="stat-num" id="stat-hot">—</span><span class="stat-label">Hot deals</span></div>
-  <div class="stat"><span class="stat-num" id="stat-avg-price">—</span><span class="stat-label">Avg. price</span></div>
-  <div class="stat"><span class="stat-num" id="stat-avg-discount">—</span><span class="stat-label">Avg. discount</span></div>
-  <div class="stat"><span class="stat-num" id="stat-updated">—</span><span class="stat-label">Last updated</span></div>
+  <div class="stat"><span class="stat-num" id="stat-total">&mdash;</span><span class="stat-label">Active deals</span></div>
+  <div class="stat"><span class="stat-num" id="stat-hot">&mdash;</span><span class="stat-label">Hot deals</span></div>
+  <div class="stat"><span class="stat-num" id="stat-avg-price">&mdash;</span><span class="stat-label">Avg. price</span></div>
+  <div class="stat"><span class="stat-num" id="stat-avg-discount">&mdash;</span><span class="stat-label">Avg. discount</span></div>
+  <div class="stat"><span class="stat-num" id="stat-updated">&mdash;</span><span class="stat-label">Last updated</span></div>
 </div>
 
 <div class="divider"></div>
@@ -1164,9 +1272,9 @@
 <div class="hot-section" id="hot-section" style="display:none;">
   <div class="hot-header">
     <div class="hot-title-wrap">
-      <span class="hot-icon">🔥</span>
+      <span class="hot-icon">&#x1F525;</span>
       <span class="hot-title">Hot Deals</span>
-      <span class="hot-subtitle">— 30% off or more</span>
+      <span class="hot-subtitle">&mdash; 30% off or more</span>
     </div>
     <span class="hot-pill" id="hot-count-pill"></span>
   </div>
@@ -1178,7 +1286,7 @@
 <div class="search-wrap" id="search-wrap">
   <div class="search-inner">
     <input type="text" id="search-input" placeholder="Search deals by name, brand or category..." oninput="handleSearch()" />
-    <button class="search-clear" id="search-clear" onclick="clearSearch()">✕</button>
+    <button class="search-clear" id="search-clear" onclick="clearSearch()">&#x2715;</button>
   </div>
 </div>
 
@@ -1196,8 +1304,8 @@
 </div>
 
 <footer>
-  <p>Made with care by <strong>Black Lab Deals</strong> · <a href="#">About</a> · <a href="#">Contact</a> · <a href="#">Privacy</a></p>
-  <p style="margin-top:6px;font-size:12px;color:var(--text-muted);">Updated every hour · Powered by live Amazon data</p>
+  <p>Made with care by <strong>Black Lab Deals</strong> &middot; <a href="#">About</a> &middot; <a href="#">Contact</a> &middot; <a href="#">Privacy</a></p>
+  <p style="margin-top:6px;font-size:12px;color:var(--text-muted);">Updated every 30 minutes &middot; Powered by live Amazon data</p>
   <p class="disclaimer">As an Amazon Associate I earn from qualifying purchases. Prices sourced live from Amazon. Some deals include clippable coupons on the Amazon product page.</p>
 </footer>
 
@@ -1246,7 +1354,7 @@ CATEGORIES.forEach((cat, i) => {
   }
   const btn = document.createElement('button');
   btn.className = 'dropdown-item';
-  btn.innerHTML = `<span class="dropdown-item-emoji">${cat.emoji}</span>${cat.label}`;
+  btn.innerHTML = '<span class="dropdown-item-emoji">' + cat.emoji + '</span>' + cat.label;
   btn.onclick = () => {
     closeAllDropdowns();
     scrollToCategories();
@@ -1262,7 +1370,7 @@ const drawerCatList = document.getElementById('drawer-cat-list');
 CATEGORIES.forEach(cat => {
   const btn = document.createElement('button');
   btn.className = 'drawer-cat-item';
-  btn.innerHTML = `<span>${cat.emoji}</span>${cat.label}`;
+  btn.innerHTML = '<span>' + cat.emoji + '</span>' + cat.label;
   btn.onclick = () => {
     closeMobileMenu();
     scrollToCategories();
@@ -1353,30 +1461,17 @@ function img(src, emoji, size) {
   const pad = size === 'hot' ? '8px' : '12px';
   const fs  = size === 'hot' ? '34px' : '44px';
   if (src) {
-    return `<img src="${src}" alt="" style="width:100%;height:100%;object-fit:contain;padding:${pad};" onerror="this.parentElement.innerHTML='<span style=\\'font-size:${fs}px\\'>${emoji || '🛒'}</span>'"/>`;
+    return '<img src="' + src + '" alt="" style="width:100%;height:100%;object-fit:contain;padding:' + pad + ';" onerror="this.parentElement.innerHTML=\'<span style=\\\'font-size:' + fs + '\\\'>' + (emoji || '🛒') + '</span>\'"/>';
   }
-  return `<span style="font-size:${fs}px">${emoji || '🛒'}</span>`;
+  return '<span style="font-size:' + fs + '">' + (emoji || '🛒') + '</span>';
 }
 
 function renderHotDeals() {
   const hot = allDeals.filter(d => Number(d.pct) >= 30 || d.hot);
   document.getElementById('hot-count-pill').textContent = hot.length + ' deal' + (hot.length !== 1 ? 's' : '');
   document.getElementById('hot-grid').innerHTML = hot.length === 0
-    ? `<div style="padding:18px;color:var(--text-muted);font-size:13px;">No hot deals yet — check back soon.</div>`
-    : hot.map(d => `
-      <a class="hot-card" href="${escUrl(d.link || '#')}" target="_blank" rel="noopener sponsored">
-        <div class="hot-card-img">${img(d.image, d.emoji, 'hot')}</div>
-        <span class="hot-card-badge">${esc(d.discount || (d.pct + '% off'))}</span>
-        <div class="hot-card-body">
-          <div class="hot-card-title">${esc(d.title)}</div>
-          <div class="hot-card-prices">
-            <span class="hot-price-now">${esc(d.price || 'See price')}</span>
-            ${d.was ? `<span class="hot-price-was">${esc(d.was)}</span>` : ''}
-          </div>
-          <button class="hot-btn">Grab Deal →</button>
-        </div>
-      </a>
-    `).join('');
+    ? '<div style="padding:18px;color:var(--text-muted);font-size:13px;">No hot deals yet — check back soon.</div>'
+    : hot.map(d => '<a class="hot-card" href="' + escUrl(d.link || '#') + '" target="_blank" rel="noopener sponsored"><div class="hot-card-img">' + img(d.image, d.emoji, 'hot') + '</div><span class="hot-card-badge">' + esc(d.discount || (d.pct + '% off')) + '</span><div class="hot-card-body"><div class="hot-card-title">' + esc(d.title) + '</div><div class="hot-card-prices"><span class="hot-price-now">' + esc(d.price || 'See price') + '</span>' + (d.was ? '<span class="hot-price-was">' + esc(d.was) + '</span>' : '') + '</div><button class="hot-btn">Grab Deal →</button></div></a>').join('');
 }
 
 function renderHotDropdown() {
@@ -1384,21 +1479,8 @@ function renderHotDropdown() {
   const grid = document.getElementById('hot-dropdown-grid');
   if (!grid) return;
   grid.innerHTML = hot.length === 0
-    ? `<div class="hot-dropdown-empty">No hot deals right now — check back soon.</div>`
-    : hot.map(d => `
-      <a class="hot-dropdown-card" href="${escUrl(d.link || '#')}" target="_blank" rel="noopener sponsored" onclick="closeAllDropdowns()">
-        <div class="hot-dropdown-img">
-          ${d.image ? `<img src="${escUrl(d.image)}" alt="" onerror="this.parentElement.innerHTML='🛒'"/>` : '🛒'}
-        </div>
-        <div class="hot-dropdown-info">
-          <div class="hot-dropdown-name">${esc(d.title)}</div>
-          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
-            <span class="hot-dropdown-price">${esc(d.price || 'See price')}</span>
-            ${d.discount ? `<span class="hot-dropdown-badge">${esc(d.discount)}</span>` : ''}
-          </div>
-        </div>
-      </a>
-    `).join('');
+    ? '<div class="hot-dropdown-empty">No hot deals right now — check back soon.</div>'
+    : hot.map(d => '<a class="hot-dropdown-card" href="' + escUrl(d.link || '#') + '" target="_blank" rel="noopener sponsored" onclick="closeAllDropdowns()"><div class="hot-dropdown-img">' + (d.image ? '<img src="' + escUrl(d.image) + '" alt="" onerror="this.parentElement.innerHTML=\'🛒\'"/>' : '🛒') + '</div><div class="hot-dropdown-info"><div class="hot-dropdown-name">' + esc(d.title) + '</div><div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;"><span class="hot-dropdown-price">' + esc(d.price || 'See price') + '</span>' + (d.discount ? '<span class="hot-dropdown-badge">' + esc(d.discount) + '</span>' : '') + '</div></div></a>').join('');
 }
 
 function renderDeals(cat) {
@@ -1412,29 +1494,8 @@ function renderDeals(cat) {
   }
   document.getElementById('count-label').textContent = filtered.length + ' deal' + (filtered.length !== 1 ? 's' : '');
   document.getElementById('deals-grid').innerHTML = filtered.length === 0
-    ? `<div style="grid-column:1/-1;padding:48px;text-align:center;color:var(--text-muted);">${searchQuery ? 'No deals found for "' + esc(searchQuery) + '" — try a different search.' : 'No deals in this category right now — check back soon!'}</div>`
-    : filtered.map(d => `
-      <a class="deal-card" href="${escUrl(d.link || '#')}" target="_blank" rel="noopener sponsored">
-        <div class="card-img">${img(d.image, d.emoji, 'card')}</div>
-        <div class="card-body">
-          <div class="card-meta">
-            <span class="card-category">${esc(d.cat)}</span>
-            ${(Number(d.pct) >= 30 || d.hot) ? '<span class="card-badge-hot">🔥 Hot</span>' : ''}
-          </div>
-          <div class="card-title">${esc(d.title)}</div>
-          <div class="card-desc">${esc(d.desc || '')}</div>
-          <div class="card-footer">
-            <div class="price-block">
-              <span class="price-now">${esc(d.price || 'See price on Amazon')}</span>
-              ${d.was ? `<span class="price-was">${esc(d.was)}</span>` : ''}
-            </div>
-            <span class="discount-badge">${esc(d.discount || '')}</span>
-          </div>
-          ${d.hasCoupon ? `<div class="coupon-row"><span class="coupon-badge">🏷️ ${esc(d.couponDisplay)}</span></div>` : ''}
-          <button class="btn-deal">See Deal on Amazon →</button>
-        </div>
-      </a>
-    `).join('');
+    ? '<div style="grid-column:1/-1;padding:48px;text-align:center;color:var(--text-muted);">' + (searchQuery ? 'No deals found for "' + esc(searchQuery) + '" — try a different search.' : 'No deals in this category right now — check back soon!') + '</div>'
+    : filtered.map(d => '<a class="deal-card" href="' + escUrl(d.link || '#') + '" target="_blank" rel="noopener sponsored"><div class="card-img">' + img(d.image, d.emoji, 'card') + '</div><div class="card-body"><div class="card-meta"><span class="card-category">' + esc(d.cat) + '</span>' + ((Number(d.pct) >= 30 || d.hot) ? '<span class="card-badge-hot">🔥 Hot</span>' : '') + '</div><div class="card-title">' + esc(d.title) + '</div><div class="card-desc">' + esc(d.desc || '') + '</div><div class="card-footer"><div class="price-block"><span class="price-now">' + esc(d.price || 'See price on Amazon') + '</span>' + (d.was ? '<span class="price-was">' + esc(d.was) + '</span>' : '') + '</div><span class="discount-badge">' + esc(d.discount || '') + '</span></div>' + (d.hasCoupon ? '<div class="coupon-row"><span class="coupon-badge">🏷️ ' + esc(d.couponDisplay) + '</span></div>' : '') + '<button class="btn-deal">See Deal on Amazon →</button></div></a>').join('');
 }
 
 function handleSearch() {
@@ -1501,26 +1562,50 @@ function switchTab(tab) {
     : 'Standard msg rates may apply. Text STOP to unsubscribe.';
 }
 
+function mobileSwitchTab(tab) {
+  document.getElementById('mobile-tab-email').classList.toggle('active', tab === 'email');
+  document.getElementById('mobile-tab-sms').classList.toggle('active', tab === 'sms');
+  const input = document.getElementById('mobile-signup-input');
+  input.type = tab === 'email' ? 'email' : 'tel';
+  input.placeholder = tab === 'email' ? 'your@email.com' : '(555) 000-0000';
+  document.getElementById('mobile-signup-msg').textContent = tab === 'email'
+    ? 'No spam, ever. Unsubscribe anytime.'
+    : 'Standard msg rates may apply. Text STOP to unsubscribe.';
+}
+
 async function handleSignup() {
   const input = document.getElementById('signup-input');
   const val   = input.value.trim();
   const msg   = document.getElementById('signup-msg');
   const btn   = document.querySelector('.btn-sub');
   if (!val) return;
-
   const isEmail = input.type === 'email';
   btn.textContent = 'Saving...';
   btn.disabled    = true;
-
   const params = new URLSearchParams();
   params.append('email', isEmail ? val : '');
   params.append('phone', isEmail ? '' : val);
+  await fetch(SHEET_ENDPOINT + '?' + params.toString(), { method: 'GET', mode: 'no-cors' });
+  msg.textContent = "✓ You're in! Watch for your first deal alert.";
+  msg.style.color = '#1a3a5c';
+  input.value     = '';
+  btn.textContent = 'Notify me';
+  btn.disabled    = false;
+}
 
-  await fetch(SHEET_ENDPOINT + '?' + params.toString(), {
-    method: 'GET',
-    mode:   'no-cors',
-  });
-
+async function handleMobileSignup() {
+  const input = document.getElementById('mobile-signup-input');
+  const val   = input.value.trim();
+  const msg   = document.getElementById('mobile-signup-msg');
+  const btn   = document.querySelector('.mobile-btn-sub');
+  if (!val) return;
+  const isEmail = input.type === 'email';
+  btn.textContent = 'Saving...';
+  btn.disabled    = true;
+  const params = new URLSearchParams();
+  params.append('email', isEmail ? val : '');
+  params.append('phone', isEmail ? '' : val);
+  await fetch(SHEET_ENDPOINT + '?' + params.toString(), { method: 'GET', mode: 'no-cors' });
   msg.textContent = "✓ You're in! Watch for your first deal alert.";
   msg.style.color = '#1a3a5c';
   input.value     = '';
@@ -1552,7 +1637,11 @@ function scrollToHotDeals() {
 function scrollToAlerts() {
   closeAllDropdowns();
   closeMobileMenu();
-  const el = document.getElementById('alerts-box') || document.getElementById('hot-section');
+  // On mobile scroll to the dedicated mobile signup box; on desktop scroll to the hero signup
+  const isMobile = window.innerWidth <= 700;
+  const el = isMobile
+    ? document.getElementById('mobile-alerts-box')
+    : document.getElementById('alerts-box');
   if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
