@@ -21,7 +21,7 @@ from amazon_creatorsapi.models import GetItemsResource
 KEEPA_API_KEY     = os.getenv("KEEPA_API_KEY")
 CREDENTIAL_ID     = os.getenv("CREATORS_CREDENTIAL_ID")
 CREDENTIAL_SECRET = os.getenv("CREATORS_CREDENTIAL_SECRET")
-PARTNER_TAG       = os.getenv("AFFILIATE_TAG", "sawsustsavings-20")
+PARTNER_TAG       = os.getenv("AFFILIATE_TAG", "simplewoodsho-20")
 
 if not KEEPA_API_KEY:
     raise RuntimeError("Missing KEEPA_API_KEY")
@@ -140,46 +140,59 @@ def get_keepa_deals(api_key, fetch_asins, cached_asins):
     tokens_before = api.tokens_left
     print(f"    Keepa tokens available: {tokens_before}")
 
-    product_params = {
-        "sort":                        [["deltaPercent7_AMAZON", "asc"]],
-        "productType":                 [0],
-        "deltaPercent7_AMAZON_lte":    -10,
-        "current_AMAZON_gte":          1,
-        "current_COUNT_REVIEWS_gte":   15,
-        "current_RATING_gte":          40,
-        "categories_include":          INCLUDED_CATEGORIES,
-        "categories_exclude":          EXCLUDED_CATEGORIES,
-        "availabilityAmazon":          [0],
+    # Base params shared across all queries
+    base_params = {
+        "productType":               [0],
+        "deltaPercent7_AMAZON_lte":  -10,
+        "current_AMAZON_gte":        1,
+        "current_COUNT_REVIEWS_gte": 15,
+        "current_RATING_gte":        40,
+        "categories_include":        INCLUDED_CATEGORIES,
+        "categories_exclude":        EXCLUDED_CATEGORIES,
+        "availabilityAmazon":        [0],
     }
 
-    try:
-        asins = api.product_finder(product_params, n_products=fetch_asins)
-        asins = list(asins[:fetch_asins])
-        before_blacklist = len(asins)
-        asins = [a for a in asins if a not in BLACKLISTED_ASINS]
-        blocked = before_blacklist - len(asins)
-        if blocked:
-            print(f"    Blocked {blocked} blacklisted ASINs.")
-        print(f"    Found {len(asins)} price drop ASINs.")
-    except Exception as e:
-        print(f"    product_finder failed: {e}")
-        asins = []
+    # Multiple sort strategies to get diverse ASINs each run
+    sort_strategies = [
+        ("deltaPercent7_AMAZON",  "asc",  "7-day price drop"),
+        ("deltaPercent30_AMAZON", "asc",  "30-day price drop"),
+        ("current_COUNT_REVIEWS", "desc", "most reviewed"),
+        ("current_RATING",        "desc", "highest rated"),
+    ]
+
+    seen = set(BLACKLISTED_ASINS)
+    asins = []
+
+    for sort_field, sort_dir, label in sort_strategies:
+        params = {**base_params, "sort": [[sort_field, sort_dir]]}
+        try:
+            batch = api.product_finder(params, n_products=50)
+            batch = [a for a in batch if a not in seen]
+            seen.update(batch)
+            asins.extend(batch)
+            print(f"    [{label}] -> {len(batch)} unique ASINs")
+        except Exception as e:
+            print(f"    product_finder failed ({label}): {e}")
+        time.sleep(1)
+
+    print(f"    Found {len(asins)} total unique price drop ASINs.")
 
     if not asins:
         try:
             print("    Trying deal finder fallback...")
             deal_response = api.deals({"page": 0, "domainId": 1})
             asins = list(deal_response.get("asinList", []))[:fetch_asins]
+            asins = [a for a in asins if a not in BLACKLISTED_ASINS]
             print(f"    Found {len(asins)} deal ASINs.")
         except Exception as e:
             print(f"    Deal finder also failed: {e}")
             return [], {}
 
-    # ── Only fetch Keepa price history for NEW ASINs not already in memory ──
+    # Only fetch Keepa price history for NEW ASINs not already in memory
     new_asins = [a for a in asins if a not in cached_asins]
     cached_count = len(asins) - len(new_asins)
     print(f"    {len(new_asins)} new ASINs need Keepa history "
-          f"({cached_count} already cached — skipping Keepa query for those).")
+          f"({cached_count} already cached - skipping Keepa query for those).")
 
     keepa_prices = {}
 
@@ -223,7 +236,7 @@ def get_keepa_deals(api_key, fetch_asins, cached_asins):
                         "avg_90d":  avg_price,
                     }
             except Exception as e:
-                print(f"    Warning: Keepa history batch failed — {e}")
+                print(f"    Warning: Keepa history batch failed - {e}")
             time.sleep(0.5)
 
         print(f"    Got price history for {len(keepa_prices)} new ASINs.")
@@ -270,7 +283,7 @@ def get_amazon_pricing(asins, credential_id, credential_secret, partner_tag):
             for item in items:
                 all_items[item.asin] = item
         except Exception as e:
-            print(f"    Warning: batch failed — {e}")
+            print(f"    Warning: batch failed - {e}")
         time.sleep(1)
 
     print(f"    Retrieved pricing for {len(all_items)} items.")
@@ -340,7 +353,7 @@ def build_and_merge(asins, amazon_items, keepa_prices, memory):
             category = None
 
         if is_excluded_category(category):
-            print(f"    Skipping {asin} — excluded category: {category}")
+            print(f"    Skipping {asin} - excluded category: {category}")
             skip_count += 1
             continue
 
@@ -364,7 +377,7 @@ def build_and_merge(asins, amazon_items, keepa_prices, memory):
         try:
             condition = listing.condition.value
             if condition and condition.lower() != "new":
-                print(f"    Skipping {asin} — condition: {condition}")
+                print(f"    Skipping {asin} - condition: {condition}")
                 skip_count += 1
                 continue
         except:
@@ -465,7 +478,7 @@ def main():
                 new_asins, amazon_items, keepa_prices, memory
             )
         else:
-            print("    All ASINs already in memory — skipping Amazon API calls.")
+            print("    All ASINs already in memory - skipping Amazon API calls.")
 
     save_memory(memory)
 
@@ -488,7 +501,7 @@ def main():
     with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
         json.dump(output, f, indent=2)
 
-    print(f"\n✅ Saved {len(all_deals)} deals to {OUTPUT_FILE}")
+    print(f"\nSaved {len(all_deals)} deals to {OUTPUT_FILE}")
     print("Done.")
 
 
