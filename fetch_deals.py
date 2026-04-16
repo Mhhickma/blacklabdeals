@@ -68,6 +68,15 @@ EXCLUDED_CATEGORIES = [
     7141123011,   # Clothing & Fashion
     679337011,    # Shoes
     2476901011,   # Luggage & Travel Gear
+    1040660,      # Apparel (top-level)
+    2015765011,   # Boys' Clothing
+    2015766011,   # Girls' Clothing
+    1044694,      # Men's Clothing
+    1045024,      # Women's Clothing
+    9056981011,   # Baby & Toddler Clothing
+    2209219011,   # Novelty & More Clothing
+    7147440011,   # School Uniforms
+    3880881,      # Costumes & Accessories
 ]
 
 # Filter out at Amazon category name level as safety net
