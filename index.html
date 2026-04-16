@@ -11,16 +11,12 @@
 <meta property="og:url" content="https://dealdrop-flame.vercel.app/">
 <meta property="og:title" content="Black Lab Deals — Fresh Amazon Deals, Every 30 Minutes">
 <meta property="og:description" content="Hot Amazon deals across every category, curated automatically every 30 minutes. Save big on electronics, home, kitchen, and more.">
-<meta property="og:image" content="https://raw.githubusercontent.com/Mhhickma/dealdrop/main/logo.png">
-<meta property="og:image:width" content="1200">
-<meta property="og:image:height" content="630">
 <meta property="og:site_name" content="Black Lab Deals">
 
 <!-- Twitter Card -->
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Black Lab Deals — Fresh Amazon Deals, Every 30 Minutes">
 <meta name="twitter:description" content="Hot Amazon deals across every category, curated automatically every 30 minutes.">
-<meta name="twitter:image" content="https://raw.githubusercontent.com/Mhhickma/dealdrop/main/logo.png">
 
 <!-- PWA -->
 <link rel="manifest" href="/manifest.json">
@@ -1612,19 +1608,19 @@ function shareUrl(d) {
   return 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(text) + '&url=' + encodeURIComponent(url);
 }
 
-function handleShareClick(e, tweetUrl) {
+function handleShareClick(e, dealLink, tweetUrl) {
   e.preventDefault();
   e.stopPropagation();
   // Try native share first (mobile), fall back to Twitter
   if (navigator.share) {
     const card = e.target.closest('a.deal-card');
-    const title = card ? card.querySelector('.card-title') : null;
+    const titleEl = card ? card.querySelector('.card-title') : null;
     navigator.share({
-      title: title ? title.textContent : 'Check out this deal',
-      url: card ? card.href : window.location.href
+      title: titleEl ? titleEl.textContent : 'Check out this deal',
+      url: dealLink
     }).catch(() => {});
   } else {
-    window.open(tweetUrl, '_blank', 'width=550,height=420');
+    window.open(tweetUrl, '_blank', 'width=550,height=420,noopener,noreferrer');
   }
 }
 
@@ -1646,7 +1642,7 @@ function renderDeals(cat) {
     ? '<div style="grid-column:1/-1;padding:48px;text-align:center;color:var(--text-muted);">' + (searchQuery ? 'No deals found for "' + esc(searchQuery) + '" — try a different search.' : 'No deals in this category right now — check back soon!') + '</div>'
     : filtered.map(d => {
         const tw = shareUrl(d);
-        return '<a class="deal-card" href="' + escUrl(d.link || '#') + '" target="_blank" rel="noopener sponsored"><div class="card-img">' + img(d.image, d.emoji, 'card') + '</div><div class="card-body"><div class="card-meta"><span class="card-category">' + esc(d.cat) + '</span>' + ((Number(d.pct) >= 30 || d.hot) ? '<span class="card-badge-hot">🔥 Hot</span>' : '') + '</div><div class="card-title">' + esc(d.title) + '</div><div class="card-desc">' + esc(d.desc || '') + '</div><div class="card-footer"><div class="price-block"><span class="price-now">' + esc(d.price || 'See price on Amazon') + '</span>' + (d.was ? '<span class="price-was">' + esc(d.was) + '</span>' : '') + '</div><span class="discount-badge">' + esc(d.discount || '') + '</span></div>' + (d.hasCoupon ? '<div class="coupon-row"><span class="coupon-badge">🏷️ ' + esc(d.couponDisplay) + '</span></div>' : '') + '<button class="btn-deal">See Deal on Amazon →</button><button class="card-share-btn" onclick="handleShareClick(event, \'' + escUrl(tw) + '\')">↗ Share deal</button></div></a>';
+        return '<a class="deal-card" href="' + escUrl(d.link || '#') + '" target="_blank" rel="noopener sponsored"><div class="card-img">' + img(d.image, d.emoji, 'card') + '</div><div class="card-body"><div class="card-meta"><span class="card-category">' + esc(d.cat) + '</span>' + ((Number(d.pct) >= 30 || d.hot) ? '<span class="card-badge-hot">🔥 Hot</span>' : '') + '</div><div class="card-title">' + esc(d.title) + '</div><div class="card-desc">' + esc(d.desc || '') + '</div><div class="card-footer"><div class="price-block"><span class="price-now">' + esc(d.price || 'See price on Amazon') + '</span>' + (d.was ? '<span class="price-was">' + esc(d.was) + '</span>' : '') + '</div><span class="discount-badge">' + esc(d.discount || '') + '</span></div>' + (d.hasCoupon ? '<div class="coupon-row"><span class="coupon-badge">🏷️ ' + esc(d.couponDisplay) + '</span></div>' : '') + '<button class="btn-deal">See Deal on Amazon \u2192</button><a class="card-share-btn" href="' + escUrl(tw) + '" onclick="handleShareClick(event, \'' + escUrl(d.link || '#') + '\', \'' + escUrl(tw) + '\')">&#x2197; Share deal</a></div></a>';
       }).join('');
 }
 
