@@ -87,8 +87,7 @@ EXCLUDED_CATEGORY_NAMES = [
     "book", "books", "textbook", "novel", "literature",
 ]
 
-# Hardcoded ASIN blacklist — these slip through Keepa category filters
-# and waste tokens every run. Skip them before any API calls.
+# Hardcoded ASIN blacklist — slip through Keepa category filters
 BLACKLISTED_ASINS = {
     "B0CNSFQ988",
     "B0CNSDDJ1C",
@@ -97,6 +96,174 @@ BLACKLISTED_ASINS = {
     "B0CNSCZQ1W",
     "B0CNSBX4ZK",
 }
+
+# ─────────────────────────────────────────────
+# CATEGORY NORMALIZATION
+# Maps Amazon's raw category names -> frontend category IDs
+# ─────────────────────────────────────────────
+CATEGORY_MAP = {
+    # Health & Household
+    "health and beauty":            "Health & Household",
+    "health & beauty":              "Health & Household",
+    "beauty":                       "Health & Household",
+    "personal care":                "Health & Household",
+    "drugstore":                    "Health & Household",
+    "grocery":                      "Health & Household",
+    "vitamins":                     "Health & Household",
+    "supplement":                   "Health & Household",
+    "medical":                      "Health & Household",
+    "health":                       "Health & Household",
+    # Electronics
+    "personal computers":           "Electronics",
+    "camera & photo":               "Electronics",
+    "cameras & photo":              "Electronics",
+    "consumer electronics":         "Electronics",
+    "computers":                    "Electronics",
+    "computer":                     "Electronics",
+    "television":                   "Electronics",
+    "tv":                           "Electronics",
+    "audio":                        "Electronics",
+    "headphone":                    "Electronics",
+    "speaker":                      "Electronics",
+    "wearable":                     "Electronics",
+    "tablet":                       "Electronics",
+    "laptop":                       "Electronics",
+    "printer":                      "Electronics",
+    "monitor":                      "Electronics",
+    "projector":                    "Electronics",
+    # Cell Phones & Accessories
+    "wireless":                     "Cell Phones & Accessories",
+    "cell phone":                   "Cell Phones & Accessories",
+    "mobile phone":                 "Cell Phones & Accessories",
+    "smartphone":                   "Cell Phones & Accessories",
+    # Home & Kitchen
+    "kitchen":                      "Home & Kitchen",
+    "home":                         "Home & Kitchen",
+    "bedding":                      "Home & Kitchen",
+    "bath":                         "Home & Kitchen",
+    "furniture":                    "Home & Kitchen",
+    "lighting":                     "Home & Kitchen",
+    "storage":                      "Home & Kitchen",
+    "vacuum":                       "Home & Kitchen",
+    "appliance":                    "Home & Kitchen",
+    "cookware":                     "Home & Kitchen",
+    "dining":                       "Home & Kitchen",
+    # Patio, Lawn & Garden
+    "garden & outdoor":             "Patio, Lawn & Garden",
+    "outdoor living":               "Patio, Lawn & Garden",
+    "patio":                        "Patio, Lawn & Garden",
+    "lawn":                         "Patio, Lawn & Garden",
+    "garden":                       "Patio, Lawn & Garden",
+    "outdoor":                      "Patio, Lawn & Garden",
+    # Toys & Games
+    "toy":                          "Toys & Games",
+    "game":                         "Toys & Games",
+    "puzzle":                       "Toys & Games",
+    "kids":                         "Toys & Games",
+    "children":                     "Toys & Games",
+    # Sports & Outdoors
+    "sport":                        "Sports & Outdoors",
+    "outdoor recreation":           "Sports & Outdoors",
+    "exercise":                     "Sports & Outdoors",
+    "fitness":                      "Sports & Outdoors",
+    "cycling":                      "Sports & Outdoors",
+    "hiking":                       "Sports & Outdoors",
+    "camping":                      "Sports & Outdoors",
+    "hunting":                      "Sports & Outdoors",
+    "fishing":                      "Sports & Outdoors",
+    "golf":                         "Sports & Outdoors",
+    # Automotive
+    "automotive parts":             "Automotive",
+    "vehicle":                      "Automotive",
+    "car":                          "Automotive",
+    "truck":                        "Automotive",
+    "motorcycle":                   "Automotive",
+    "auto":                         "Automotive",
+    # Office Products
+    "office":                       "Office Products",
+    "stationery":                   "Office Products",
+    "school supplies":              "Office Products",
+    # Baby Products
+    "baby":                         "Baby Products",
+    "infant":                       "Baby Products",
+    "toddler":                      "Baby Products",
+    # Musical Instruments
+    "musical":                      "Musical Instruments",
+    "instrument":                   "Musical Instruments",
+    "guitar":                       "Musical Instruments",
+    "piano":                        "Musical Instruments",
+    "drum":                         "Musical Instruments",
+    # Pet Supplies
+    "pet":                          "Pet Supplies",
+    "dog":                          "Pet Supplies",
+    "cat supplies":                 "Pet Supplies",
+    "aquarium":                     "Pet Supplies",
+    "bird":                         "Pet Supplies",
+    # Tools & Home Improvement
+    "tool":                         "Tools & Home Improvement",
+    "hardware":                     "Tools & Home Improvement",
+    "power tool":                   "Tools & Home Improvement",
+    "hand tool":                    "Tools & Home Improvement",
+    "home improvement":             "Tools & Home Improvement",
+    "building":                     "Tools & Home Improvement",
+    "paint":                        "Tools & Home Improvement",
+    "plumbing":                     "Tools & Home Improvement",
+    "electrical":                   "Tools & Home Improvement",
+    # Arts, Crafts & Sewing
+    "craft":                        "Arts, Crafts & Sewing",
+    "sewing":                       "Arts, Crafts & Sewing",
+    "art supply":                   "Arts, Crafts & Sewing",
+    "drawing":                      "Arts, Crafts & Sewing",
+    "knitting":                     "Arts, Crafts & Sewing",
+    "scrapbook":                    "Arts, Crafts & Sewing",
+    # Industrial & Scientific
+    "industrial":                   "Industrial & Scientific",
+    "scientific":                   "Industrial & Scientific",
+    "laboratory":                   "Industrial & Scientific",
+    "janitorial":                   "Industrial & Scientific",
+    "safety":                       "Industrial & Scientific",
+    # Handmade Products
+    "handmade":                     "Handmade Products",
+    # Appliances
+    "large appliance":              "Appliances",
+    "small appliance":              "Appliances",
+    "washer":                       "Appliances",
+    "dryer":                        "Appliances",
+    "refrigerator":                 "Appliances",
+    "dishwasher":                   "Appliances",
+    "microwave":                    "Appliances",
+    "air conditioner":              "Appliances",
+}
+
+# Exact known frontend categories (already normalized)
+KNOWN_CATEGORIES = {
+    "appliances", "arts, crafts & sewing", "automotive",
+    "baby products", "cell phones & accessories", "electronics",
+    "everything else", "handmade products", "health & household",
+    "home & kitchen", "industrial & scientific", "musical instruments",
+    "office products", "patio, lawn & garden", "pet supplies",
+    "sports & outdoors", "tools & home improvement", "toys & games",
+}
+
+
+def normalize_category(raw_cat):
+    """Map Amazon's raw category string to a frontend category ID."""
+    if not raw_cat:
+        return "Everything Else"
+
+    # Already matches a known frontend category exactly
+    if raw_cat.lower() in KNOWN_CATEGORIES:
+        return raw_cat
+
+    # Try substring match against CATEGORY_MAP
+    lower = raw_cat.lower()
+    for key, mapped in CATEGORY_MAP.items():
+        if key in lower:
+            return mapped
+
+    # Log unmapped categories so we can add them later
+    print(f"    [UNMAPPED CAT] '{raw_cat}' -> Everything Else")
+    return "Everything Else"
 
 
 # ─────────────────────────────────────────────
@@ -140,7 +307,6 @@ def get_keepa_deals(api_key, fetch_asins, cached_asins):
     tokens_before = api.tokens_left
     print(f"    Keepa tokens available: {tokens_before}")
 
-    # Base params shared across all queries
     base_params = {
         "productType":               [0],
         "deltaPercent7_AMAZON_lte":  -10,
@@ -152,7 +318,6 @@ def get_keepa_deals(api_key, fetch_asins, cached_asins):
         "availabilityAmazon":        [0],
     }
 
-    # Multiple sort strategies to get diverse ASINs each run
     sort_strategies = [
         ("deltaPercent7_AMAZON",  "asc",  "7-day price drop"),
         ("deltaPercent30_AMAZON", "asc",  "30-day price drop"),
@@ -348,14 +513,18 @@ def build_and_merge(asins, amazon_items, keepa_prices, memory):
             brand = None
 
         try:
-            category = item.item_info.classifications.product_group.display_value
+            raw_category = item.item_info.classifications.product_group.display_value
         except:
-            category = None
+            raw_category = None
 
-        if is_excluded_category(category):
-            print(f"    Skipping {asin} - excluded category: {category}")
+        # Exclude apparel/books at name level before normalization
+        if is_excluded_category(raw_category):
+            print(f"    Skipping {asin} - excluded category: {raw_category}")
             skip_count += 1
             continue
+
+        # Normalize to frontend category
+        category = normalize_category(raw_category)
 
         try:
             image = item.images.primary.large.url
@@ -458,7 +627,6 @@ def main():
     memory = purge_expired(memory)
     print(f"    Memory: {len(memory)} deals after purge.")
 
-    # Pass cached ASINs into Keepa step so it skips history lookups for them
     cached_asins = set(memory.keys())
 
     asins, keepa_prices = get_keepa_deals(KEEPA_API_KEY, FETCH_ASINS, cached_asins)
