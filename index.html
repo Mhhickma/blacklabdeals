@@ -1130,7 +1130,7 @@
       <button class="tab-btn" id="tab-sms" onclick="switchTab('sms')">💬 Text</button>
     </div>
     <div class="signup-field">
-      <input type="email" id="signup-input" placeholder="your@email.com" />
+      <input type="email" id="signup-input" placeholder="your@email.com" onkeydown="if(event.key==='Enter') handleSignup()" />
       <button class="btn-sub" onclick="handleSignup()">Notify me</button>
     </div>
     <p class="signup-note" id="signup-msg">No spam, ever. Unsubscribe anytime.</p>
