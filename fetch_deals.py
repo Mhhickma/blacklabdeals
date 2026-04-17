@@ -1,7 +1,7 @@
 """
 Keepa + Amazon Creators API — Deal Price Scraper
 -------------------------------------------------
-A deal = current price is at least 10% below the 7-day average price.
+A deal = current price is at least 10% below the 30-day average price.
 """
 
 import json
@@ -34,7 +34,7 @@ FETCH_ASINS       = 280
 MAX_DISPLAY       = 1000
 DEAL_TTL_HOURS    = 24
 AMAZON_BATCH_SIZE = 10
-MIN_DISCOUNT_PCT  = 10   # current price must be at least this % below 7d avg
+MIN_DISCOUNT_PCT  = 10   # current price must be at least this % below 30d avg
 
 # Only pull from these Keepa category IDs
 INCLUDED_CATEGORIES = [
@@ -280,7 +280,7 @@ def get_keepa_deals(api_key, fetch_asins, cached_asins):
 
     base_params = {
         "productType":               [0],
-        "deltaPercent7_AMAZON_lte":  -10,   # dropped at least 10% in last 7 days
+        "deltaPercent7_AMAZON_lte":  -10,
         "current_AMAZON_gte":        1,
         "current_COUNT_REVIEWS_gte": 15,
         "current_RATING_gte":        40,
@@ -330,7 +330,7 @@ def get_keepa_deals(api_key, fetch_asins, cached_asins):
         for i in range(0, len(new_asins), 10):
             batch = new_asins[i:i + 10]
             try:
-                products = api.query(batch, stats=7, history=False)
+                products = api.query(batch, stats=30, history=False)
                 for product in products:
                     asin = product.get("asin")
                     if not asin:
@@ -346,17 +346,17 @@ def get_keepa_deals(api_key, fetch_asins, cached_asins):
                         if val and val > 0:
                             current_price = val / 100.0
 
-                    # 7-day average Amazon price
-                    avg_7d = None
-                    avg_raw = stats.get("avg7", [])
+                    # 30-day average Amazon price
+                    avg_30d = None
+                    avg_raw = stats.get("avg30", [])
                     if isinstance(avg_raw, list) and len(avg_raw) > 0:
                         val = avg_raw[0]
                         if val and val > 0:
-                            avg_7d = val / 100.0
+                            avg_30d = val / 100.0
 
                     keepa_prices[asin] = {
                         "current": current_price,
-                        "avg_7d":  avg_7d,
+                        "avg_30d": avg_30d,
                     }
             except Exception as e:
                 print(f"    Warning: Keepa history batch failed - {e}")
@@ -509,13 +509,13 @@ def build_and_merge(asins, amazon_items, keepa_prices, memory):
 
         # ──────────────────────────────────────────────────────
         # CORE DEAL CHECK:
-        # Current price must be at least 10% below 7-day average
+        # Current price must be at least 10% below 30-day average
         # ──────────────────────────────────────────────────────
         keepa_data = keepa_prices.get(asin, {})
-        avg_7d = keepa_data.get("avg_7d")
+        avg_30d = keepa_data.get("avg_30d")
 
-        if not avg_7d:
-            print(f"    Skipping {asin} - no 7-day average available")
+        if not avg_30d:
+            print(f"    Skipping {asin} - no 30-day average available")
             skip_count += 1
             continue
 
@@ -524,15 +524,15 @@ def build_and_merge(asins, amazon_items, keepa_prices, memory):
             skip_count += 1
             continue
 
-        if price_amount >= avg_7d * (1 - MIN_DISCOUNT_PCT / 100):
+        if price_amount >= avg_30d * (1 - MIN_DISCOUNT_PCT / 100):
             print(f"    Skipping {asin} - price ${price_amount:.2f} not {MIN_DISCOUNT_PCT}% "
-                  f"below 7d avg ${avg_7d:.2f}")
+                  f"below 30d avg ${avg_30d:.2f}")
             skip_count += 1
             continue
 
         # Calculate discount label
-        pct_off = round(((avg_7d - price_amount) / avg_7d) * 100)
-        was_display    = f"${avg_7d:.2f}"
+        pct_off = round(((avg_30d - price_amount) / avg_30d) * 100)
+        was_display    = f"${avg_30d:.2f}"
         discount_label = f"-{pct_off}%"
         is_hot         = pct_off >= 30
 
