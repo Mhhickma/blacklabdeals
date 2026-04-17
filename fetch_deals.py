@@ -28,13 +28,14 @@ if not CREDENTIAL_ID or not CREDENTIAL_SECRET:
 # ─────────────────────────────────────────────
 # SETTINGS
 # ─────────────────────────────────────────────
-OUTPUT_FILE       = "deals.json"
-MEMORY_FILE       = "deals_memory.json"
-FETCH_ASINS       = 280
-MAX_DISPLAY       = 1000
-DEAL_TTL_HOURS    = 24
-AMAZON_BATCH_SIZE = 10
-MIN_DISCOUNT_PCT  = 10   # current price must be at least this % below 30d avg
+OUTPUT_FILE         = "deals.json"
+MEMORY_FILE         = "deals_memory.json"
+MAX_NEW_ASINS       = 100    # max new ASINs to fetch Keepa history for per run
+MIN_KEEPA_TOKENS    = 50     # bail out if tokens drop below this
+MAX_DISPLAY         = 1000
+DEAL_TTL_HOURS      = 24
+AMAZON_BATCH_SIZE   = 10
+MIN_DISCOUNT_PCT    = 10     # current price must be at least this % below 30d avg
 
 # Only pull from these Keepa category IDs
 INCLUDED_CATEGORIES = [
@@ -272,11 +273,16 @@ def purge_expired(memory):
 # ─────────────────────────────────────────────
 # STEP 1: Pull ASINs from Keepa
 # ─────────────────────────────────────────────
-def get_keepa_deals(api_key, fetch_asins, cached_asins):
+def get_keepa_deals(api_key, cached_asins):
     print("\n[1/3] Fetching price drops from Keepa...")
     api = keepa.Keepa(api_key)
     tokens_before = api.tokens_left
     print(f"    Keepa tokens available: {tokens_before}")
+
+    # Bail out early if already low on tokens
+    if tokens_before < MIN_KEEPA_TOKENS:
+        print(f"    Token balance too low ({tokens_before}) — skipping this run.")
+        return [], {}
 
     base_params = {
         "productType":               [0],
@@ -317,17 +323,27 @@ def get_keepa_deals(api_key, fetch_asins, cached_asins):
         print("    No ASINs found — skipping deal fetch.")
         return [], {}
 
-    # Only fetch Keepa history for NEW ASINs
+    # Only fetch history for NEW ASINs not already in memory
     new_asins = [a for a in asins if a not in cached_asins]
     cached_count = len(asins) - len(new_asins)
-    print(f"    {len(new_asins)} new ASINs need Keepa history "
-          f"({cached_count} already cached).")
+    print(f"    {len(new_asins)} new ASINs found ({cached_count} already cached).")
+
+    # Cap at MAX_NEW_ASINS to stay within token budget
+    if len(new_asins) > MAX_NEW_ASINS:
+        print(f"    Capping at {MAX_NEW_ASINS} to stay within token budget.")
+        new_asins = new_asins[:MAX_NEW_ASINS]
 
     keepa_prices = {}
 
     if new_asins:
-        print(f"    Fetching Keepa price history for {len(new_asins)} new ASINs...")
+        print(f"    Fetching Keepa price history for {len(new_asins)} ASINs...")
         for i in range(0, len(new_asins), 10):
+
+            # Check tokens before each batch
+            if api.tokens_left < MIN_KEEPA_TOKENS:
+                print(f"    Token balance low ({api.tokens_left}) — stopping history fetch early.")
+                break
+
             batch = new_asins[i:i + 10]
             try:
                 products = api.query(batch, stats=30, history=False)
@@ -362,7 +378,7 @@ def get_keepa_deals(api_key, fetch_asins, cached_asins):
                 print(f"    Warning: Keepa history batch failed - {e}")
             time.sleep(0.5)
 
-        print(f"    Got price history for {len(keepa_prices)} new ASINs.")
+        print(f"    Got price history for {len(keepa_prices)} ASINs.")
 
     tokens_after = api.tokens_left
     print(f"    Tokens used: {tokens_before - tokens_after} (remaining: {tokens_after})")
@@ -531,7 +547,7 @@ def build_and_merge(asins, amazon_items, keepa_prices, memory):
             continue
 
         # Calculate discount label
-        pct_off = round(((avg_30d - price_amount) / avg_30d) * 100)
+        pct_off        = round(((avg_30d - price_amount) / avg_30d) * 100)
         was_display    = f"${avg_30d:.2f}"
         discount_label = f"-{pct_off}%"
         is_hot         = pct_off >= 30
@@ -582,7 +598,7 @@ def main():
 
     cached_asins = set(memory.keys())
 
-    asins, keepa_prices = get_keepa_deals(KEEPA_API_KEY, FETCH_ASINS, cached_asins)
+    asins, keepa_prices = get_keepa_deals(KEEPA_API_KEY, cached_asins)
 
     if not asins:
         print("No ASINs found from Keepa.")
