@@ -31,7 +31,7 @@ if not CREDENTIAL_ID or not CREDENTIAL_SECRET:
 OUTPUT_FILE         = "deals.json"
 MEMORY_FILE         = "deals_memory.json"
 MAX_NEW_ASINS       = 100    # max new ASINs to fetch Keepa history for per run
-MIN_KEEPA_TOKENS    = 50     # bail out if tokens drop below this
+MIN_KEEPA_TOKENS    = 50     # stop mid-run if tokens drop below this
 MAX_DISPLAY         = 1000
 DEAL_TTL_HOURS      = 24
 AMAZON_BATCH_SIZE   = 10
@@ -279,11 +279,6 @@ def get_keepa_deals(api_key, cached_asins):
     tokens_before = api.tokens_left
     print(f"    Keepa tokens available: {tokens_before}")
 
-    # Bail out early if already low on tokens
-    if tokens_before < MIN_KEEPA_TOKENS:
-        print(f"    Token balance too low ({tokens_before}) — skipping this run.")
-        return [], {}
-
     base_params = {
         "productType":               [0],
         "deltaPercent7_AMAZON_lte":  -10,
@@ -339,7 +334,7 @@ def get_keepa_deals(api_key, cached_asins):
         print(f"    Fetching Keepa price history for {len(new_asins)} ASINs...")
         for i in range(0, len(new_asins), 10):
 
-            # Check tokens before each batch
+            # Stop mid-run if tokens drop too low
             if api.tokens_left < MIN_KEEPA_TOKENS:
                 print(f"    Token balance low ({api.tokens_left}) — stopping history fetch early.")
                 break
