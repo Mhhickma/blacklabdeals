@@ -1590,10 +1590,7 @@ function renderHotDropdown() {
     : hot.map(d => '<a class="hot-dropdown-card" href="' + escUrl(d.link || '#') + '" target="_blank" rel="noopener sponsored" onclick="closeAllDropdowns()"><div class="hot-dropdown-img">' + (d.image ? '<img src="' + escUrl(d.image) + '" alt="" onerror="this.parentElement.innerHTML=\'🛒\'"/>' : '🛒') + '</div><div class="hot-dropdown-info"><div class="hot-dropdown-name">' + esc(d.title) + '</div><div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;"><span class="hot-dropdown-price">' + esc(d.price || 'See price') + '</span>' + (d.discount ? '<span class="hot-dropdown-badge">' + esc(d.discount) + '</span>' : '') + '</div></div></a>').join('');
 }
 
-}
-
 function renderDeals(cat) {
-  // Skip cards with no title or no link — they render as blank boxes
   let filtered = cat === 'All' ? allDeals : allDeals.filter(d => d.cat === cat);
   if (searchQuery) {
     filtered = filtered.filter(d =>
@@ -1656,9 +1653,7 @@ function filterDeals(cat, btn) {
   renderDeals(cat);
 }
 
-// Restore persisted category after deals load
-  } catch(e) {}
-}
+
 
 function toggleDropdown(name) {
   const menu    = document.getElementById('menu-' + name);
