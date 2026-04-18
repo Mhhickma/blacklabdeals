@@ -1306,7 +1306,7 @@
 
 <div class="search-strip">
   <div class="search-inner">
-    <input type="text" id="search-input" placeholder="Search deals by name, brand or category..." oninput="handleSearch()" />
+    <input type="text" id="search-input" placeholder="Search deals by name, brand or category..." oninput="handleSearch()" onkeydown="if(event.key==='Enter') handleSearch()" />
     <button class="search-clear" id="search-clear" onclick="clearSearch()">&#x2715;</button>
   </div>
 </div>
