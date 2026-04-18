@@ -268,7 +268,7 @@ def get_keepa_deals(api_key, cached_asins):
             continue
 
         # Min price $10 — current is a list, index varies by price type
-        prices = [x for x in item.get("current", []) if isinstance(x, (int, float)) and x > 0]
+        prices = [x for x in item.get("current", []) if isinstance(x, (int, float)) and x > 500]
         if not prices or min(prices) < 1000:
             continue
 
