@@ -1306,7 +1306,7 @@
 
 <div class="search-strip">
   <div class="search-inner">
-    <input type="text" id="search-input" placeholder="Search deals by name, brand or category..." oninput="handleSearch()" onkeydown="if(event.key==='Enter') handleSearch()" />
+    <input type="text" id="search-input" placeholder="Search deals by name, brand or category..." oninput="handleSearch()" onkeydown="if(event.key==='Enter'){handleSearch();setTimeout(()=>{document.getElementById('deals-section').scrollIntoView({behavior:'smooth',block:'start'})},100)}" />
     <button class="search-clear" id="search-clear" onclick="clearSearch()">&#x2715;</button>
   </div>
 </div>
