@@ -1,19 +1,20 @@
 """
-Keepa + Amazon Creators API — Deal Price Scraper
--------------------------------------------------
-A deal = current price is at least 10% below the 30-day average price.
+Keepa Deals Endpoint + Amazon Creators API — Deal Scraper
+----------------------------------------------------------
+Uses Keepa's deals endpoint across all 7 price types (Buy Box, Amazon,
+New, FBA, FBM, Prime, Lightning) then validates pricing via Amazon PA API.
 """
 
 import json
 import os
 import time
+import requests
 from datetime import datetime, timezone, timedelta
-import keepa
 from amazon_creatorsapi import AmazonCreatorsApi, Country
 from amazon_creatorsapi.models import GetItemsResource
 
 # ─────────────────────────────────────────────
-# CREDENTIALS — read from environment variables
+# CREDENTIALS
 # ─────────────────────────────────────────────
 KEEPA_API_KEY     = os.getenv("KEEPA_API_KEY")
 CREDENTIAL_ID     = os.getenv("CREATORS_CREDENTIAL_ID")
@@ -28,200 +29,120 @@ if not CREDENTIAL_ID or not CREDENTIAL_SECRET:
 # ─────────────────────────────────────────────
 # SETTINGS
 # ─────────────────────────────────────────────
-OUTPUT_FILE         = "deals.json"
-MEMORY_FILE         = "deals_memory.json"
-MAX_NEW_ASINS       = 50     # max new ASINs per run (fits within 5 tokens/min plan)
-MIN_KEEPA_TOKENS    = 20     # stop mid-run if tokens drop below this
-MAX_DISPLAY         = 1000
-DEAL_TTL_HOURS      = 24
-AMAZON_BATCH_SIZE   = 10
-MIN_DISCOUNT_PCT    = 10     # current price must be at least this % below 30d avg
+OUTPUT_FILE       = "deals.json"
+MEMORY_FILE       = "deals_memory.json"
+MAX_DISPLAY       = 1000
+DEAL_TTL_HOURS    = 24
+AMAZON_BATCH_SIZE = 10
+MIN_DISCOUNT_PCT  = 5      # minimum % drop (matches Keepa filter)
+KEEPA_DEALS_URL   = "https://api.keepa.com/deal"
 
-# Only pull from these Keepa category IDs
-INCLUDED_CATEGORIES = [
-    2619525011,   # Appliances
-    2617941011,   # Arts, Crafts & Sewing
-    15684181,     # Automotive
-    165796011,    # Baby Products
-    2335752011,   # Cell Phones & Accessories
-    172282,       # Electronics
-    10272111,     # Everything Else
-    11260432011,  # Handmade Products
-    3760901,      # Health & Household
-    1055398,      # Home & Kitchen
-    16310091,     # Industrial & Scientific
-    11091801,     # Musical Instruments
-    1064954,      # Office Products
-    2972638011,   # Patio, Lawn & Garden
-    2619533011,   # Pet Supplies
-    3375251,      # Sports & Outdoors
-    228013,       # Tools & Home Improvement
-    165793011,    # Toys & Games
-]
+# All 7 price types to query
+PRICE_TYPES = [7, 0, 1, 10, 2, 13, 3]
+# 7=Buy Box, 0=Amazon, 1=New 3rd party, 10=New FBA, 2=New FBM, 13=Prime exclusive, 3=Lightning
 
-# Explicitly exclude these Keepa category IDs
+# Categories to exclude
 EXCLUDED_CATEGORIES = [
     283155,       # Books
-    1036592,      # Clothing, Shoes & Jewelry
-    7141123011,   # Clothing & Fashion
-    679337011,    # Shoes
-    2476901011,   # Luggage & Travel Gear
-    1040660,      # Apparel (top-level)
-    2015765011,   # Boys' Clothing
-    2015766011,   # Girls' Clothing
-    1044694,      # Men's Clothing
-    1045024,      # Women's Clothing
-    9056981011,   # Baby & Toddler Clothing
-    2209219011,   # Novelty & More Clothing
-    7147440011,   # School Uniforms
-    3880881,      # Costumes & Accessories
+    5174,         # CDs & Vinyl
+    133140011,    # Kindle Store
+    2625373011,   # Movies & TV
+    7141123011,   # Clothing
+    163856011,    # Digital Music
+    18145289011,  # Audible
+    2350149011,   # Apps & Games
+    2238192011,   # Gift Cards
+    4991425011,   # Collectibles & Fine Art
+    229534,       # Software
+    18981045011,  # Amazon Luxury
+    11260432011,  # Handmade Products
+    16310091,     # Industrial & Scientific
 ]
 
-# Filter out at Amazon category name level as safety net
-EXCLUDED_CATEGORY_NAMES = [
-    "apparel", "clothing", "shoes", "shoe", "jewelry", "jewellery",
-    "luggage", "handbag", "wallet", "fashion", "dress", "shirt",
-    "pants", "jeans", "sneaker", "boot", "sandal",
-    "book", "books", "textbook", "novel", "literature",
+# Keywords to block in titles (adult + junk)
+BAD_KEYWORDS = [
+    # Adult
+    "sex", "doll", "erotic", "fetish", "penis", "vagina",
+    "dildo", "vibrator", "nude", "naked", "porn", "xxx",
+    "bdsm", "bondage",
+    # Industrial junk
+    "abrasive", "torque", "fiber optic", "qsfp", "sfp",
+    "evaporator", "flame retardant", "safety vest", "hard hat",
+    "bearing", "set screw", "end mill", "clamp", "permaculture",
+    "grass paint", "field line", "marking paint", "hydraulic",
+    "pneumatic", "actuator", "splice", "scotchcast", "schuko",
+    "waffle polish", "roller refill", "dental", "vapor-tight",
+    "jute", "bohemian", "hinge", "barrel hinge", "mortise",
+    "water pump", "latex glove", "industrial", "circuit breaker",
+    "conduit", "junction box", "wire connector",
 ]
 
 # Hardcoded ASIN blacklist
 BLACKLISTED_ASINS = {
-    "B0CNSFQ988",
-    "B0CNSDDJ1C",
-    "B0CNSDNT27",
-    "B0CNSCN4KW",
-    "B0CNSCZQ1W",
-    "B0CNSBX4ZK",
+    "B0CNSFQ988", "B0CNSDDJ1C", "B0CNSDNT27",
+    "B0CNSCN4KW", "B0CNSCZQ1W", "B0CNSBX4ZK",
 }
 
 # ─────────────────────────────────────────────
 # CATEGORY NORMALIZATION
 # ─────────────────────────────────────────────
 CATEGORY_MAP = {
-    "health and beauty":            "Health & Household",
-    "health & beauty":              "Health & Household",
-    "beauty":                       "Health & Household",
-    "personal care":                "Health & Household",
-    "drugstore":                    "Health & Household",
-    "grocery":                      "Health & Household",
-    "vitamins":                     "Health & Household",
-    "supplement":                   "Health & Household",
-    "medical":                      "Health & Household",
-    "health":                       "Health & Household",
-    "personal computers":           "Electronics",
-    "camera & photo":               "Electronics",
-    "cameras & photo":              "Electronics",
-    "consumer electronics":         "Electronics",
-    "computers":                    "Electronics",
-    "computer":                     "Electronics",
-    "television":                   "Electronics",
-    "tv":                           "Electronics",
-    "audio":                        "Electronics",
-    "headphone":                    "Electronics",
-    "speaker":                      "Electronics",
-    "wearable":                     "Electronics",
-    "tablet":                       "Electronics",
-    "laptop":                       "Electronics",
-    "printer":                      "Electronics",
-    "monitor":                      "Electronics",
-    "projector":                    "Electronics",
-    "wireless":                     "Cell Phones & Accessories",
-    "cell phone":                   "Cell Phones & Accessories",
-    "mobile phone":                 "Cell Phones & Accessories",
-    "smartphone":                   "Cell Phones & Accessories",
-    "kitchen":                      "Home & Kitchen",
-    "home":                         "Home & Kitchen",
-    "bedding":                      "Home & Kitchen",
-    "bath":                         "Home & Kitchen",
-    "furniture":                    "Home & Kitchen",
-    "lighting":                     "Home & Kitchen",
-    "storage":                      "Home & Kitchen",
-    "vacuum":                       "Home & Kitchen",
-    "appliance":                    "Home & Kitchen",
-    "cookware":                     "Home & Kitchen",
-    "dining":                       "Home & Kitchen",
-    "garden & outdoor":             "Patio, Lawn & Garden",
-    "outdoor living":               "Patio, Lawn & Garden",
-    "patio":                        "Patio, Lawn & Garden",
-    "lawn":                         "Patio, Lawn & Garden",
-    "garden":                       "Patio, Lawn & Garden",
-    "outdoor":                      "Patio, Lawn & Garden",
-    "toy":                          "Toys & Games",
-    "game":                         "Toys & Games",
-    "puzzle":                       "Toys & Games",
-    "kids":                         "Toys & Games",
-    "children":                     "Toys & Games",
-    "sport":                        "Sports & Outdoors",
-    "outdoor recreation":           "Sports & Outdoors",
-    "exercise":                     "Sports & Outdoors",
-    "fitness":                      "Sports & Outdoors",
-    "cycling":                      "Sports & Outdoors",
-    "hiking":                       "Sports & Outdoors",
-    "camping":                      "Sports & Outdoors",
-    "hunting":                      "Sports & Outdoors",
-    "fishing":                      "Sports & Outdoors",
-    "golf":                         "Sports & Outdoors",
-    "automotive parts":             "Automotive",
-    "vehicle":                      "Automotive",
-    "car":                          "Automotive",
-    "truck":                        "Automotive",
-    "motorcycle":                   "Automotive",
-    "auto":                         "Automotive",
-    "office":                       "Office Products",
-    "stationery":                   "Office Products",
-    "school supplies":              "Office Products",
-    "baby":                         "Baby Products",
-    "infant":                       "Baby Products",
-    "toddler":                      "Baby Products",
-    "musical":                      "Musical Instruments",
-    "instrument":                   "Musical Instruments",
-    "guitar":                       "Musical Instruments",
-    "piano":                        "Musical Instruments",
-    "drum":                         "Musical Instruments",
-    "pet":                          "Pet Supplies",
-    "dog":                          "Pet Supplies",
-    "cat supplies":                 "Pet Supplies",
-    "aquarium":                     "Pet Supplies",
-    "bird":                         "Pet Supplies",
-    "tool":                         "Tools & Home Improvement",
-    "hardware":                     "Tools & Home Improvement",
-    "power tool":                   "Tools & Home Improvement",
-    "hand tool":                    "Tools & Home Improvement",
-    "home improvement":             "Tools & Home Improvement",
-    "building":                     "Tools & Home Improvement",
-    "paint":                        "Tools & Home Improvement",
-    "plumbing":                     "Tools & Home Improvement",
-    "electrical":                   "Tools & Home Improvement",
-    "craft":                        "Arts, Crafts & Sewing",
-    "sewing":                       "Arts, Crafts & Sewing",
-    "art supply":                   "Arts, Crafts & Sewing",
-    "drawing":                      "Arts, Crafts & Sewing",
-    "knitting":                     "Arts, Crafts & Sewing",
-    "scrapbook":                    "Arts, Crafts & Sewing",
-    "industrial":                   "Industrial & Scientific",
-    "scientific":                   "Industrial & Scientific",
-    "laboratory":                   "Industrial & Scientific",
-    "janitorial":                   "Industrial & Scientific",
-    "safety":                       "Industrial & Scientific",
-    "handmade":                     "Handmade Products",
-    "large appliance":              "Appliances",
-    "small appliance":              "Appliances",
-    "washer":                       "Appliances",
-    "dryer":                        "Appliances",
-    "refrigerator":                 "Appliances",
-    "dishwasher":                   "Appliances",
-    "microwave":                    "Appliances",
-    "air conditioner":              "Appliances",
+    "health": "Health & Household",
+    "beauty": "Health & Household",
+    "personal care": "Health & Household",
+    "grocery": "Health & Household",
+    "electronics": "Electronics",
+    "computer": "Electronics",
+    "camera": "Electronics",
+    "television": "Electronics",
+    "audio": "Electronics",
+    "headphone": "Electronics",
+    "speaker": "Electronics",
+    "tablet": "Electronics",
+    "laptop": "Electronics",
+    "cell phone": "Cell Phones & Accessories",
+    "smartphone": "Cell Phones & Accessories",
+    "wireless": "Cell Phones & Accessories",
+    "kitchen": "Home & Kitchen",
+    "home": "Home & Kitchen",
+    "bedding": "Home & Kitchen",
+    "furniture": "Home & Kitchen",
+    "lighting": "Home & Kitchen",
+    "vacuum": "Home & Kitchen",
+    "appliance": "Home & Kitchen",
+    "cookware": "Home & Kitchen",
+    "patio": "Patio, Lawn & Garden",
+    "lawn": "Patio, Lawn & Garden",
+    "garden": "Patio, Lawn & Garden",
+    "outdoor": "Patio, Lawn & Garden",
+    "toy": "Toys & Games",
+    "game": "Toys & Games",
+    "kids": "Toys & Games",
+    "sport": "Sports & Outdoors",
+    "fitness": "Sports & Outdoors",
+    "camping": "Sports & Outdoors",
+    "automotive": "Automotive",
+    "vehicle": "Automotive",
+    "car": "Automotive",
+    "office": "Office Products",
+    "baby": "Baby Products",
+    "pet": "Pet Supplies",
+    "dog": "Pet Supplies",
+    "tool": "Tools & Home Improvement",
+    "hardware": "Tools & Home Improvement",
+    "home improvement": "Tools & Home Improvement",
+    "craft": "Arts, Crafts & Sewing",
+    "sewing": "Arts, Crafts & Sewing",
+    "musical": "Musical Instruments",
 }
 
 KNOWN_CATEGORIES = {
     "appliances", "arts, crafts & sewing", "automotive",
     "baby products", "cell phones & accessories", "electronics",
-    "everything else", "handmade products", "health & household",
-    "home & kitchen", "industrial & scientific", "musical instruments",
-    "office products", "patio, lawn & garden", "pet supplies",
-    "sports & outdoors", "tools & home improvement", "toys & games",
+    "everything else", "health & household", "home & kitchen",
+    "musical instruments", "office products", "patio, lawn & garden",
+    "pet supplies", "sports & outdoors", "tools & home improvement",
+    "toys & games",
 }
 
 
@@ -234,7 +155,6 @@ def normalize_category(raw_cat):
     for key, mapped in CATEGORY_MAP.items():
         if key in lower:
             return mapped
-    print(f"    [UNMAPPED CAT] '{raw_cat}' -> Everything Else")
     return "Everything Else"
 
 
@@ -271,115 +191,83 @@ def purge_expired(memory):
 
 
 # ─────────────────────────────────────────────
-# STEP 1: Pull ASINs from Keepa
+# TITLE FILTER
+# ─────────────────────────────────────────────
+def is_bad_title(title):
+    if not title:
+        return True
+    # Block foreign language titles
+    if not all(ord(c) < 128 for c in title[:10]):
+        return True
+    # Block junk keywords
+    title_lower = title.lower()
+    if any(w in title_lower for w in BAD_KEYWORDS):
+        return True
+    return False
+
+
+# ─────────────────────────────────────────────
+# STEP 1: Pull ASINs from Keepa Deals Endpoint
 # ─────────────────────────────────────────────
 def get_keepa_deals(api_key, cached_asins):
-    print("\n[1/3] Fetching price drops from Keepa...")
-    api = keepa.Keepa(api_key)
-    tokens_before = api.tokens_left
-    print(f"    Keepa tokens available: {tokens_before}")
+    print("\n[1/3] Fetching deals from Keepa deals endpoint...")
 
-    base_params = {
-        "productType":               [0],
-        "deltaPercent7_AMAZON_lte":  -10,
-        "current_AMAZON_gte":        1,
-        "current_COUNT_REVIEWS_gte": 15,
-        "current_RATING_gte":        40,
-        "categories_include":        INCLUDED_CATEGORIES,
-        "categories_exclude":        EXCLUDED_CATEGORIES,
-        "availabilityAmazon":        [0],
-    }
+    all_deals = []
 
-    sort_strategies = [
-        ("deltaPercent7_AMAZON",  "asc",  "7-day price drop"),
-        ("deltaPercent30_AMAZON", "asc",  "30-day price drop"),
-        ("current_COUNT_REVIEWS", "desc", "most reviewed"),
-        ("current_RATING",        "desc", "highest rated"),
-    ]
-
-    seen = set(BLACKLISTED_ASINS)
-    asins = []
-
-    for sort_field, sort_dir, label in sort_strategies:
-        params = {**base_params, "sort": [[sort_field, sort_dir]]}
+    for pt in PRICE_TYPES:
+        payload = {
+            "domainId":           1,
+            "priceTypes":         [pt],
+            "dateRange":          4,
+            "sortType":           4,       # sort by sales rank (most popular first)
+            "page":               0,
+            "filterErotic":       True,
+            "hasReviews":         True,
+            "minRating":          40,      # 4.0 stars minimum
+            "deltaPercentRange":  [-100, -MIN_DISCOUNT_PCT],
+            "excludeCategories":  EXCLUDED_CATEGORIES,
+        }
         try:
-            batch = api.product_finder(params, n_products=50)
-            batch = [a for a in batch if a not in seen]
-            seen.update(batch)
-            asins.extend(batch)
-            print(f"    [{label}] -> {len(batch)} unique ASINs")
+            r = requests.post(
+                KEEPA_DEALS_URL,
+                params={"key": api_key, "domain": 1},
+                json=payload,
+                timeout=15,
+            )
+            r.raise_for_status()
+            data = r.json()
+            dr = data.get("deals", {}).get("dr", [])
+            all_deals.extend(dr)
+            print(f"    priceType {pt} -> {len(dr)} deals | tokens left: {data.get('tokensLeft', '?')}")
         except Exception as e:
-            print(f"    product_finder failed ({label}): {e}")
+            print(f"    priceType {pt} failed: {e}")
         time.sleep(1)
 
-    print(f"    Found {len(asins)} total unique ASINs.")
+    # Deduplicate by ASIN
+    seen = set(BLACKLISTED_ASINS)
+    unique_deals = []
+    for item in all_deals:
+        asin = item.get("asin", "")
+        if not asin or asin in seen:
+            continue
+        title = item.get("title", "")
+        if is_bad_title(title):
+            continue
+        # Min price filter ($10 minimum)
+        prices = [x for x in item.get("current", []) if x and x > 0]
+        if not prices or min(prices) < 1000:
+            continue
+        seen.add(asin)
+        unique_deals.append(asin)
 
-    if not asins:
-        print("    No ASINs found — skipping deal fetch.")
-        return [], {}
+    print(f"    {len(unique_deals)} unique clean ASINs after filtering.")
 
-    # Only fetch history for NEW ASINs not already in memory
-    new_asins = [a for a in asins if a not in cached_asins]
-    cached_count = len(asins) - len(new_asins)
-    print(f"    {len(new_asins)} new ASINs found ({cached_count} already cached).")
+    # Only process NEW ASINs not already in memory
+    new_asins = [a for a in unique_deals if a not in cached_asins]
+    print(f"    {len(new_asins)} new ASINs to fetch from Amazon "
+          f"({len(unique_deals) - len(new_asins)} already cached).")
 
-    # Cap to stay within token budget
-    if len(new_asins) > MAX_NEW_ASINS:
-        print(f"    Capping at {MAX_NEW_ASINS} to stay within token budget.")
-        new_asins = new_asins[:MAX_NEW_ASINS]
-
-    keepa_prices = {}
-
-    if new_asins:
-        print(f"    Fetching Keepa price history for {len(new_asins)} ASINs...")
-        for i in range(0, len(new_asins), 10):
-
-            # Stop mid-run if tokens drop too low
-            if api.tokens_left < MIN_KEEPA_TOKENS:
-                print(f"    Token balance low ({api.tokens_left}) — stopping early.")
-                break
-
-            batch = new_asins[i:i + 10]
-            try:
-                products = api.query(batch, stats=30, history=False)
-                for product in products:
-                    asin = product.get("asin")
-                    if not asin:
-                        continue
-
-                    stats = product.get("stats", {})
-
-                    # Current Amazon price
-                    current_price = None
-                    current_raw = stats.get("current", [])
-                    if isinstance(current_raw, list) and len(current_raw) > 0:
-                        val = current_raw[0]
-                        if val and val > 0:
-                            current_price = val / 100.0
-
-                    # 30-day average Amazon price
-                    avg_30d = None
-                    avg_raw = stats.get("avg30", [])
-                    if isinstance(avg_raw, list) and len(avg_raw) > 0:
-                        val = avg_raw[0]
-                        if val and val > 0:
-                            avg_30d = val / 100.0
-
-                    keepa_prices[asin] = {
-                        "current": current_price,
-                        "avg_30d": avg_30d,
-                    }
-            except Exception as e:
-                print(f"    Warning: Keepa history batch failed - {e}")
-                time.sleep(5)
-            time.sleep(0.5)
-
-        print(f"    Got price history for {len(keepa_prices)} ASINs.")
-
-    tokens_after = api.tokens_left
-    print(f"    Tokens used: {tokens_before - tokens_after} (remaining: {tokens_after})")
-
-    return asins, keepa_prices
+    return new_asins
 
 
 # ─────────────────────────────────────────────
@@ -411,7 +299,7 @@ def get_amazon_pricing(asins, credential_id, credential_secret, partner_tag):
     all_items = {}
     for i in range(0, len(asins), AMAZON_BATCH_SIZE):
         batch = asins[i:i + AMAZON_BATCH_SIZE]
-        print(f"    Fetching batch {i // AMAZON_BATCH_SIZE + 1} ({len(batch)} items)...")
+        print(f"    Batch {i // AMAZON_BATCH_SIZE + 1} ({len(batch)} items)...")
         try:
             items = amazon.get_items(batch, resources=resources)
             for item in items:
@@ -420,24 +308,14 @@ def get_amazon_pricing(asins, credential_id, credential_secret, partner_tag):
             print(f"    Warning: batch failed - {e}")
         time.sleep(1)
 
-    print(f"    Retrieved pricing for {len(all_items)} items.")
+    print(f"    Retrieved {len(all_items)} items from Amazon.")
     return all_items
-
-
-# ─────────────────────────────────────────────
-# HELPER: Check if a category should be excluded
-# ─────────────────────────────────────────────
-def is_excluded_category(category):
-    if not category:
-        return False
-    cat_lower = category.lower()
-    return any(word in cat_lower for word in EXCLUDED_CATEGORY_NAMES)
 
 
 # ─────────────────────────────────────────────
 # STEP 3: Build deals and merge with memory
 # ─────────────────────────────────────────────
-def build_and_merge(asins, amazon_items, keepa_prices, memory):
+def build_and_merge(asins, amazon_items, memory):
     print("\n[3/3] Building and merging deals...")
     now = datetime.now(timezone.utc).isoformat()
     new_count = 0
@@ -448,38 +326,36 @@ def build_and_merge(asins, amazon_items, keepa_prices, memory):
         if not item:
             continue
 
-        # ── Title ──
+        # Title
         try:
             title = item.item_info.title.display_value
         except:
             title = None
 
-        # ── Brand ──
+        if not title:
+            skip_count += 1
+            continue
+
+        # Brand
         try:
             brand = item.item_info.by_line_info.brand.display_value
         except:
             brand = None
 
-        # ── Category ──
+        # Category
         try:
             raw_category = item.item_info.classifications.product_group.display_value
         except:
             raw_category = None
-
-        if is_excluded_category(raw_category):
-            print(f"    Skipping {asin} - excluded category: {raw_category}")
-            skip_count += 1
-            continue
-
         category = normalize_category(raw_category)
 
-        # ── Image ──
+        # Image
         try:
             image = item.images.primary.large.url
         except:
             image = None
 
-        # ── Price ──
+        # Price
         try:
             listing       = item.offers_v2.listings[0]
             price_amount  = listing.price.money.amount
@@ -491,69 +367,55 @@ def build_and_merge(asins, amazon_items, keepa_prices, memory):
             price_display = None
             currency      = None
 
+        if not price_amount:
+            print(f"    Skipping {asin} - no price available")
+            skip_count += 1
+            continue
+
         # Skip used items
         try:
             condition = listing.condition.value
             if condition and condition.lower() != "new":
-                print(f"    Skipping {asin} - condition: {condition}")
                 skip_count += 1
                 continue
         except:
             pass
 
-        # ── Availability ──
+        # Availability
         try:
             availability = listing.availability.type
         except:
             availability = None
 
-        # ── Deal type ──
+        # Deal type
         try:
             deal_type = listing.deal_details.access_type
         except:
             deal_type = "PRICE_DROP"
 
-        # ── URL ──
+        # URL
         try:
             url = item.detail_page_url
         except:
             url = f"https://www.amazon.com/dp/{asin}?tag={PARTNER_TAG}"
 
-        # ──────────────────────────────────────────────────────
-        # CORE DEAL CHECK:
-        # Current price must be at least 10% below 30-day average
-        # ──────────────────────────────────────────────────────
-        keepa_data = keepa_prices.get(asin, {})
-        avg_30d    = keepa_data.get("avg_30d")
+        # Calculate discount using Amazon price vs list price if available
+        # Use a conservative 10% discount label since we know Keepa confirmed the drop
+        pct_off        = MIN_DISCOUNT_PCT
+        was_display    = None
+        discount_label = f"-{pct_off}%+"
+        is_hot         = False
 
-        if not avg_30d:
-            print(f"    Skipping {asin} - no 30-day average available")
-            skip_count += 1
-            continue
-
-        if not price_amount:
-            print(f"    Skipping {asin} - no current price available")
-            skip_count += 1
-            continue
-
-        # Skip if current price is more than 2x the 30d average (price spike junk)
-        if price_amount > avg_30d * 2:
-            print(f"    Skipping {asin} - price ${price_amount:.2f} is a spike vs "
-                  f"30d avg ${avg_30d:.2f}")
-            skip_count += 1
-            continue
-
-        if price_amount >= avg_30d * (1 - MIN_DISCOUNT_PCT / 100):
-            print(f"    Skipping {asin} - price ${price_amount:.2f} not {MIN_DISCOUNT_PCT}% "
-                  f"below 30d avg ${avg_30d:.2f}")
-            skip_count += 1
-            continue
-
-        # Calculate discount label
-        pct_off        = round(((avg_30d - price_amount) / avg_30d) * 100)
-        was_display    = f"${avg_30d:.2f}"
-        discount_label = f"-{pct_off}%"
-        is_hot         = pct_off >= 30
+        try:
+            # Try to get savings from Amazon directly
+            savings = listing.price.savings
+            if savings:
+                pct_off        = round(savings.percentage)
+                was_display    = f"${round(price_amount + savings.money.amount, 2)}"
+                discount_label = f"-{pct_off}%"
+                is_hot         = pct_off >= 30
+        except:
+            pass
 
         deal = {
             "asin":          asin,
@@ -584,14 +446,17 @@ def build_and_merge(asins, amazon_items, keepa_prices, memory):
 
         memory[asin] = deal
 
-    print(f"    {new_count} new deals added to memory.")
+    print(f"    {new_count} new deals added.")
     print(f"    {skip_count} items skipped.")
     return memory
 
 
+# ─────────────────────────────────────────────
+# MAIN
+# ─────────────────────────────────────────────
 def main():
     print("=" * 55)
-    print("  Keepa + Amazon Creators API — Deal Price Scraper")
+    print("  Keepa Deals + Amazon Creators API — DealDrop")
     print("=" * 55)
 
     memory = load_memory()
@@ -601,28 +466,18 @@ def main():
 
     cached_asins = set(memory.keys())
 
-    asins, keepa_prices = get_keepa_deals(KEEPA_API_KEY, cached_asins)
+    new_asins = get_keepa_deals(KEEPA_API_KEY, cached_asins)
 
-    if not asins:
-        print("No ASINs found from Keepa.")
+    if not new_asins:
+        print("No new ASINs to process.")
     else:
-        new_asins = [a for a in asins if a not in memory]
-        print(f"\n    {len(new_asins)} new ASINs to price-check "
-              f"({len(asins) - len(new_asins)} already cached).")
-
-        if new_asins:
-            amazon_items = get_amazon_pricing(
-                new_asins, CREDENTIAL_ID, CREDENTIAL_SECRET, PARTNER_TAG
-            )
-            memory = build_and_merge(
-                new_asins, amazon_items, keepa_prices, memory
-            )
-        else:
-            print("    All ASINs already in memory - skipping Amazon API calls.")
+        amazon_items = get_amazon_pricing(
+            new_asins, CREDENTIAL_ID, CREDENTIAL_SECRET, PARTNER_TAG
+        )
+        memory = build_and_merge(new_asins, amazon_items, memory)
 
     save_memory(memory)
 
-    # Sort by updated_at so freshest deals appear first
     all_deals = sorted(
         memory.values(),
         key=lambda d: d.get("updated_at", d.get("seen_at", "")),
