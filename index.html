@@ -1246,7 +1246,7 @@
       <img src="https://raw.githubusercontent.com/Mhhickma/blacklabdeals/main/logo.png" alt="Black Lab Deals" />
       <div class="drawer-title">Black Lab <span>Deals</span></div>
     </div>
-    <button class="drawer-close" onclick="closeMobileMenu()" aria-label="Close menu">&#x2715;</button>
+    <button class="drawer-close" onclick="closeMobileMenu()" aria-label="Close menu">x</button>
   </div>
   <div class="drawer-content">
     <div class="drawer-alert">
@@ -1260,8 +1260,8 @@
       <button onclick="closeMobileMenu(); scrollToAllDeals();">All Deals</button>
       <div class="drawer-cat-section">
         <button class="drawer-cat-toggle" id="drawer-cat-toggle" onclick="toggleDrawerCats()">
-          &#x1F4C2; Browse Categories
-          <span class="drawer-cat-toggle-arrow">&#x25BC;</span>
+           Browse Categories
+          <span class="drawer-cat-toggle-arrow">v</span>
         </button>
         <div class="drawer-cat-list" id="drawer-cat-list"></div>
       </div>
@@ -1272,7 +1272,7 @@
   </div>
 </aside>
 
-<button id="back-to-top" onclick="scrollToTop()" aria-label="Back to top">&#x2191;</button>
+<button id="back-to-top" onclick="scrollToTop()" aria-label="Back to top">^</button>
 
 <nav>
   <div class="nav-inner">
@@ -1288,7 +1288,7 @@
         <a href="#" onclick="scrollToTop(); return false;">Home</a>
         <div class="nav-dropdown" id="dropdown-hot">
           <button class="nav-dropdown-trigger" onclick="toggleDropdown('hot')" id="trigger-hot">
-            HOT Deals <span class="nav-dropdown-arrow">&#x25BC;</span>
+            HOT Deals <span class="nav-dropdown-arrow">v</span>
           </button>
           <div class="dropdown-menu hot-dropdown" id="menu-hot">
             <div class="hot-dropdown-header">
@@ -1302,7 +1302,7 @@
         </div>
         <div class="nav-dropdown" id="dropdown-categories">
           <button class="nav-dropdown-trigger" onclick="toggleDropdown('categories')" id="trigger-categories">
-            &#x1F4C2; Categories <span class="nav-dropdown-arrow">&#x25BC;</span>
+             Categories <span class="nav-dropdown-arrow">v</span>
           </button>
           <div class="dropdown-menu" id="menu-categories" style="min-width:240px;"></div>
         </div>
@@ -1327,13 +1327,13 @@
 </nav>
 
 <div class="disclosure-bar">
-  <span>&#x1F517; As an Amazon Associate we earn from qualifying purchases. Prices and availability are accurate at time of posting. &nbsp;&middot;&nbsp; Trusted deal source since 2023.</span>
+  <span> As an Amazon Associate we earn from qualifying purchases. Prices and availability are accurate at time of posting. &nbsp;&middot;&nbsp; Trusted deal source since 2023.</span>
 </div>
 
 <div class="search-strip">
   <div class="search-inner">
     <input type="text" id="search-input" placeholder="Search deals by name, brand or category..." oninput="handleSearch()" onkeydown="if(event.key==='Enter'){handleSearch();setTimeout(()=>{document.getElementById('deals-section').scrollIntoView({behavior:'smooth',block:'start'})},100)}" />
-    <button class="search-clear" id="search-clear" onclick="clearSearch()">&#x2715;</button>
+    <button class="search-clear" id="search-clear" onclick="clearSearch()">x</button>
   </div>
 </div>
 
@@ -1345,14 +1345,14 @@
     </div>
     <h1>The best deals,<br>curated for you.</h1>
     <p>Top Amazon discounts across every category &mdash; updated every 30 minutes automatically.</p>
-    <p style="margin-top:10px;font-size:13px;color:var(--text-muted);">&#x1F43E; Sniffed out hourly by Black Lab Deals</p>
+    <p style="margin-top:10px;font-size:13px;color:var(--text-muted);"> Sniffed out hourly by Black Lab Deals</p>
   </div>
   <div class="signup-box" id="alerts-box">
     <h3>Never miss a deal</h3>
     <p>Get alerts the moment new deals drop.</p>
     <div class="signup-tabs">
-      <button class="tab-btn active" id="tab-email" onclick="switchTab('email')">&#x1F4E7; Email</button>
-      <button class="tab-btn" id="tab-sms" onclick="switchTab('sms')">&#x1F4AC; Text</button>
+      <button class="tab-btn active" id="tab-email" onclick="switchTab('email')">Email Email</button>
+      <button class="tab-btn" id="tab-sms" onclick="switchTab('sms')">Text Text</button>
     </div>
     <div class="signup-field">
       <input type="email" id="signup-input" placeholder="your@email.com" onkeydown="if(event.key==='Enter') handleSignup()" />
@@ -1365,7 +1365,7 @@
 <!-- Mobile hero banner -->
 <section class="mobile-hot-hero">
   <div class="mobile-hot-hero-inner">
-    <span class="mobile-hot-kicker">&#x1F525; Live Deal Feed</span>
+    <span class="mobile-hot-kicker">HOT Live Deal Feed</span>
     <h2>HOT DEALS<br>RIGHT NOW</h2>
     <p>Fresh drops, strong discounts, and the best deals pushed to the top first.</p>
     <div class="mobile-hero-actions">
@@ -1383,11 +1383,11 @@
 <!-- Mobile signup box  shown only on mobile, scroll target for bell icon -->
 <section class="mobile-signup-section" id="mobile-alerts-box">
   <div class="mobile-signup-box">
-    <h3>&#x1F514; Never miss a deal</h3>
+    <h3> Never miss a deal</h3>
     <p>Get alerts the moment new deals drop.</p>
     <div class="mobile-signup-tabs">
-      <button class="mobile-tab-btn active" id="mobile-tab-email" onclick="mobileSwitchTab('email')">&#x1F4E7; Email</button>
-      <button class="mobile-tab-btn" id="mobile-tab-sms" onclick="mobileSwitchTab('sms')">&#x1F4AC; Text</button>
+      <button class="mobile-tab-btn active" id="mobile-tab-email" onclick="mobileSwitchTab('email')">Email Email</button>
+      <button class="mobile-tab-btn" id="mobile-tab-sms" onclick="mobileSwitchTab('sms')">Text Text</button>
     </div>
     <div class="mobile-signup-field">
       <input type="email" id="mobile-signup-input" placeholder="your@email.com" onkeydown="if(event.key==='Enter') handleMobileSignup()" />
@@ -1418,7 +1418,7 @@
 <div class="hot-section" id="hot-section" style="display:none;">
   <div class="hot-header">
     <div class="hot-title-wrap">
-      <span class="hot-icon">&#x1F525;</span>
+      <span class="hot-icon">HOT</span>
       <span class="hot-title">Hot Deals</span>
       <span class="hot-subtitle">&mdash; 30% off or more</span>
     </div>
