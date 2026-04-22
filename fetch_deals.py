@@ -424,7 +424,7 @@ def build_and_merge(asins, amazon_items, memory):
                 pct_off        = round(savings.percentage)
                 was_display    = f"${round(price_amount + savings.money.amount, 2)}"
                 discount_label = f"-{pct_off}%"
-                is_hot         = pct_off >= 30
+                is_hot         = pct_off >= 40
         except:
             pass
 
