@@ -5,18 +5,27 @@ on:
   workflow_dispatch:
 permissions:
   contents: write
+concurrency:
+  group: fetch-deals-main
+  cancel-in-progress: true
 jobs:
   fetch-deals:
     runs-on: ubuntu-latest
     steps:
       - name: Check out repo
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
       - name: Install dependencies
         run: pip install requests keepa numpy python-amazon-paapi
+      - name: Sync to latest main
+        run: |
+          git fetch origin main
+          git reset --hard origin/main
       - name: Run deal fetcher
         env:
           KEEPA_API_KEY:              ${{ secrets.KEEPA_API_KEY }}
@@ -28,14 +37,21 @@ jobs:
           MAILCHIMP_LIST_ID:          ${{ secrets.MAILCHIMP_LIST_ID }}
           INTERNAL_SECRET:            ${{ secrets.INTERNAL_SECRET }}
         run: python fetch_deals.py
-      - name: Commit and push updated deals.json
+      - name: Commit and push updated deal files
         run: |
-          git config user.name  "DealDrop Bot"
+          git config user.name "DealDrop Bot"
           git config user.email "bot@dealdrop.com"
+
           git add -f deals.json || true
           git add -f deals_memory.json || true
-          git add notified_deals.json || true
+          [ -f notified_deals.json ] && git add -f notified_deals.json || true
+
           git status
-          git diff --staged --quiet || git commit -m "Update deals $(date -u '+%Y-%m-%d %H:%M UTC')"
-          git pull --rebase origin main
-          git push
+
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+
+          git commit -m "Update deals $(date -u '+%Y-%m-%d %H:%M UTC')"
+          git push origin main
