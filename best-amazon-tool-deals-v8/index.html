@@ -47,9 +47,12 @@
     .nav-right { display: flex; align-items: center; gap: 14px; }
     .desktop-nav { display: flex; align-items: center; gap: 4px; }
     .desktop-nav a { text-decoration: none; color: var(--text-secondary); font-size: 14px; font-weight: 500; padding: 6px 10px; border-radius: 8px; }
+    .desktop-nav a.active-nav { color: var(--accent); background: var(--accent-light); }
     .nav-alert-btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 18px; border-radius: 999px; background: var(--accent); color: white; border: none; font-size: 13px; font-weight: 700; text-decoration: none; }
     .page-shell { padding-top: 26px; padding-bottom: 18px; }
-    .breadcrumbs { font-size: 13px; color: var(--text-muted); margin-bottom: 18px; }
+    .breadcrumbs { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; font-size: 13px; color: var(--text-muted); margin-bottom: 18px; }
+    .breadcrumbs a { color: var(--accent); text-decoration: none; font-weight: 600; }
+    .breadcrumbs .crumb-sep { color: var(--text-muted); }
     .hero { display: block; margin-bottom: 20px; }
     .hero-left { padding-top: 10px; max-width: 760px; }
     .hero-pill { display: inline-flex; align-items: center; gap: 8px; background: #fff3d4; border: 1px solid #e8c96a; border-radius: 999px; padding: 5px 14px; margin-bottom: 16px; font-size: 12px; font-weight: 600; color: #7a5200; }
@@ -59,15 +62,15 @@
     .page-banner { margin: 0 0 24px; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; box-shadow: var(--shadow); }
     .page-banner img { display: block; width: 100%; height: auto; }
     .seo-intro, .panel { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; box-shadow: var(--shadow); }
-    .seo-intro { padding: 20px 22px; margin-bottom: 24px; }
+    .seo-intro { padding: 20px 22px; margin-bottom: 18px; }
     .seo-intro h2, .section-head h2, .panel h3 { font-family: 'Playfair Display', serif; }
     .seo-intro h2 { font-size: 24px; margin-bottom: 10px; }
-    .seo-intro p { font-size: 14px; color: var(--text-secondary); margin-bottom: 10px; }
-    .stats-bar { display: flex; gap: 42px; flex-wrap: wrap; margin: 8px 0 28px; }
+    .seo-intro p { font-size: 14px; color: var(--text-secondary); margin-bottom: 8px; }
+    .stats-bar { display: flex; gap: 32px; flex-wrap: wrap; margin: 6px 0 20px; }
     .stat-num { font-size: 22px; font-weight: 700; line-height: 1; }
     .stat-label { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
-    .divider { border-bottom: 1px solid var(--border); margin: 0 0 24px; }
-    .section-head { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin-bottom: 16px; }
+    .divider { border-bottom: 1px solid var(--border); margin: 0 0 18px; }
+    .section-head { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin-bottom: 14px; }
     .section-head h2 { font-size: 24px; color: var(--text-primary); }
     .section-head .muted { color: var(--text-muted); font-size: 13px; }
     .deal-count { font-size: 12px; font-weight: 700; color: white; background: var(--red); padding: 6px 12px; border-radius: 999px; }
@@ -107,13 +110,17 @@
 <body>
   <nav>
     <div class="nav-inner">
-      <a class="logo-wrap" href="/">
+      <a class="logo-wrap" href="/" aria-label="Black Lab Deals home">
         <img class="logo-img" src="https://raw.githubusercontent.com/Mhhickma/blacklabdeals/main/logo.png" alt="Black Lab Deals logo" />
         <div><div class="logo-text">Black Lab <span>Deals</span></div><div class="nav-tagline">Fresh deals, hourly</div></div>
       </a>
       <div class="nav-right">
-        <div class="desktop-nav"><a href="/">Home</a><a href="/">HOT Deals</a><a href="/">Categories</a><a href="/">All Deals</a></div>
-        <a class="nav-alert-btn" href="/">Get Alerts</a>
+        <div class="desktop-nav">
+          <a href="/">Home</a>
+          <a href="/" class="active-nav">All Deals</a>
+          <a href="/best-amazon-tool-deals-v8/">Tool Deals</a>
+        </div>
+        <a class="nav-alert-btn" href="/">Back to Main Site</a>
       </div>
     </div>
   </nav>
@@ -122,14 +129,20 @@
   <div class="search-strip"><div class="search-inner"><input value="Search deals by name, brand or category..." readonly /></div></div>
 
   <main class="page-shell">
-    <div class="breadcrumbs">Home &gt; Tools &gt; Best Amazon Tool Deals</div>
+    <nav class="breadcrumbs" aria-label="Breadcrumb">
+      <a href="/">Home</a>
+      <span class="crumb-sep">&gt;</span>
+      <a href="/">All Deals</a>
+      <span class="crumb-sep">&gt;</span>
+      <span>Tool Deals</span>
+    </nav>
 
     <section class="hero">
       <div class="hero-left">
         <div class="hero-pill" id="hero-pill">Loading tool deals...</div>
         <h1>Best Amazon tool deals, price drops, and coupons.</h1>
-        <p>Shop the best Amazon tool deals today across power tools, hand tools, tool storage, measuring tools, air tools, and workshop gear. This page updates automatically from the current deal feed and is built to highlight stronger discounts first.</p>
-        <div class="hero-note">Hidden live test page using Amazon’s Tools &amp; Home Improvement category directly.</div>
+        <p>Shop the best Amazon tool deals today across power tools, hand tools, tool storage, measuring tools, air tools, and workshop gear. This page updates automatically from the current deal feed and surfaces stronger deals first.</p>
+        <div class="hero-note">Built from your live Tools &amp; Home Improvement feed with easy navigation back to the full site.</div>
       </div>
     </section>
 
@@ -139,9 +152,8 @@
 
     <section class="seo-intro">
       <h2>Why this Amazon tool deals page is different</h2>
-      <p>This page is designed to rank for searches like <strong>best Amazon tool deals</strong>, <strong>Amazon power tool deals</strong>, and <strong>Amazon tool price drops</strong>. It now uses the Amazon category in your feed directly instead of the extra-tight custom keyword filter.</p>
-      <p>That means if a deal is categorized as <strong>Tools &amp; Home Improvement</strong> in your feed, it belongs here. The page still keeps the same card style and layout as the rest of your site.</p>
-      <p>These are the top tool deals from the current live feed, ranked by deal strength, discount, recency, and shopper usefulness.</p>
+      <p>This page targets searches like <strong>best Amazon tool deals</strong>, <strong>Amazon power tool deals</strong>, and <strong>Amazon tool price drops</strong> while pulling directly from the Tools &amp; Home Improvement category in your live feed.</p>
+      <p>If a deal is categorized as <strong>Tools &amp; Home Improvement</strong>, it belongs here. That keeps the page focused while still matching the full site style.</p>
     </section>
 
     <div class="stats-bar">
@@ -155,7 +167,7 @@
     <div class="divider"></div>
 
     <section class="section-head">
-      <div><h2>Hot Amazon tool deals <span class="muted">— Amazon Tools &amp; Home Improvement only</span></h2></div>
+      <div><h2>Today’s best Amazon tool deals <span class="muted">— live from Tools &amp; Home Improvement</span></h2></div>
       <div class="deal-count" id="deal-count">0 deals</div>
     </section>
 
@@ -167,7 +179,7 @@
     <section class="content-grid">
       <div class="panel">
         <h3>How this page helps SEO</h3>
-        <p>This page now uses a cleaner permanent URL, a stronger title tag, a more search-focused meta description, richer intro text, clearer headings, and FAQ content. That gives search engines much more context than a simple card grid.</p>
+        <p>This page uses a clean permanent URL, stronger metadata, focused intro copy, and FAQ content so search engines get much more context than a simple product grid.</p>
         <ul><li>Targets “best Amazon tool deals” and related long-tail searches.</li><li>Explains what kinds of tool deals are included.</li><li>Provides crawlable supporting content around the product cards.</li><li>Creates a reusable template for other category pages.</li></ul>
       </div>
       <div class="panel">
@@ -178,7 +190,7 @@
 
     <section class="panel">
       <h3>Frequently asked questions</h3>
-      <div class="faq-list"><div class="faq-item"><div class="faq-q">How often are Amazon tool deals updated?</div><div class="faq-answer">This page updates automatically from the current deal feed, so the tool deals shown here refresh as the main feed refreshes.</div></div><div class="faq-item"><div class="faq-q">Do these Amazon tool deals include coupons?</div><div class="faq-answer">Yes. This page can include both direct price drops and coupon-style offers when they appear in the feed.</div></div><div class="faq-item"><div class="faq-q">What kinds of tools are featured on this page?</div><div class="faq-answer">Anything categorized as Tools &amp; Home Improvement in your feed can appear here, including power tools, hand tools, tool storage, measuring tools, air tools, and workshop accessories.</div></div><div class="faq-item"><div class="faq-q">How are tool deals chosen for this page?</div><div class="faq-answer">This page now includes deals based on the Tools &amp; Home Improvement category from your feed, then ranks them by hot status, discount, freshness, and price.</div></div></div>
+      <div class="faq-list"><div class="faq-item"><div class="faq-q">How often are Amazon tool deals updated?</div><div class="faq-answer">This page updates automatically from the current deal feed, so the tool deals shown here refresh as the main feed refreshes.</div></div><div class="faq-item"><div class="faq-q">Do these Amazon tool deals include coupons?</div><div class="faq-answer">Yes. This page can include both direct price drops and coupon-style offers when they appear in the feed.</div></div><div class="faq-item"><div class="faq-q">What kinds of tools are featured on this page?</div><div class="faq-answer">Anything categorized as Tools &amp; Home Improvement in your feed can appear here, including power tools, hand tools, tool storage, measuring tools, air tools, and workshop accessories.</div></div><div class="faq-item"><div class="faq-q">How are tool deals chosen for this page?</div><div class="faq-answer">This page includes deals based on the Tools &amp; Home Improvement category from your feed, then ranks them by hot status, discount, freshness, and price.</div></div></div>
     </section>
   </main>
 
