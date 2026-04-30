@@ -46,8 +46,8 @@ jobs:
       - name: Patch homepage navigation
         run: python patch_homepage_nav.py
 
-      - name: Patch best seller page navigation
-        run: python patch_best_seller_nav.py
+      - name: Patch best seller page navigation to shared nav
+        run: python patch_best_seller_shared_nav.py
 
       - name: Commit and push updated best seller deal files
         run: |
@@ -60,6 +60,7 @@ jobs:
           git add -f best_seller_deals.json || true
           git add -f index.html || true
           git add -f best-seller-deals.html || true
+          git add -f shared-navigation.js || true
 
           git status
 
