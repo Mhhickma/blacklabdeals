@@ -15,6 +15,7 @@
       <div class="bld-mega-column">
         <h3>Featured</h3>
         <a class="bld-mega-link" href="/top-100-amazon-deals-today/"><span class="bld-mega-icon">🔥</span>Top 100 Deals</a>
+        <a class="bld-mega-link" href="/best-seller-deals.html"><span class="bld-mega-icon">🏆</span>Best Seller Deals</a>
         <a class="bld-mega-link" href="/#deals-section"><span class="bld-mega-icon">✨</span>New Deals Today</a>
         <a class="bld-mega-link" href="/best-amazon-deals-under-50/"><span class="bld-mega-icon">💵</span>Deals Under $50</a>
         <a class="bld-mega-link" href="/#hot-deals"><span class="bld-mega-icon">⚡</span>Hot Deals</a>
