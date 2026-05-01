@@ -1,5 +1,6 @@
 /* Black Lab Deals uniform header navigation.
-   Shared header used by pages that include /site-header.js. */
+   Shared header used by pages that include /site-header.js.
+   Navigation version: best-sellers-menu-2026-04-30 */
 
 (function () {
   const MEGA_MENU_HTML = `
