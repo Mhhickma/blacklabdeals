@@ -37,11 +37,38 @@ jobs:
           MAILCHIMP_LIST_ID:          ${{ secrets.MAILCHIMP_LIST_ID }}
           INTERNAL_SECRET:            ${{ secrets.INTERNAL_SECRET }}
         run: python fetch_deals.py
+      - name: Apply Amazon compliance copy updates
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          replacements = {
+              'Top Amazon discounts across every category — updated every 30 minutes automatically.': 'Top deals found on Amazon across every category — updated every 30 minutes automatically.',
+              'Top Amazon discounts across every category - updated every 30 minutes automatically.': 'Top deals found on Amazon across every category - updated every 30 minutes automatically.',
+              'Updated every 30 minutes · Powered by live Amazon data': 'Updated every 30 minutes · Deal data refreshed regularly',
+              'Updated every 30 minutes &middot; Powered by live Amazon data': 'Updated every 30 minutes &middot; Deal data refreshed regularly',
+              'Updated every 30 minutes • Powered by live Amazon data': 'Updated every 30 minutes • Deal data refreshed regularly',
+              'Updated every 30 minutes - Powered by live Amazon data': 'Updated every 30 minutes - Deal data refreshed regularly',
+              'Prices sourced live from Amazon.': 'Prices and availability are checked at time of posting and may change.',
+              'As an Amazon Associate we earn from qualifying purchases.': 'As an Amazon Associate, Black Lab Deals earns from qualifying purchases.',
+              'As an Amazon Associate I earn from qualifying purchases.': 'As an Amazon Associate, Black Lab Deals earns from qualifying purchases.',
+          }
+
+          for path in [p for p in Path('.').rglob('*.html') if '.git' not in p.parts]:
+              text = path.read_text(encoding='utf-8')
+              original = text
+              for old, new in replacements.items():
+                  text = text.replace(old, new)
+              if text != original:
+                  path.write_text(text, encoding='utf-8')
+                  print(f'Updated compliance copy in {path}')
+          PY
       - name: Commit and push updated deal files
         run: |
           git config user.name "DealDrop Bot"
           git config user.email "bot@dealdrop.com"
 
+          git add -f *.html || true
           git add -f deals.json || true
           git add -f deals_memory.json || true
           [ -f notified_deals.json ] && git add -f notified_deals.json || true
