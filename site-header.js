@@ -1,6 +1,6 @@
 /* Black Lab Deals uniform header navigation.
    Shared header used by pages that include /site-header.js.
-   Navigation version: homepage-menu-match-2026-05-01 */
+   Navigation version: shared-mobile-hamburger-2026-05-03 */
 
 (function () {
   const MEGA_MENU_HTML = `
@@ -82,6 +82,13 @@
 
           <div class="bld-mobile-actions">
             <a class="bld-alert-btn" href="${getHomeAwareHref('#alerts-box')}"><span class="bld-alert-icon">●</span> Get Alerts</a>
+            <button class="bld-mobile-menu-btn" type="button" aria-label="Open menu" aria-expanded="false">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true">
+                <path d="M4 6h16"></path>
+                <path d="M4 12h16"></path>
+                <path d="M4 18h16"></path>
+              </svg>
+            </button>
           </div>
         </div>
       </header>
@@ -108,6 +115,27 @@
         window.scrollToAllDeals();
       });
     }
+  }
+
+  function wireMobileMenu(root) {
+    const btn = root.querySelector('.bld-mobile-menu-btn');
+    if (!btn) return;
+
+    btn.addEventListener('click', function () {
+      if (typeof window.openMobileMenu === 'function') {
+        window.openMobileMenu();
+        btn.setAttribute('aria-expanded', 'true');
+        return;
+      }
+
+      const trigger = root.querySelector('.bld-category-trigger');
+      const menu = root.querySelector('.bld-mega-menu');
+      if (trigger && menu) {
+        const isOpen = menu.classList.toggle('show');
+        trigger.setAttribute('aria-expanded', String(isOpen));
+        btn.setAttribute('aria-expanded', String(isOpen));
+      }
+    });
   }
 
   function initMegaMenu(root) {
@@ -142,6 +170,7 @@
 
     mount.innerHTML = buildHeader();
     wireHomepageScrollLinks(mount);
+    wireMobileMenu(mount);
     initMegaMenu(mount);
   }
 
