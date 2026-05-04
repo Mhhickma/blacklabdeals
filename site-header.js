@@ -1,6 +1,6 @@
 /* Black Lab Deals uniform header navigation.
    Shared header used by pages that include /site-header.js.
-   Navigation version: shared-mobile-drawer-2026-05-04 */
+   Navigation version: shared-search-2026-05-04 */
 
 (function () {
   const NAV_LINKS = [
@@ -63,6 +63,10 @@
         <button class="bld-mobile-drawer-close" type="button" aria-label="Close menu" data-bld-mobile-close>×</button>
       </div>
       <div class="bld-mobile-drawer-content">
+        <form class="bld-mobile-drawer-search" action="/search.html" method="get" role="search">
+          <input type="search" name="q" placeholder="Search Here" aria-label="Search all deals">
+          <button type="submit">Search</button>
+        </form>
         <a class="bld-mobile-drawer-alert" href="/#alerts-box"><span>●</span> Get Deal Alerts</a>
         <div class="bld-mobile-drawer-section">
           <h3>Featured Deal Pages</h3>
@@ -82,6 +86,16 @@
   `;
 
   const MOBILE_DRAWER_CSS = `
+    .bld-header-search-row{background:var(--surface,#fff);border-top:1px solid var(--border,#e8e6e1);border-bottom:1px solid var(--border,#e8e6e1);padding:12px 24px 14px;}
+    .bld-header-search{max-width:760px;margin:0 auto;display:flex;align-items:center;gap:10px;}
+    .bld-header-search input{width:100%;height:44px;border:1px solid var(--border,#e8e6e1);border-radius:999px;background:var(--bg,#f9f8f5);color:var(--text-primary,#1a1a18);font-family:'DM Sans',sans-serif;font-size:15px;font-weight:700;padding:0 18px;outline:none;box-shadow:0 1px 3px rgba(0,0,0,.04);}
+    .bld-header-search input:focus{border-color:var(--accent,#1a3a5c);box-shadow:0 0 0 3px rgba(26,58,92,.12);}
+    .bld-header-search input::placeholder{color:var(--text-muted,#9e9e97);}
+    .bld-header-search button{height:44px;border:0;border-radius:999px;background:var(--accent,#1a3a5c);color:#fff;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:900;padding:0 18px;cursor:pointer;white-space:nowrap;}
+    .bld-header-search button:hover{background:var(--accent-mid,#2a5a8c);}
+    .bld-mobile-drawer-search{display:flex;gap:8px;margin-bottom:2px;}
+    .bld-mobile-drawer-search input{min-width:0;flex:1;height:42px;border:1px solid var(--border,#e8e6e1);border-radius:999px;background:var(--bg,#f9f8f5);padding:0 14px;font-size:15px;font-weight:800;color:var(--text-primary,#1a1a18);outline:none;}
+    .bld-mobile-drawer-search button{height:42px;border:0;border-radius:999px;background:var(--accent,#1a3a5c);color:#fff;font-size:13px;font-weight:900;padding:0 14px;}
     .bld-mobile-menu-btn{width:44px;height:44px;border:1px solid var(--border,#e8e6e1);border-radius:14px;background:var(--surface,#fff);color:var(--text-primary,#1a1a18);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:var(--shadow,0 1px 3px rgba(0,0,0,.06));}
     .bld-mobile-menu-btn svg{width:22px;height:22px;}
     .bld-mobile-drawer-overlay{position:fixed;inset:0;background:rgba(0,0,0,.42);z-index:998;opacity:0;pointer-events:none;transition:opacity .22s ease;}
@@ -105,6 +119,7 @@
     .bld-mobile-drawer-all{background:var(--accent-light,#e8eef5);color:var(--accent,#1a3a5c)!important;}
     body.bld-mobile-menu-open{overflow:hidden;}
     @media (min-width:901px){.bld-mobile-drawer,.bld-mobile-drawer-overlay{display:none!important;}}
+    @media (max-width:700px){.bld-header-search-row{padding:10px 14px 12px;}.bld-header-search{gap:8px;}.bld-header-search input{height:42px;font-size:15px;}.bld-header-search button{height:42px;padding:0 14px;font-size:13px;}}
     @media (max-width:520px){.bld-mobile-actions .bld-alert-btn{display:none;}.bld-mobile-drawer{width:92vw;}.bld-mobile-drawer-title{font-size:21px;}}
   `;
 
@@ -155,6 +170,12 @@
               </svg>
             </button>
           </div>
+        </div>
+        <div class="bld-header-search-row">
+          <form class="bld-header-search" action="/search.html" method="get" role="search">
+            <input type="search" name="q" placeholder="Search Here" aria-label="Search all Black Lab Deals">
+            <button type="submit">Search</button>
+          </form>
         </div>
         ${MOBILE_DRAWER_HTML}
       </header>
