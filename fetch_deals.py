@@ -43,7 +43,7 @@ KEEPA_DEALS_URL   = "https://api.keepa.com/deal"
 # Keep AMAZON_BATCH_SIZE at 10 because Amazon GetItems supports up to 10 ASINs per request.
 # AMAZON_CONCURRENT_BATCHES controls how many legal 10-ASIN requests run at the same time.
 # You can override these in GitHub Actions/Vercel env vars without editing code.
-KEEPA_DEAL_PAGES             = int(os.getenv("KEEPA_DEAL_PAGES", "10"))
+KEEPA_DEAL_PAGES             = int(os.getenv("KEEPA_DEAL_PAGES", "15"))
 MAX_NEW_ASINS_PER_RUN        = int(os.getenv("MAX_NEW_ASINS_PER_RUN", "0"))
 DEAL_REQUEST_DELAY_SECONDS   = float(os.getenv("DEAL_REQUEST_DELAY_SECONDS", "3"))
 AMAZON_REQUEST_DELAY_SECONDS = float(os.getenv("AMAZON_REQUEST_DELAY_SECONDS", "1"))
