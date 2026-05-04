@@ -207,6 +207,11 @@ footer::after {
   font-weight: 600 !important;
 }
 
+/* Hide the duplicated completed deal pages panel in the footer. */
+footer .browse-more-links {
+  display: none !important;
+}
+
 @media (max-width: 900px) {
   .bld-mobile-actions {
     display: flex !important;
