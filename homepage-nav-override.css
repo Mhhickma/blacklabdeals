@@ -1,7 +1,12 @@
-/* Homepage-only navigation cleanup. Keeps the original working homepage header/scripts and only restyles the Categories dropdown. */
-.homepage-mega-menu {
-  width: min(680px, calc(100vw - 40px)) !important;
-  min-width: min(680px, calc(100vw - 40px)) !important;
+/* Homepage navigation styling.
+   This file now supports the shared /site-header.js mega menu on the homepage.
+   It also keeps the old homepage-mega-* selectors as aliases in case an older
+   cached page is still loading the previous homepage-only menu. */
+
+.homepage-mega-menu,
+.bld-mega-menu {
+  width: min(820px, calc(100vw - 40px)) !important;
+  min-width: min(820px, calc(100vw - 40px)) !important;
   max-width: calc(100vw - 40px) !important;
   padding: 18px !important;
   border-radius: 20px !important;
@@ -15,11 +20,15 @@
   transform: translateX(-50%) translateY(-8px) !important;
 }
 
-.homepage-mega-menu.show {
+.homepage-mega-menu.show,
+.bld-mega-menu.show,
+.bld-category-wrap:hover .bld-mega-menu,
+.bld-category-wrap:focus-within .bld-mega-menu {
   transform: translateX(-50%) translateY(0) !important;
 }
 
-.homepage-mega-header {
+.homepage-mega-header,
+.bld-mega-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
@@ -29,21 +38,24 @@
   margin-bottom: 14px;
 }
 
-.homepage-mega-title {
+.homepage-mega-title,
+.bld-mega-title {
   font-family: 'Playfair Display', serif;
   font-size: 24px;
   line-height: 1.1;
   color: var(--text-primary, #1a1a18);
 }
 
-.homepage-mega-subtitle {
+.homepage-mega-subtitle,
+.bld-mega-subtitle {
   color: var(--text-muted, #9e9e97);
   font-size: 13px;
   margin-top: 4px;
   font-weight: 500;
 }
 
-.homepage-mega-pill {
+.homepage-mega-pill,
+.bld-mega-pill {
   background: var(--accent-light, #e8eef5);
   color: var(--accent, #1a3a5c);
   font-size: 12px;
@@ -53,20 +65,23 @@
   white-space: nowrap;
 }
 
-.homepage-mega-grid {
+.homepage-mega-grid,
+.bld-mega-grid {
   display: grid;
   grid-template-columns: 1fr 1.2fr 1fr;
   gap: 14px;
 }
 
-.homepage-mega-column {
+.homepage-mega-column,
+.bld-mega-column {
   background: #fbfaf7;
   border: 1px solid var(--border, #e8e6e1);
   border-radius: 16px;
   padding: 12px;
 }
 
-.homepage-mega-column h3 {
+.homepage-mega-column h3,
+.bld-mega-column h3 {
   color: var(--text-primary, #1a1a18);
   font-size: 12px;
   text-transform: uppercase;
@@ -76,7 +91,8 @@
   font-weight: 900;
 }
 
-.homepage-mega-link {
+.homepage-mega-link,
+.bld-mega-link {
   display: flex !important;
   align-items: center;
   gap: 9px;
@@ -89,14 +105,17 @@
   background: transparent !important;
   transition: background 0.12s, color 0.12s;
   white-space: normal;
+  line-height: 1.25;
 }
 
-.homepage-mega-link:hover {
+.homepage-mega-link:hover,
+.bld-mega-link:hover {
   background: var(--accent-light, #e8eef5) !important;
   color: var(--accent, #1a3a5c) !important;
 }
 
-.homepage-mega-icon {
+.homepage-mega-icon,
+.bld-mega-icon {
   width: 23px;
   height: 23px;
   display: inline-flex;
@@ -109,7 +128,8 @@
   flex-shrink: 0;
 }
 
-.homepage-mega-footer {
+.homepage-mega-footer,
+.bld-mega-footer {
   margin-top: 14px;
   padding: 12px 14px !important;
   border-radius: 16px !important;
@@ -125,7 +145,8 @@
 }
 
 @media (max-width: 900px) {
-  .homepage-mega-menu {
+  .homepage-mega-menu,
+  .bld-mega-menu {
     width: min(92vw, 360px) !important;
     min-width: min(92vw, 360px) !important;
     max-height: 78vh;
@@ -134,7 +155,22 @@
     right: 0 !important;
     transform: translateY(-8px) !important;
   }
-  .homepage-mega-menu.show { transform: translateY(0) !important; }
-  .homepage-mega-grid { grid-template-columns: 1fr; }
-  .homepage-mega-header { flex-direction: column; gap: 8px; }
+
+  .homepage-mega-menu.show,
+  .bld-mega-menu.show,
+  .bld-category-wrap:hover .bld-mega-menu,
+  .bld-category-wrap:focus-within .bld-mega-menu {
+    transform: translateY(0) !important;
+  }
+
+  .homepage-mega-grid,
+  .bld-mega-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .homepage-mega-header,
+  .bld-mega-header {
+    flex-direction: column;
+    gap: 8px;
+  }
 }
