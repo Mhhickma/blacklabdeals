@@ -25,8 +25,13 @@
 
 .homepage-mega-menu.show,
 .bld-mega-menu.show,
+.bld-category-wrap .bld-mega-menu.show,
 .bld-category-wrap:hover .bld-mega-menu,
 .bld-category-wrap:focus-within .bld-mega-menu {
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+  display: block !important;
   transform: translateX(-50%) translateY(0) !important;
 }
 
@@ -261,8 +266,13 @@ footer .browse-more-links {
 
   .homepage-mega-menu.show,
   .bld-mega-menu.show,
+  .bld-category-wrap .bld-mega-menu.show,
   .bld-category-wrap:hover .bld-mega-menu,
   .bld-category-wrap:focus-within .bld-mega-menu {
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+    display: block !important;
     transform: translateY(0) !important;
   }
 
