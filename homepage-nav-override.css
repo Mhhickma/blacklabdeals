@@ -151,6 +151,62 @@
   display: none;
 }
 
+/* Safer Amazon compliance copy shown on the homepage. */
+.deal-statement-bar,
+.footer-deal-statement,
+footer .footer-disclosure,
+.hot-btn {
+  font-size: 0 !important;
+}
+
+.deal-statement-bar::after,
+.footer-deal-statement::after,
+footer .footer-disclosure::after,
+.hot-btn::after {
+  font-size: 11px !important;
+  line-height: 1.6 !important;
+}
+
+.deal-statement-bar::after,
+.footer-deal-statement::after {
+  content: "Deals are checked against current Amazon pricing data when posted. Prices and availability may change at any time. Hot deals are 40% off or more.";
+}
+
+.deal-statement-bar::after {
+  font-size: 15px !important;
+}
+
+footer .footer-disclosure::after {
+  content: "As an Amazon Associate, Black Lab Deals earns from qualifying purchases. This page may contain affiliate links.";
+}
+
+footer .disclaimer:first-of-type {
+  font-size: 0 !important;
+}
+
+footer .disclaimer:first-of-type::after {
+  content: "Prices and availability are checked at time of posting and may change at any time. Final price is shown on Amazon at checkout. Some deals may include clippable coupons on the Amazon product page.";
+  font-size: 11px !important;
+  line-height: 1.6 !important;
+}
+
+footer::after {
+  content: "Amazon and the Amazon logo are trademarks of Amazon.com, Inc. or its affiliates. Black Lab Deals is independent and is not endorsed by Amazon.\A Fresh deal finds updated regularly.";
+  white-space: pre-line;
+  display: block;
+  max-width: 600px;
+  margin: 8px auto 0;
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--text-muted, #9e9e97);
+}
+
+.hot-btn::after {
+  content: "See Deal on Amazon →";
+  font-size: 12px !important;
+  font-weight: 600 !important;
+}
+
 @media (max-width: 900px) {
   .bld-mobile-actions {
     display: flex !important;
