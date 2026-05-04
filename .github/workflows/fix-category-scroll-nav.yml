@@ -1,0 +1,143 @@
+name: Fix Category Scroll Nav
+on:
+  push:
+    paths:
+      - '.github/workflows/fix-category-scroll-nav.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: fix-category-scroll-nav
+  cancel-in-progress: true
+jobs:
+  fix-category-nav:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Keep category menu below sticky nav
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          path = Path('index.html')
+          text = path.read_text(encoding='utf-8')
+          original = text
+
+          # Raise the sticky header above category overlays.
+          text = re.sub(
+              r'(nav\s*\{[^}]*?z-index:\s*)300(\s*;)',
+              r'\g<1>2600\2',
+              text,
+              count=1,
+              flags=re.S,
+          )
+
+          fix_css = r'''
+
+  /* Fix: keep the category navigation from disappearing while scrolling */
+  nav {
+    z-index: 2600;
+    isolation: isolate;
+  }
+
+  body.menu-open nav,
+  body.category-menu-open nav,
+  body.categories-open nav {
+    z-index: 3000;
+  }
+
+  .nav-dropdown,
+  .desktop-nav,
+  .nav-inner {
+    z-index: 2601;
+  }
+
+  .dropdown-menu,
+  .dropdown-menu.show,
+  .category-menu,
+  .category-menu.show,
+  .categories-menu,
+  .categories-menu.show,
+  .category-dropdown,
+  .category-dropdown.show,
+  .categories-dropdown,
+  .categories-dropdown.show,
+  .category-mega,
+  .category-mega.show,
+  .mega-menu,
+  .mega-menu.show,
+  #categoryMenu,
+  #categoryMenu.show,
+  #categoriesMenu,
+  #categoriesMenu.show {
+    z-index: 2550;
+  }
+
+  .category-menu,
+  .category-menu.show,
+  .categories-menu,
+  .categories-menu.show,
+  .category-dropdown,
+  .category-dropdown.show,
+  .categories-dropdown,
+  .categories-dropdown.show,
+  .category-mega,
+  .category-mega.show,
+  .mega-menu,
+  .mega-menu.show,
+  #categoryMenu,
+  #categoryMenu.show,
+  #categoriesMenu,
+  #categoriesMenu.show {
+    max-height: calc(100vh - 148px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  @media (min-width: 769px) {
+    .category-menu,
+    .category-menu.show,
+    .categories-menu,
+    .categories-menu.show,
+    .category-dropdown,
+    .category-dropdown.show,
+    .categories-dropdown,
+    .categories-dropdown.show,
+    .category-mega,
+    .category-mega.show,
+    .mega-menu,
+    .mega-menu.show,
+    #categoryMenu,
+    #categoryMenu.show,
+    #categoriesMenu,
+    #categoriesMenu.show {
+      top: auto;
+    }
+  }
+'''
+
+          if 'Fix: keep the category navigation from disappearing while scrolling' not in text:
+              text = text.replace('</style>', fix_css + '\n</style>', 1)
+
+          if text == original:
+              print('Category scroll nav fix already applied')
+          else:
+              path.write_text(text, encoding='utf-8')
+              print('Applied category scroll nav fix to index.html')
+          PY
+      - name: Commit category nav fix
+        run: |
+          git config user.name "DealDrop Bot"
+          git config user.email "bot@dealdrop.com"
+          git add -f index.html
+          git status
+          if git diff --staged --quiet; then
+            echo "No category nav changes to commit"
+            exit 0
+          fi
+          git commit -m "Fix category navigation scroll layering"
+          git push origin main
