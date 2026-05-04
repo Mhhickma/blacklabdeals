@@ -22,78 +22,77 @@ jobs:
           python - <<'PY'
           from pathlib import Path
           import re
+          import textwrap
 
           marker = 'Fix v2: desktop category nav stays visible while scrolling'
-          fix_css = r'''
+          fix_css = textwrap.dedent(r'''
+            /* Fix v2: desktop category nav stays visible while scrolling */
+            @media (min-width: 769px) {
+              nav,
+              header nav,
+              .site-header,
+              .site-nav,
+              .main-nav {
+                position: sticky !important;
+                top: 0 !important;
+                z-index: 10000 !important;
+                isolation: isolate;
+                overflow: visible !important;
+              }
 
-  /* Fix v2: desktop category nav stays visible while scrolling */
-  @media (min-width: 769px) {
-    nav,
-    header nav,
-    .site-header,
-    .site-nav,
-    .main-nav {
-      position: sticky !important;
-      top: 0 !important;
-      z-index: 10000 !important;
-      isolation: isolate;
-      overflow: visible !important;
-    }
+              .nav-inner,
+              .desktop-nav,
+              .nav-left,
+              .nav-right,
+              .nav-dropdown {
+                position: relative;
+                z-index: 10001 !important;
+                overflow: visible !important;
+              }
 
-    .nav-inner,
-    .desktop-nav,
-    .nav-left,
-    .nav-right,
-    .nav-dropdown {
-      position: relative;
-      z-index: 10001 !important;
-      overflow: visible !important;
-    }
+              .dropdown-menu,
+              .dropdown-menu.show,
+              .category-menu,
+              .category-menu.show,
+              .categories-menu,
+              .categories-menu.show,
+              .category-dropdown,
+              .category-dropdown.show,
+              .categories-dropdown,
+              .categories-dropdown.show,
+              .category-mega,
+              .category-mega.show,
+              .mega-menu,
+              .mega-menu.show,
+              .nav-mega,
+              .nav-mega.show,
+              #categoryMenu,
+              #categoryMenu.show,
+              #categoriesMenu,
+              #categoriesMenu.show,
+              [id*="category" i],
+              [class*="category" i][class*="menu" i],
+              [class*="categories" i][class*="menu" i],
+              [class*="mega" i][class*="menu" i] {
+                z-index: 9999 !important;
+                max-height: calc(100vh - 150px) !important;
+                overflow-y: auto !important;
+                overscroll-behavior: contain;
+              }
 
-    .dropdown-menu,
-    .dropdown-menu.show,
-    .category-menu,
-    .category-menu.show,
-    .categories-menu,
-    .categories-menu.show,
-    .category-dropdown,
-    .category-dropdown.show,
-    .categories-dropdown,
-    .categories-dropdown.show,
-    .category-mega,
-    .category-mega.show,
-    .mega-menu,
-    .mega-menu.show,
-    .nav-mega,
-    .nav-mega.show,
-    #categoryMenu,
-    #categoryMenu.show,
-    #categoriesMenu,
-    #categoriesMenu.show,
-    [id*="category" i],
-    [class*="category" i][class*="menu" i],
-    [class*="categories" i][class*="menu" i],
-    [class*="mega" i][class*="menu" i] {
-      z-index: 9999 !important;
-      max-height: calc(100vh - 150px) !important;
-      overflow-y: auto !important;
-      overscroll-behavior: contain;
-    }
-
-    body.menu-open,
-    body.category-menu-open,
-    body.categories-open {
-      overflow: auto !important;
-    }
-  }
-'''
+              body.menu-open,
+              body.category-menu-open,
+              body.categories-open {
+                overflow: auto !important;
+              }
+            }
+          ''').strip()
 
           changed_files = []
           for path in sorted(Path('.').glob('*.html')):
               text = path.read_text(encoding='utf-8')
               original = text
 
-              # Raise common nav z-indexes already in the file.
               text = re.sub(
                   r'(nav\s*\{[^}]*?z-index:\s*)\d+(\s*;)',
                   r'\g<1>10000\2',
@@ -104,9 +103,9 @@ jobs:
 
               if marker not in text:
                   if '</style>' in text:
-                      text = text.replace('</style>', fix_css + '\n</style>', 1)
+                      text = text.replace('</style>', '\n' + fix_css + '\n</style>', 1)
                   else:
-                      text = text.replace('</head>', '<style>' + fix_css + '\n</style>\n</head>', 1)
+                      text = text.replace('</head>', '<style>\n' + fix_css + '\n</style>\n</head>', 1)
 
               if text != original:
                   path.write_text(text, encoding='utf-8')
