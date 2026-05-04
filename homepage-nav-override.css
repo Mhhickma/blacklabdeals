@@ -147,7 +147,44 @@
   font-size: 14px !important;
 }
 
+.bld-mobile-menu-btn {
+  display: none;
+}
+
 @media (max-width: 900px) {
+  .bld-mobile-actions {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    flex-shrink: 0 !important;
+  }
+
+  .bld-mobile-actions .bld-alert-btn {
+    padding: 11px 14px !important;
+    font-size: 13px !important;
+    line-height: 1.15 !important;
+    white-space: nowrap !important;
+  }
+
+  .bld-mobile-menu-btn {
+    width: 46px !important;
+    height: 46px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-shrink: 0 !important;
+    border: 1px solid var(--border, #e8e6e1) !important;
+    border-radius: 14px !important;
+    background: var(--surface, #fff) !important;
+    color: var(--accent, #1a3a5c) !important;
+    box-shadow: 0 8px 18px rgba(26,58,92,0.14) !important;
+  }
+
+  .bld-mobile-menu-btn svg {
+    width: 23px !important;
+    height: 23px !important;
+  }
+
   .homepage-mega-menu,
   .bld-mega-menu {
     width: min(92vw, 360px) !important;
