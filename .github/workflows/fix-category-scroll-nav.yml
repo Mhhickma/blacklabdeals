@@ -17,88 +17,41 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Keep category menu below sticky nav
+      - name: Fix desktop category navigation while scrolling
         run: |
           python - <<'PY'
           from pathlib import Path
           import re
 
-          path = Path('index.html')
-          text = path.read_text(encoding='utf-8')
-          original = text
-
-          # Raise the sticky header above category overlays.
-          text = re.sub(
-              r'(nav\s*\{[^}]*?z-index:\s*)300(\s*;)',
-              r'\g<1>2600\2',
-              text,
-              count=1,
-              flags=re.S,
-          )
-
+          marker = 'Fix v2: desktop category nav stays visible while scrolling'
           fix_css = r'''
 
-  /* Fix: keep the category navigation from disappearing while scrolling */
-  nav {
-    z-index: 2600;
-    isolation: isolate;
-  }
-
-  body.menu-open nav,
-  body.category-menu-open nav,
-  body.categories-open nav {
-    z-index: 3000;
-  }
-
-  .nav-dropdown,
-  .desktop-nav,
-  .nav-inner {
-    z-index: 2601;
-  }
-
-  .dropdown-menu,
-  .dropdown-menu.show,
-  .category-menu,
-  .category-menu.show,
-  .categories-menu,
-  .categories-menu.show,
-  .category-dropdown,
-  .category-dropdown.show,
-  .categories-dropdown,
-  .categories-dropdown.show,
-  .category-mega,
-  .category-mega.show,
-  .mega-menu,
-  .mega-menu.show,
-  #categoryMenu,
-  #categoryMenu.show,
-  #categoriesMenu,
-  #categoriesMenu.show {
-    z-index: 2550;
-  }
-
-  .category-menu,
-  .category-menu.show,
-  .categories-menu,
-  .categories-menu.show,
-  .category-dropdown,
-  .category-dropdown.show,
-  .categories-dropdown,
-  .categories-dropdown.show,
-  .category-mega,
-  .category-mega.show,
-  .mega-menu,
-  .mega-menu.show,
-  #categoryMenu,
-  #categoryMenu.show,
-  #categoriesMenu,
-  #categoriesMenu.show {
-    max-height: calc(100vh - 148px);
-    overflow-y: auto;
-    overscroll-behavior: contain;
-  }
-
+  /* Fix v2: desktop category nav stays visible while scrolling */
   @media (min-width: 769px) {
+    nav,
+    header nav,
+    .site-header,
+    .site-nav,
+    .main-nav {
+      position: sticky !important;
+      top: 0 !important;
+      z-index: 10000 !important;
+      isolation: isolate;
+      overflow: visible !important;
+    }
+
+    .nav-inner,
+    .desktop-nav,
+    .nav-left,
+    .nav-right,
+    .nav-dropdown {
+      position: relative;
+      z-index: 10001 !important;
+      overflow: visible !important;
+    }
+
+    .dropdown-menu,
+    .dropdown-menu.show,
     .category-menu,
     .category-menu.show,
     .categories-menu,
@@ -111,33 +64,65 @@ jobs:
     .category-mega.show,
     .mega-menu,
     .mega-menu.show,
+    .nav-mega,
+    .nav-mega.show,
     #categoryMenu,
     #categoryMenu.show,
     #categoriesMenu,
-    #categoriesMenu.show {
-      top: auto;
+    #categoriesMenu.show,
+    [id*="category" i],
+    [class*="category" i][class*="menu" i],
+    [class*="categories" i][class*="menu" i],
+    [class*="mega" i][class*="menu" i] {
+      z-index: 9999 !important;
+      max-height: calc(100vh - 150px) !important;
+      overflow-y: auto !important;
+      overscroll-behavior: contain;
+    }
+
+    body.menu-open,
+    body.category-menu-open,
+    body.categories-open {
+      overflow: auto !important;
     }
   }
 '''
 
-          if 'Fix: keep the category navigation from disappearing while scrolling' not in text:
-              text = text.replace('</style>', fix_css + '\n</style>', 1)
+          changed_files = []
+          for path in sorted(Path('.').glob('*.html')):
+              text = path.read_text(encoding='utf-8')
+              original = text
 
-          if text == original:
-              print('Category scroll nav fix already applied')
-          else:
-              path.write_text(text, encoding='utf-8')
-              print('Applied category scroll nav fix to index.html')
+              # Raise common nav z-indexes already in the file.
+              text = re.sub(
+                  r'(nav\s*\{[^}]*?z-index:\s*)\d+(\s*;)',
+                  r'\g<1>10000\2',
+                  text,
+                  count=1,
+                  flags=re.S,
+              )
+
+              if marker not in text:
+                  if '</style>' in text:
+                      text = text.replace('</style>', fix_css + '\n</style>', 1)
+                  else:
+                      text = text.replace('</head>', '<style>' + fix_css + '\n</style>\n</head>', 1)
+
+              if text != original:
+                  path.write_text(text, encoding='utf-8')
+                  changed_files.append(str(path))
+
+          print('Changed files:', ', '.join(changed_files) if changed_files else 'none')
           PY
       - name: Commit category nav fix
         run: |
           git config user.name "DealDrop Bot"
           git config user.email "bot@dealdrop.com"
-          git add -f index.html
+          git add -f *.html
           git status
           if git diff --staged --quiet; then
             echo "No category nav changes to commit"
             exit 0
           fi
-          git commit -m "Fix category navigation scroll layering"
+          git commit -m "Fix desktop category nav disappearing on scroll"
           git push origin main
