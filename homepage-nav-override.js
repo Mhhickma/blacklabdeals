@@ -34,9 +34,16 @@
     loadSharedHeaderScript();
   }
 
+  function removeCompletedDealPagesPanel() {
+    const panel = document.querySelector('footer .browse-more-links');
+    if (panel) panel.remove();
+  }
+
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', useSharedHeaderOnHomepage);
+    document.addEventListener('DOMContentLoaded', removeCompletedDealPagesPanel);
   } else {
     useSharedHeaderOnHomepage();
+    removeCompletedDealPagesPanel();
   }
 })();
