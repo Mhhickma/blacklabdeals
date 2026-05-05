@@ -1,3 +1,4 @@
+# Runs once when this file changes, and can also be run manually from GitHub Actions.
 name: Fix social preview metadata
 
 on:
@@ -68,7 +69,6 @@ jobs:
           }
 
           def make_png(path: Path, width=1200, height=630):
-              # Simple valid 1200x630 PNG fallback. Facebook accepts PNG for Open Graph images.
               bg = (18, 24, 38)
               accent = (245, 190, 80)
               rows = []
