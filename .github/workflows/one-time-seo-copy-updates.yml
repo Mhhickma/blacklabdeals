@@ -1,0 +1,136 @@
+name: One-time SEO copy updates
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  update-seo-copy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Update SEO and compliance wording
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          
+          replacements = [
+              ("Top 100 Amazon Deals Today", "Top 100 Deals Found on Amazon Today"),
+              ("Top 100 Amazon deals today", "Top 100 deals found on Amazon today"),
+              ("Top 100 Amazon deals", "Top 100 deals found on Amazon"),
+              ("top 100 Amazon deals", "top 100 deals found on Amazon"),
+              ("Today’s top 100 Amazon deals", "Today’s top 100 deals found on Amazon"),
+              ("Today's top 100 Amazon deals", "Today's top 100 deals found on Amazon"),
+              ("Best Amazon Tool Deals", "Best Tool Deals Found on Amazon"),
+              ("Best Amazon Tools Deals", "Best Tool Deals Found on Amazon"),
+              ("Best Amazon Deals Under $50", "Best Deals Under $50 Found on Amazon"),
+              ("Best Amazon Home & Kitchen Deals", "Best Home & Kitchen Deals Found on Amazon"),
+              ("Best Amazon Kitchen Deals", "Best Kitchen Deals Found on Amazon"),
+              ("Best Amazon Electronics Deals", "Best Electronics Deals Found on Amazon"),
+              ("Best Amazon Pet Supplies Deals", "Best Pet Supply Deals Found on Amazon"),
+              ("Best Amazon Pet Supply Deals", "Best Pet Supply Deals Found on Amazon"),
+              ("Best Amazon Sports & Outdoors Deals", "Best Sports & Outdoor Deals Found on Amazon"),
+              ("Best Amazon Sports and Outdoors Deals", "Best Sports & Outdoor Deals Found on Amazon"),
+              ("Amazon Deals Updated Every 30 Minutes", "Best Deals Found on Amazon — Updated Every 30 Minutes"),
+              ("Amazon deals updated every 30 minutes", "deals found on Amazon, updated every 30 minutes"),
+              ("Black Lab Deals tracks live Amazon price drops", "Black Lab Deals tracks live price drops found on Amazon"),
+              ("Loading today’s top 100 Amazon deals", "Loading today’s top 100 deals found on Amazon"),
+              ("Loading today's top 100 Amazon deals", "Loading today's top 100 deals found on Amazon"),
+              ("Loading the top 100 deals from the live feed", "Loading the top 100 deals found on Amazon from the live feed"),
+              ("The Best Amazon Deals We Found Right Now", "The Best Deals We Found on Amazon Right Now"),
+              ("Best Amazon Deals Right Now", "Best Deals Found on Amazon Right Now"),
+              ("Trending Amazon Discounts Today", "Trending Discounts Found on Amazon Today"),
+              ("Newly Found Amazon Deals", "Newly Found Deals on Amazon"),
+          ]
+          
+          trademark = "Amazon and the Amazon logo are trademarks of Amazon.com, Inc. or its affiliates."
+          trademark_html = f'<p class="amazon-trademark-note">{trademark}</p>'
+          
+          how_section = '''
+<section class="seo-info-section" aria-labelledby="how-we-find-deals">
+  <h2 id="how-we-find-deals">How We Find These Deals</h2>
+  <p>We track price history, discounts, and trending products to bring you the best deals found on Amazon. Our lists are updated frequently so you can quickly review current price drops, coupons, and limited-time discounts.</p>
+</section>
+'''
+          
+          def insert_before(text, marker, block):
+              idx = text.lower().find(marker.lower())
+              if idx == -1:
+                  return text
+              return text[:idx] + block + "\n" + text[idx:]
+          
+          changed_files = []
+          for path in Path('.').rglob('*.html'):
+              if '.git' in path.parts:
+                  continue
+              text = path.read_text(encoding='utf-8')
+              original = text
+              for old, new in replacements:
+                  text = text.replace(old, new)
+              
+              # Add the Amazon trademark footer note, but do NOT add the near-top Associate disclosure line.
+              if trademark not in text:
+                  if '</footer>' in text.lower():
+                      import re
+                      text = re.sub(r'</footer>', '  ' + trademark_html + '\n</footer>', text, count=1, flags=re.IGNORECASE)
+                  elif '</body>' in text.lower():
+                      text = insert_before(text, '</body>', '<footer class="site-footer">' + trademark_html + '</footer>')
+              
+              # Add a short SEO trust section to deal pages only once.
+              lower = text.lower()
+              if ('how we find these deals' not in lower and 'black lab deals' in lower and ('amazon' in lower or 'deals' in lower)):
+                  if '<footer' in lower:
+                      text = insert_before(text, '<footer', how_section)
+                  elif '</main>' in lower:
+                      text = insert_before(text, '</main>', how_section)
+                  elif '</body>' in lower:
+                      text = insert_before(text, '</body>', how_section)
+              
+              if text != original:
+                  path.write_text(text, encoding='utf-8')
+                  changed_files.append(str(path))
+          
+          # Also update sitemap-adjacent titles if any simple XML title text exists, while preserving URLs.
+          for path in list(Path('.').rglob('*.xml')) + list(Path('.').rglob('*.json')):
+              if '.git' in path.parts:
+                  continue
+              try:
+                  text = path.read_text(encoding='utf-8')
+              except UnicodeDecodeError:
+                  continue
+              original = text
+              for old, new in replacements:
+                  text = text.replace(old, new)
+              if text != original:
+                  path.write_text(text, encoding='utf-8')
+                  changed_files.append(str(path))
+          
+          wf = Path('.github/workflows/one-time-seo-copy-updates.yml')
+          if wf.exists():
+              wf.unlink()
+              changed_files.append(str(wf))
+          
+          print('Changed files:')
+          for item in changed_files:
+              print('-', item)
+          PY
+
+      - name: Commit SEO copy updates
+        run: |
+          git config user.name "DealDrop Bot"
+          git config user.email "actions@github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "Update SEO copy and Amazon trademark footer"
+            git push
+          fi
