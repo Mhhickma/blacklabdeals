@@ -1,0 +1,189 @@
+name: Fix social preview metadata
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/fix-social-previews.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  inject-social-preview-meta:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Add Open Graph and Twitter Card tags to HTML pages
+        shell: python
+        run: |
+          import html as html_lib
+          import os
+          import re
+          import struct
+          import zlib
+          from pathlib import Path
+
+          SITE = "https://blacklabdeals.com"
+          FALLBACK_IMAGE_PATH = "blacklabdeals-social-preview.png"
+          FALLBACK_IMAGE_URL = f"{SITE}/{FALLBACK_IMAGE_PATH}"
+
+          PAGE_DEFAULTS = {
+              "index.html": {
+                  "title": "Black Lab Deals | Amazon Deals Updated Daily",
+                  "description": "Find Amazon deals, price drops, coupons, and discounts updated throughout the day by Black Lab Deals.",
+              },
+              "top-100-amazon-deals-today/index.html": {
+                  "title": "Top 100 Amazon Deals Today | Black Lab Deals",
+                  "description": "See the top 100 Amazon deals today, ranked by discount, freshness, and value.",
+              },
+              "best-amazon-tool-deals/index.html": {
+                  "title": "Best Amazon Tool Deals Today | Black Lab Deals",
+                  "description": "Shop updated Amazon tool deals, power tool discounts, woodworking deals, and garage finds.",
+              },
+              "best-amazon-deals-under-50/index.html": {
+                  "title": "Best Amazon Deals Under $50 Today | Black Lab Deals",
+                  "description": "Browse Amazon deals under $50 with updated price drops, coupons, and budget-friendly finds.",
+              },
+              "best-amazon-home-kitchen-deals/index.html": {
+                  "title": "Best Amazon Home & Kitchen Deals Today | Black Lab Deals",
+                  "description": "Find updated Amazon Home & Kitchen deals, appliance discounts, kitchen finds, and household savings.",
+              },
+              "best-amazon-electronics-deals/index.html": {
+                  "title": "Best Amazon Electronics Deals Today | Black Lab Deals",
+                  "description": "See updated Amazon electronics deals, tech discounts, gadget deals, and accessory price drops.",
+              },
+              "best-amazon-sports-outdoors-deals/index.html": {
+                  "title": "Best Amazon Sports & Outdoors Deals Today | Black Lab Deals",
+                  "description": "Find updated Amazon Sports & Outdoors deals, fitness discounts, camping gear deals, and outdoor savings.",
+              },
+              "best-amazon-pet-supplies-deals/index.html": {
+                  "title": "Best Amazon Pet Supplies Deals Today | Black Lab Deals",
+                  "description": "Browse updated Amazon pet supplies deals, dog deals, cat deals, and pet care discounts.",
+              },
+          }
+
+          def make_png(path: Path, width=1200, height=630):
+              # Simple valid 1200x630 PNG fallback. Facebook accepts PNG for Open Graph images.
+              bg = (18, 24, 38)
+              accent = (245, 190, 80)
+              rows = []
+              for y in range(height):
+                  row = bytearray([0])
+                  for x in range(width):
+                      if 70 < x < 1130 and 70 < y < 560:
+                          color = (24, 34, 53)
+                      else:
+                          color = bg
+                      if 95 < x < 1105 and 95 < y < 122:
+                          color = accent
+                      row.extend(color)
+                  rows.append(bytes(row))
+              raw = b"".join(rows)
+              def chunk(kind, data):
+                  return struct.pack(">I", len(data)) + kind + data + struct.pack(">I", zlib.crc32(kind + data) & 0xffffffff)
+              png = b"\x89PNG\r\n\x1a\n"
+              png += chunk(b"IHDR", struct.pack(">IIBBBBB", width, height, 8, 2, 0, 0, 0))
+              png += chunk(b"IDAT", zlib.compress(raw, 6))
+              png += chunk(b"IEND", b"")
+              path.write_bytes(png)
+
+          def rel_path(path: Path) -> str:
+              return path.as_posix().lstrip("./")
+
+          def page_url_for(path: Path) -> str:
+              rp = rel_path(path)
+              if rp == "index.html":
+                  return f"{SITE}/"
+              if rp.endswith("/index.html"):
+                  return f"{SITE}/{rp[:-10]}/"
+              return f"{SITE}/{rp}"
+
+          def extract_title(text: str, fallback: str) -> str:
+              m = re.search(r"<title[^>]*>(.*?)</title>", text, re.I | re.S)
+              if m and m.group(1).strip():
+                  return html_lib.unescape(re.sub(r"\s+", " ", m.group(1)).strip())
+              m = re.search(r"<h1[^>]*>(.*?)</h1>", text, re.I | re.S)
+              if m and m.group(1).strip():
+                  return html_lib.unescape(re.sub(r"<[^>]+>", "", re.sub(r"\s+", " ", m.group(1))).strip())
+              return fallback
+
+          def extract_description(text: str, fallback: str) -> str:
+              m = re.search(r"<meta[^>]+name=[\"']description[\"'][^>]+content=[\"']([^\"']+)[\"'][^>]*>", text, re.I)
+              if m and m.group(1).strip():
+                  return html_lib.unescape(m.group(1).strip())
+              return fallback
+
+          def first_image_url(text: str, path: Path) -> str:
+              m = re.search(r"<img[^>]+src=[\"']([^\"']+)[\"']", text, re.I)
+              if not m:
+                  return FALLBACK_IMAGE_URL
+              src = html_lib.unescape(m.group(1).strip())
+              if not src or src.startswith("data:"):
+                  return FALLBACK_IMAGE_URL
+              if src.startswith("http://") or src.startswith("https://"):
+                  return src
+              if src.startswith("/"):
+                  return SITE + src
+              base_dir = "" if path.parent.as_posix() == "." else path.parent.as_posix().strip("/") + "/"
+              return f"{SITE}/{base_dir}{src}"
+
+          def social_block(title: str, description: str, url: str, image: str) -> str:
+              title_e = html_lib.escape(title, quote=True)
+              desc_e = html_lib.escape(description, quote=True)
+              url_e = html_lib.escape(url, quote=True)
+              image_e = html_lib.escape(image, quote=True)
+              return f'''\n  <!-- Black Lab Deals social preview meta -->\n  <meta property="og:title" content="{title_e}">\n  <meta property="og:description" content="{desc_e}">\n  <meta property="og:url" content="{url_e}">\n  <meta property="og:type" content="website">\n  <meta property="og:site_name" content="Black Lab Deals">\n  <meta property="og:image" content="{image_e}">\n  <meta property="og:image:width" content="1200">\n  <meta property="og:image:height" content="630">\n  <meta name="twitter:card" content="summary_large_image">\n  <meta name="twitter:title" content="{title_e}">\n  <meta name="twitter:description" content="{desc_e}">\n  <meta name="twitter:image" content="{image_e}">\n  <!-- End Black Lab Deals social preview meta -->\n'''
+
+          def strip_existing_social_meta(text: str) -> str:
+              text = re.sub(r"\n?\s*<!-- Black Lab Deals social preview meta -->.*?<!-- End Black Lab Deals social preview meta -->\s*\n?", "\n", text, flags=re.I | re.S)
+              text = re.sub(r"\n?\s*<meta\s+(?:property|name)=[\"'](?:og:[^\"']+|twitter:[^\"']+)[\"'][^>]*>\s*", "\n", text, flags=re.I)
+              return text
+
+          make_png(Path(FALLBACK_IMAGE_PATH))
+
+          changed = []
+          for path in sorted(Path(".").rglob("*.html")):
+              if ".git" in path.parts:
+                  continue
+              text = path.read_text(encoding="utf-8", errors="ignore")
+              if not re.search(r"</head>", text, re.I):
+                  continue
+              rp = rel_path(path)
+              defaults = PAGE_DEFAULTS.get(rp, {})
+              fallback_title = defaults.get("title", "Black Lab Deals | Amazon Deals Updated Daily")
+              fallback_desc = defaults.get("description", "Find Amazon deals, price drops, coupons, and discounts updated throughout the day by Black Lab Deals.")
+              title = defaults.get("title") or extract_title(text, fallback_title)
+              description = defaults.get("description") or extract_description(text, fallback_desc)
+              url = page_url_for(path)
+              image = first_image_url(text, path)
+
+              new_text = strip_existing_social_meta(text)
+              new_text = re.sub(r"</head>", social_block(title, description, url, image) + "</head>", new_text, count=1, flags=re.I)
+              if new_text != text:
+                  path.write_text(new_text, encoding="utf-8")
+                  changed.append(rp)
+
+          if changed:
+              print("Updated social preview metadata for:")
+              for item in changed:
+                  print(f"- {item}")
+          else:
+              print("No HTML metadata changes needed.")
+
+      - name: Commit social preview updates
+        shell: bash
+        run: |
+          if [[ -n "$(git status --porcelain)" ]]; then
+            git config user.name "Black Lab Deals Bot"
+            git config user.email "actions@github.com"
+            git add .
+            git commit -m "Fix social preview images for pages"
+            git push
+          else
+            echo "No changes to commit."
+          fi
