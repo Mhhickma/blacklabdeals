@@ -9,9 +9,14 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: one-time-seo-copy-updates
+  cancel-in-progress: false
+
 jobs:
   optimize-pages:
     runs-on: ubuntu-latest
+
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -25,6 +30,7 @@ jobs:
           import html
           import json
           import re
+          from datetime import date
 
           SITE = "https://blacklabdeals.com"
           BRAND = "Black Lab Deals"
@@ -134,13 +140,22 @@ jobs:
           ]
 
           FAQS = [
-              ("How often are these deals updated?", "Black Lab Deals updates deal lists frequently so shoppers can review current discounts, price drops, and coupons."),
-              ("Are these official Amazon rankings?", "No. These are deals found on Amazon and organized by Black Lab Deals to make shopping easier."),
-              ("Do prices and coupons change?", "Yes. Prices, coupons, and availability can change quickly, so always confirm the final price on Amazon before purchasing."),
+              (
+                  "How often are these deals updated?",
+                  "Black Lab Deals updates deal lists frequently so shoppers can review current discounts, price drops, and coupons.",
+              ),
+              (
+                  "Are these official Amazon rankings?",
+                  "No. These are deals found on Amazon and organized by Black Lab Deals to make shopping easier.",
+              ),
+              (
+                  "Do prices and coupons change?",
+                  "Yes. Prices, coupons, and availability can change quickly, so always confirm the final price on Amazon before purchasing.",
+              ),
           ]
 
           def esc(value):
-              return html.escape(value, quote=True)
+              return html.escape(str(value), quote=True)
 
           def rel_path(path: Path) -> str:
               return path.as_posix().lstrip("./")
@@ -153,18 +168,46 @@ jobs:
               return SITE + "/" + rel
 
           def remove_existing_managed_blocks(text):
-              text = re.sub(r'\n?\s*<!-- BLD SEO START -->.*?<!-- BLD SEO END -->\s*\n?', '\n', text, flags=re.S)
-              text = re.sub(r'\n?\s*<!-- BLD TRUST START -->.*?<!-- BLD TRUST END -->\s*\n?', '\n', text, flags=re.S)
+              text = re.sub(
+                  r'\n?\s*<!-- BLD SEO START -->.*?<!-- BLD SEO END -->\s*\n?',
+                  '\n',
+                  text,
+                  flags=re.S,
+              )
+              text = re.sub(
+                  r'\n?\s*<!-- BLD TRUST START -->.*?<!-- BLD TRUST END -->\s*\n?',
+                  '\n',
+                  text,
+                  flags=re.S,
+              )
               return text
 
           def set_title(text, title):
-              if re.search(r'<title>.*?</title>', text, flags=re.I|re.S):
-                  return re.sub(r'<title>.*?</title>', f'<title>{esc(title)}</title>', text, count=1, flags=re.I|re.S)
-              return re.sub(r'</head>', f'  <title>{esc(title)}</title>\n</head>', text, count=1, flags=re.I)
+              if re.search(r'<title>.*?</title>', text, flags=re.I | re.S):
+                  return re.sub(
+                      r'<title>.*?</title>',
+                      f'<title>{esc(title)}</title>',
+                      text,
+                      count=1,
+                      flags=re.I | re.S,
+                  )
+              return re.sub(
+                  r'</head>',
+                  f'  <title>{esc(title)}</title>\n</head>',
+                  text,
+                  count=1,
+                  flags=re.I,
+              )
 
           def set_h1(text, h1):
-              if re.search(r'<h1([^>]*)>.*?</h1>', text, flags=re.I|re.S):
-                  return re.sub(r'<h1([^>]*)>.*?</h1>', lambda m: f'<h1{m.group(1)}>{esc(h1)}</h1>', text, count=1, flags=re.I|re.S)
+              if re.search(r'<h1([^>]*)>.*?</h1>', text, flags=re.I | re.S):
+                  return re.sub(
+                      r'<h1([^>]*)>.*?</h1>',
+                      lambda m: f'<h1{m.group(1)}>{esc(h1)}</h1>',
+                      text,
+                      count=1,
+                      flags=re.I | re.S,
+                  )
               return text
 
           def strip_meta(text):
@@ -177,7 +220,7 @@ jobs:
                   r'\s*<script\s+type=["\']application/ld\+json["\']\s+data-bld-seo=["\']true["\']>.*?</script>\n?',
               ]
               for pat in patterns:
-                  text = re.sub(pat, '\n', text, flags=re.I|re.S)
+                  text = re.sub(pat, '\n', text, flags=re.I | re.S)
               return text
 
           def build_schema(data, url):
@@ -187,25 +230,49 @@ jobs:
                   "name": data["h1"],
                   "description": data["description"],
                   "url": url,
-                  "publisher": {"@type": "Organization", "name": BRAND, "url": SITE + "/"},
+                  "publisher": {
+                      "@type": "Organization",
+                      "name": BRAND,
+                      "url": SITE + "/",
+                  },
                   "about": ["deals", "discounts", "price drops", "Amazon shopping"],
               }
+
               breadcrumb = {
                   "@context": "https://schema.org",
                   "@type": "BreadcrumbList",
                   "itemListElement": [
-                      {"@type": "ListItem", "position": 1, "name": "Home", "item": SITE + "/"},
-                      {"@type": "ListItem", "position": 2, "name": data["h1"], "item": url},
+                      {
+                          "@type": "ListItem",
+                          "position": 1,
+                          "name": "Home",
+                          "item": SITE + "/",
+                      },
+                      {
+                          "@type": "ListItem",
+                          "position": 2,
+                          "name": data["h1"],
+                          "item": url,
+                      },
                   ],
               }
+
               faq = {
                   "@context": "https://schema.org",
                   "@type": "FAQPage",
                   "mainEntity": [
-                      {"@type": "Question", "name": q, "acceptedAnswer": {"@type": "Answer", "text": a}}
+                      {
+                          "@type": "Question",
+                          "name": q,
+                          "acceptedAnswer": {
+                              "@type": "Answer",
+                              "text": a,
+                          },
+                      }
                       for q, a in FAQS
                   ],
               }
+
               return "\n".join([
                   '<script type="application/ld+json" data-bld-seo="true">' + json.dumps(web_page, ensure_ascii=False) + '</script>',
                   '<script type="application/ld+json" data-bld-seo="true">' + json.dumps(breadcrumb, ensure_ascii=False) + '</script>',
@@ -215,35 +282,40 @@ jobs:
           def build_head_block(data, url):
               keywords = ", ".join(data.get("keywords", []))
               schema = build_schema(data, url)
+
               return f'''<!-- BLD SEO START -->
-  <meta name="description" content="{esc(data['description'])}">
-  <meta name="keywords" content="{esc(keywords)}">
-  <link rel="canonical" href="{esc(url)}">
-  <meta property="og:type" content="website">
-  <meta property="og:site_name" content="{BRAND}">
-  <meta property="og:title" content="{esc(data['title'])}">
-  <meta property="og:description" content="{esc(data['description'])}">
-  <meta property="og:url" content="{esc(url)}">
-  <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="{esc(data['title'])}">
-  <meta name="twitter:description" content="{esc(data['description'])}">
-  {schema}
-  <!-- BLD SEO END -->'''
+          <meta name="description" content="{esc(data['description'])}">
+          <meta name="keywords" content="{esc(keywords)}">
+          <link rel="canonical" href="{esc(url)}">
+          <meta property="og:type" content="website">
+          <meta property="og:site_name" content="{BRAND}">
+          <meta property="og:title" content="{esc(data['title'])}">
+          <meta property="og:description" content="{esc(data['description'])}">
+          <meta property="og:url" content="{esc(url)}">
+          <meta name="twitter:card" content="summary_large_image">
+          <meta name="twitter:title" content="{esc(data['title'])}">
+          <meta name="twitter:description" content="{esc(data['description'])}">
+          {schema}
+          <!-- BLD SEO END -->'''
 
           def build_trust_block(data):
-              faq_html = "\n".join([f"""    <details>
-      <summary>{esc(q)}</summary>
-      <p>{esc(a)}</p>
-    </details>""" for q, a in FAQS])
+              faq_html = "\n".join([
+                  f'''    <details>
+              <summary>{esc(q)}</summary>
+              <p>{esc(a)}</p>
+            </details>'''
+                  for q, a in FAQS
+              ])
+
               return f'''<!-- BLD TRUST START -->
-<section class="seo-info-section" aria-labelledby="how-we-find-deals">
-  <h2 id="how-we-find-deals">How We Find These Deals</h2>
-  <p>{esc(data['intro'])}</p>
-  <p>We track price history, discounts, coupons, and trending products to help shoppers review deals found on Amazon more quickly. Deal prices and availability can change, so always confirm the final price before buying.</p>
-  <h2>Deal Questions</h2>
-{faq_html}
-</section>
-<!-- BLD TRUST END -->'''
+          <section class="seo-info-section" aria-labelledby="how-we-find-deals">
+            <h2 id="how-we-find-deals">How We Find These Deals</h2>
+            <p>{esc(data['intro'])}</p>
+            <p>We track price history, discounts, coupons, and trending products to help shoppers review deals found on Amazon more quickly. Deal prices and availability can change, so always confirm the final price before buying.</p>
+            <h2>Deal Questions</h2>
+          {faq_html}
+          </section>
+          <!-- BLD TRUST END -->'''
 
           def insert_before_case_insensitive(text, marker, block):
               m = re.search(re.escape(marker), text, flags=re.I)
@@ -252,86 +324,133 @@ jobs:
               return text[:m.start()] + block + "\n" + text[m.start():]
 
           changed = []
-          for path in sorted(Path('.').rglob('*.html')):
-              if '.git' in path.parts:
+
+          for path in sorted(Path(".").rglob("*.html")):
+              if ".git" in path.parts:
                   continue
+
               rel = rel_path(path)
-              text = path.read_text(encoding='utf-8')
+              text = path.read_text(encoding="utf-8")
               original = text
+
               text = remove_existing_managed_blocks(text)
+
               for old, new in COPY_REPLACEMENTS:
                   text = text.replace(old, new)
 
               data = PAGE_SEO.get(rel)
+
               if data:
                   url = page_url(rel)
-                  text = set_title(text, data['title'])
-                  text = set_h1(text, data['h1'])
+
+                  text = set_title(text, data["title"])
+                  text = set_h1(text, data["h1"])
                   text = strip_meta(text)
+
                   head_block = build_head_block(data, url)
-                  if re.search(r'</head>', text, flags=re.I):
-                      text = re.sub(r'</head>', head_block + '\n</head>', text, count=1, flags=re.I)
+
+                  if re.search(r"</head>", text, flags=re.I):
+                      text = re.sub(
+                          r"</head>",
+                          head_block + "\n</head>",
+                          text,
+                          count=1,
+                          flags=re.I,
+                      )
 
                   trust_block = build_trust_block(data)
-                  if re.search(r'<footer', text, flags=re.I):
-                      text = insert_before_case_insensitive(text, '<footer', trust_block)
-                  elif re.search(r'</main>', text, flags=re.I):
-                      text = insert_before_case_insensitive(text, '</main>', trust_block)
-                  elif re.search(r'</body>', text, flags=re.I):
-                      text = insert_before_case_insensitive(text, '</body>', trust_block)
+
+                  if re.search(r"<footer", text, flags=re.I):
+                      text = insert_before_case_insensitive(text, "<footer", trust_block)
+                  elif re.search(r"</main>", text, flags=re.I):
+                      text = insert_before_case_insensitive(text, "</main>", trust_block)
+                  elif re.search(r"</body>", text, flags=re.I):
+                      text = insert_before_case_insensitive(text, "</body>", trust_block)
 
               if TRADEMARK not in text:
                   trademark_html = f'<p class="amazon-trademark-note">{esc(TRADEMARK)}</p>'
-                  if re.search(r'</footer>', text, flags=re.I):
-                      text = re.sub(r'</footer>', '  ' + trademark_html + '\n</footer>', text, count=1, flags=re.I)
-                  elif re.search(r'</body>', text, flags=re.I):
-                      text = insert_before_case_insensitive(text, '</body>', '<footer class="site-footer">' + trademark_html + '</footer>')
+
+                  if re.search(r"</footer>", text, flags=re.I):
+                      text = re.sub(
+                          r"</footer>",
+                          "  " + trademark_html + "\n</footer>",
+                          text,
+                          count=1,
+                          flags=re.I,
+                      )
+                  elif re.search(r"</body>", text, flags=re.I):
+                      text = insert_before_case_insensitive(
+                          text,
+                          "</body>",
+                          '<footer class="site-footer">' + trademark_html + "</footer>",
+                      )
 
               if text != original:
-                  path.write_text(text, encoding='utf-8')
+                  path.write_text(text, encoding="utf-8")
                   changed.append(rel)
 
           # Keep sitemap URLs untouched, but refresh lastmod for listed public URLs.
-          sitemap = Path('sitemap.xml')
+          sitemap = Path("sitemap.xml")
+
           if sitemap.exists():
-              sm = sitemap.read_text(encoding='utf-8')
+              sm = sitemap.read_text(encoding="utf-8")
               orig = sm
-              from datetime import date
               today = date.today().isoformat()
               urls = [page_url(p) for p in PAGE_SEO]
+
               for url in urls:
-                  block_re = re.compile(r'(<url>\s*<loc>' + re.escape(url) + r'</loc>)(.*?)(</url>)', re.S)
+                  block_re = re.compile(
+                      r"(<url>\s*<loc>" + re.escape(url) + r"</loc>)(.*?)(</url>)",
+                      re.S,
+                  )
+
                   def repl(m):
                       body = m.group(2)
-                      if '<lastmod>' in body:
-                          body = re.sub(r'<lastmod>.*?</lastmod>', f'<lastmod>{today}</lastmod>', body, count=1)
+
+                      if "<lastmod>" in body:
+                          body = re.sub(
+                              r"<lastmod>.*?</lastmod>",
+                              f"<lastmod>{today}</lastmod>",
+                              body,
+                              count=1,
+                          )
                       else:
-                          body = body + f'\n<lastmod>{today}</lastmod>'
+                          body = body + f"\n<lastmod>{today}</lastmod>"
+
                       return m.group(1) + body + m.group(3)
+
                   sm = block_re.sub(repl, sm, count=1)
+
               if sm != orig:
-                  sitemap.write_text(sm, encoding='utf-8')
-                  changed.append('sitemap.xml')
+                  sitemap.write_text(sm, encoding="utf-8")
+                  changed.append("sitemap.xml")
 
           # Delete this one-time workflow after it applies the optimization.
-          wf = Path('.github/workflows/one-time-seo-copy-updates.yml')
+          wf = Path(".github/workflows/one-time-seo-copy-updates.yml")
+
           if wf.exists():
               wf.unlink()
               changed.append(str(wf))
 
-          print('Optimized files:')
+          print("Optimized files:")
+
           for item in changed:
-              print('-', item)
+              print("-", item)
           PY
 
       - name: Commit optimized SEO pages
         run: |
           git config user.name "DealDrop Bot"
           git config user.email "actions@github.com"
+
           git add -A
+
           if git diff --cached --quiet; then
             echo "No SEO changes to commit."
           else
             git commit -m "Optimize sitewide SEO metadata and content"
+
+            git pull --rebase origin main
+
             git push
           fi
