@@ -2,14 +2,1703 @@
   "pageTitle": "Top Amazon Best Seller Deals Today",
   "pageDescription": "Amazon best sellers from popular categories with verified price drops.",
   "source": "Keepa best-seller watchlist + Amazon Creators API live price",
-  "count": 276,
-  "totalDeals": 276,
-  "hotDeals": 98,
+  "count": 327,
+  "totalDeals": 327,
+  "hotDeals": 114,
   "watchlistCount": 2800,
   "asinsCheckedThisRun": 125,
-  "nextCursor": 1200,
-  "updatedAt": "2026-05-06T22:07:43.083998+00:00",
+  "nextCursor": 1325,
+  "updatedAt": "2026-05-06T23:10:55.565009+00:00",
   "deals": [
+    {
+      "asin": "B0B1DF9NVJ",
+      "title": "Duracell Coppertop AA Alkaline Batteries withPOWER BOOST Ingredients, 28 Count (Pack of 1), Long-Lasting Alkaline in Re-closable Pack for Quick Access and Organized Storage",
+      "brand": "DURACELL",
+      "cat": "Health & Household",
+      "bestSellerCategories": [
+        {
+          "categoryId": 3760901,
+          "name": "Health & Household",
+          "slug": "health-household",
+          "rank": 95
+        }
+      ],
+      "bestSellerRank": 95,
+      "image": "https://m.media-amazon.com/images/I/41jb+fNw46L._SL500_.jpg",
+      "price": "$23.23",
+      "price_amount": 23.23,
+      "currency": "USD",
+      "was": "$26.69",
+      "pct": 13,
+      "discount": "-13%",
+      "dealReasons": [
+        "amazon_savings_drop"
+      ],
+      "keepaAvg30": 23.55,
+      "keepaMin30": null,
+      "keepaCurrent": 23.23,
+      "link": "https://www.amazon.com/dp/B0B1DF9NVJ?tag=sawdustsavings-20&linkCode=ogi&th=1&psc=1",
+      "hot": false,
+      "desc": "Top Amazon best seller with a verified price drop",
+      "seen_at": "2026-05-02T07:13:58.857538+00:00",
+      "updated_at": "2026-05-06T23:10:55.546952+00:00"
+    },
+    {
+      "asin": "B09LRBT9QH",
+      "title": "Gorilla All Purpose Wood Filler, Natural Finish, 16 Ounce Tub (Pack of 1) - Water Resistant for Indoor or Outdoor Projects and Repairs",
+      "brand": "GORILLA",
+      "cat": "Tools & Home Improvement",
+      "bestSellerCategories": [
+        {
+          "categoryId": 228013,
+          "name": "Tools & Home Improvement",
+          "slug": "tools-home-improvement",
+          "rank": 95
+        }
+      ],
+      "bestSellerRank": 95,
+      "image": "https://m.media-amazon.com/images/I/51y5kMG3g-L._SL500_.jpg",
+      "price": "$9.39",
+      "price_amount": 9.39,
+      "currency": "USD",
+      "was": "$10.99",
+      "pct": 15,
+      "discount": "-15%",
+      "dealReasons": [
+        "amazon_savings_drop"
+      ],
+      "keepaAvg30": 9.39,
+      "keepaMin30": null,
+      "keepaCurrent": 9.39,
+      "link": "https://www.amazon.com/dp/B09LRBT9QH?tag=sawdustsavings-20&linkCode=ogi&th=1&psc=1",
+      "hot": false,
+      "desc": "Top Amazon best seller with a verified price drop",
+      "seen_at": "2026-05-02T07:13:58.857507+00:00",
+      "updated_at": "2026-05-06T23:10:55.546929+00:00"
+    },
+    {
+      "asin": "B088C44JLC",
+      "title": "Insect Lore Two Cups of Caterpillars - Butterfly Garden Kit Refill \u2013 Raise and Release Painted Lady Butterflies \u2013 Includes Two Chrys-A-Lid Holding Logs and Instructions",
+      "brand": "Insect Lore",
+      "cat": "Toys & Games",
+      "bestSellerCategories": [
+        {
+          "categoryId": 165793011,
+          "name": "Toys & Games",
+          "slug": "toys-games",
+          "rank": 95
+        }
+      ],
+      "bestSellerRank": 95,
+      "image": "https://m.media-amazon.com/images/I/41a35GkJu-L._SL500_.jpg",
+      "price": "$19.99",
+      "price_amount": 19.99,
+      "currency": "USD",
+      "was": "$26.36",
+      "pct": 24,
+      "discount": "-24%",
+      "dealReasons": [
+        "keepa_30_day_avg_drop",
+        "amazon_savings_drop"
+      ],
+      "keepaAvg30": 22.79,
+      "keepaMin30": null,
+      "keepaCurrent": 19.99,
+      "link": "https://www.amazon.com/dp/B088C44JLC?tag=sawdustsavings-20&linkCode=ogi&th=1&psc=1",
+      "hot": false,
+      "desc": "Top Amazon best seller with a verified price drop",
+      "seen_at": "2026-05-02T07:13:58.857476+00:00",
+      "updated_at": "2026-05-06T23:10:55.546908+00:00"
+    },
+    {
+      "asin": "B0787GLBMV",
+      "title": "Schick Hydro Silk Touch-Up Dermaplane Razor with Precision Cover, 3ct | Dermaplaning Tool for Face, Facial Razor for Women, Eyebrow Razor, Peach Fuzz Remover",
+      "brand": "Schick Hydro Silk",
+      "cat": "Beauty & Personal Care",
+      "bestSellerCategories": [
+        {
+          "categoryId": 3760911,
+          "name": "Beauty & Personal Care",
+          "slug": "beauty-personal-care",
+          "rank": 95
+        }
+      ],
+      "bestSellerRank": 95,
+      "image": "https://m.media-amazon.com/images/I/41YaM1OWrqL._SL500_.jpg",
+      "price": "$5.94",
+      "price_amount": 5.94,
+      "currency": "USD",
+      "was": "$7.49",
+      "pct": 21,
+      "discount": "-21%",
+      "dealReasons": [
+        "amazon_savings_drop"
+      ],
+      "keepaAvg30": 5.83,
+      "keepaMin30": null,
+      "keepaCurrent": 5.94,
+      "link": "https://www.amazon.com/dp/B0787GLBMV?tag=sawdustsavings-20&linkCode=ogi&th=1&psc=1",
+      "hot": false,
+      "desc": "Top Amazon best seller with a verified price drop",
+      "seen_at": "2026-05-02T07:13:58.857443+00:00",
+      "updated_at": "2026-05-06T23:10:55.546886+00:00"
+    },
+    {
+      "asin": "B082WZTJV5",
+      "title": "Grande Cosmetics GrandeLASH-MD Lash Enhancing Serum - Peptide & Vitamin Infused Formula for Longer, Thicker, Fuller Looking Lashes - Ophthalmologist Tested, Cruelty-Free, 6 Week Supply (1mL)",
+      "brand": "Grande Cosmetics",
+      "cat": "Beauty & Personal Care",
+      "bestSellerCategories": [
+        {
+          "categoryId": 3760911,
+          "name": "Beauty & Personal Care",
+          "slug": "beauty-personal-care",
+          "rank": 94
+        }
+      ],
+      "bestSellerRank": 94,
+      "image": "https://m.media-amazon.com/images/I/41y2Yw6zsML._SL500_.jpg",
+      "price": "$25.20",
+      "price_amount": 25.2,
+      "currency": "USD",
+      "was": "$36.0",
+      "pct": 30,
+      "discount": "-30%",
+      "dealReasons": [
+        "keepa_30_day_avg_drop",
+        "amazon_savings_drop"
+      ],
+      "keepaAvg30": 30.02,
+      "keepaMin30": null,
+      "keepaCurrent": 25.2,
+      "link": "https://www.amazon.com/dp/B082WZTJV5?tag=sawdustsavings-20&linkCode=ogi&th=1&psc=1",
+      "hot": true,
+      "desc": "Top Amazon best seller with a verified price drop",
+      "seen_at": "2026-05-02T07:13:58.857161+00:00",
+      "updated_at": "2026-05-06T23:10:55.546686+00:00"
+    },
+    {
+      "asin": "B07VVJZJ2P",
+      "title": "IVANKY 8K DisplayPort Cable 1.4, VESA Certified DP Cable 6.6ft (8K@60Hz, 4K@144Hz, 2K@240Hz)HBR3 Support 32.4Gbps, HDR, HDCP 2.2, FreeSync G-Sync, Braided Display Port for Gaming Monitor, Graphics, PC",
+      "brand": "IVANKY",
+      "cat": "Electronics",
+      "bestSellerCategories": [
+        {
+          "categoryId": 172282,
+          "name": "Electronics",
+          "slug": "electronics",
+          "rank": 94
+        }
+      ],
+      "bestSellerRank": 94,
+      "image": "https://m.media-amazon.com/images/I/41OJwZ43hVL._SL500_.jpg",
+      "price": "$8.69",
+      "price_amount": 8.69,
+      "currency": "USD",
+      "was": null,
+      "pct": 49,
+      "discount": "-49%",
+      "dealReasons": [
+        "keepa_30_day_avg_drop"
+      ],
+      "keepaAvg30": 17.19,
+      "keepaMin30": null,
+      "keepaCurrent": null,
+      "link": "https://www.amazon.com/dp/B07VVJZJ2P?tag=sawdustsavings-20&linkCode=ogi&th=1&psc=1",
+      "hot": true,
+      "desc": "Top Amazon best seller with a verified price drop",
+      "seen_at": "2026-05-02T07:13:58.857127+00:00",
+      "updated_at": "2026-05-06T23:10:55.546658+00:00"
+    },
+    {
+      "asin": "B07M6237KJ",
+      "title": "Milk-Bone Brushing Chews Original Chicken Flavor Daily Dental Dog Treats, Large, 33.7 Oz. Bag",
+      "brand": "Milk-Bone",
+      "cat": "Pet Supplies",
+      "bestSellerCategories": [
+        {
+          "categoryId": 2619533011,
+          "name": "Pet Supplies",
+          "slug": "pet-supplies",
+          "rank": 94
+        }
+      ],
+      "bestSellerRank": 94,
+      "image": "https://m.media-amazon.com/images/I/51DYkya-e9L._SL500_.jpg",
+      "price": "$14.98",
+      "price_amount": 14.98,
+      "currency": "USD",
+      "was": "$17.49",
+      "pct": 14,
+      "discount": "-14%",
+      "dealReasons": [
+        "amazon_savings_drop"
+      ],
+      "keepaAvg30": 14.98,
+      "keepaMin30": null,
+      "keepaCurrent": 14.98,
+      "link": "https://www.amazon.com/dp/B07M6237KJ?tag=sawdustsavings-20&linkCode=ogi&th=1&psc=1",
+      "hot": false,
+      "desc": "Top Amazon best seller with a verified price drop",
+      "seen_at": "2026-05-02T07:13:58.857074+00:00",
+      "updated_at": "2026-05-06T23:10:55.546619+00:00"
+    },
+    {
+      "asin": "B0DZR7VRHL",
+      "title": "Flexi Hose Expandable Garden Hose with 8 Function Nozzle, 50FT - Lightweight Retractable Garden Hose, Water Hose - No-Kink Flexibility, 3/4 Inch Solid Brass Fittings and Double Latex Core",
+      "brand": "Flexi Hose",
+      "cat": "Patio, Lawn & Garden",
+      "bestSellerCategories": [
+        {
+          "categoryId": 2972638011,
+          "name": "Patio, Lawn & Garden",
+          "slug": "patio-lawn-garden",
+          "rank": 93
+        }
+      ],
+      "bestSellerRank": 93,
+      "image": "https://m.media-amazon.com/images/I/51dEstOJp3L._SL500_.jpg",
+      "price": "$42.49",
+      "price_amount": 42.49,
+      "currency": "USD",
+      "was": "$59.99",
+      "pct": 29,
+      "discount": "-29%",
+      "dealReasons": [
+        "amazon_savings_drop"
+      ],
+      "keepaAvg30": null,
+      "keepaMin30": null,
+      "keepaCurrent": null,
+      "link": "https://www.amazon.com/dp/B0DZR7VRHL?tag=sawdustsavings-20&linkCode=ogi&th=1&psc=1",
+      "hot": false,
+      "desc": "Top Amazon best seller with a verified price drop",
+      "seen_at": "2026-05-02T07:13:58.856995+00:00",
+      "updated_at": "2026-05-06T23:10:55.546559+00:00"
+    },
+    {
+      "asin": "B0DR5423LN",
+      "title": "MIGIOL Baby Burp Cloth 100% Cotton Newborn Cotton Muslin Burp Cloth 10x20 inches (White & Pink 6 Pieces)",
+      "brand": "MIGIOL",
+      "cat": "Baby Products",
+      "bestSellerCategories": [
+        {
+          "categoryId": 165796011,
+          "name": "Baby Products",
+          "slug": "baby-products",
+          "rank": 93
+        }
+      ],
+      "bestSellerRank": 93,
+      "image": "https://m.media-amazon.com/images/I/41M-JsiINhL._SL500_.jpg",
+      "price": "$9.99",
+      "price_amount": 9.99,
+      "currency": "USD",
+      "was": "$11.99",
+      "pct": 17,
+      "discount": "-17%",
+      "dealReasons": [
+        "saved_price_drop",
+        "amazon_savings_drop"
+      ],
+      "keepaAvg30": null,
+      "keepaMin30": null,
+      "keepaCurrent": null,
+      "link": "https://www.amazon.com/dp/B0DR5423LN?tag=sawdustsavings-20&linkCode=ogi&th=1&psc=1",
+      "hot": false,
+      "desc": "Top Amazon best seller with a verified price drop",
+      "seen_at": "2026-05-06T23:10:55.546535+00:00",
+      "updated_at": "2026-05-06T23:10:55.546536+00:00"
+    },
+    {
+      "asin": "B0CLGQKZ7N",
+      "title": "Upstreman 7.7 Cu.Ft. Refrigerator with Freezer, Double Door Fridge, Adjustable Thermostat, Large Capacity, Reversible Door Swing, Refrigerator for Apartment, Office, Dorm, Black\uff08BD75\uff09",
+      "brand": "Upstreman",
+      "cat": "Appliances",
+      "bestSellerCategories": [
+        {
+          "categoryId": 2619525011,
+          "name": "Appliances",
+          "slug": "appliances",
+          "rank": 93
+        }
+      ],
+      "bestSellerRank": 93,
+      "image": "https://m.media-amazon.com/images/I/31WxASRvuzL._SL500_.jpg",
+      "price": "$325.99",
+      "price_amount": 325.99,
+      "currency": "USD",
+      "was": "$379.99",
+      "pct": 14,
+      "discount": "-14%",
+      "dealReasons": [
+        "saved_price_drop",
+        "amazon_savings_drop"
+      ],
+      "keepaAvg30": null,
+      "keepaMin30": null,
+      "keepaCurrent": null,
+      "link": "https://www.amazon.com/dp/B0CLGQKZ7N?tag=sawdustsavings-20&linkCode=ogi&th=1&psc=1",
+      "hot": false,
+      "desc": "Top Amazon best seller with a verified price drop",
+      "seen_at": "2026-05-06T23:10:55.546502+00:00",
+      "updated_at": "2026-05-06T23:10:55.546504+00:00"
+    },
+    {
+      "asin": "B0B854YTCF",
+      "title": "UNA GELLA Gel Nail Glue, Solid Nails Gl ue Gel 40g Lamp Curing Needed Soak Off G LUE Strong Nail G LUE G el for Acrylic Fake Nails Tips Extension Press On Nails for Gelly Tips",
+      "brand": "UNA GELLA",
+      "cat": "Beauty & Personal Care",
+      "bestSellerCategories": [
+        {
+          "categoryId": 3760911,
+          "name": "Beauty & Personal Care",
+          "slug": "beauty-personal-care",
+          "rank": 93
+        }
+      ],
+      "bestSellerRank": 93,
+      "image": "https://m.media-amazon.com/images/I/41KzwaTxofL._SL500_.jpg",
+      "price": "$9.99",
+      "price_amount": 9.99,
+      "currency": "USD",
+      "was": "$13.99",
+      "pct": 29,
+      "discount": "-29%",
+      "dealReasons": [
+        "amazon_savings_drop"
+      ],
+      "keepaAvg30": null,
+      "keepaMin30": null,
+      "keepaCurrent": null,
+      "link": "https://www.amazon.com/dp/B0B854YTCF?tag=sawdustsavings-20&linkCode=ogi&th=1&psc=1",
+      "hot": false,
+      "desc": "Top Amazon best seller with a verified price drop",
+      "seen_at": "2026-05-02T07:13:58.856888+00:00",
+      "updated_at": "2026-05-06T23:10:55.546461+00:00"
+    },
+    {
+      "asin": "B00XM2MXK8",
+      "title": "Amazon Basics High-Density Foam Roller for Exercise and Recovery, 18 Inches, Black",
+      "brand": "Amazon Basics",
+      "cat": "Sports & Outdoors",
+      "bestSellerCategories": [
+        {
+          "categoryId": 3375251,
+          "name": "Sports & Outdoors",
+          "slug": "sports-outdoors",
+          "rank": 93
+        }
+      ],
+      "bestSellerRank": 93,
+      "image": "https://m.media-amazon.com/images/I/41vRvFGHklL._SL500_.jpg",
+      "price": "$12.82",
+      "price_amount": 12.82,
+      "currency": "USD",
+      "was": "$15.15",
+      "pct": 15,
+      "discount": "-15%",
+      "dealReasons": [
+        "amazon_savings_drop"
+      ],
+      "keepaAvg30": 13.15,
+      "keepaMin30": null,
+      "keepaCurrent": 12.82,
+      "link": "https://www.amazon.com/dp/B00XM2MXK8?tag=sawdustsavings-20&linkCode=ogi&th=1&psc=1",
+      "hot": false,
+      "desc": "Top Amazon best seller with a verified price drop",
+      "seen_at": "2026-05-02T07:13:58.856799+00:00",
+      "updated_at": "2026-05-06T23:10:55.546388+00:00"
+    },
+    {
+      "asin": "B00M382RJO",
+      "title": "Zebra Pen Z-Grip Retractable Ballpoint Pen, Smooth-Flowing Black Ink, 1.0mm Medium Point, School & Office Supplies, Ideal for Note-Taking, Journal and Planner Use, 18-Pack (22218)",
+      "brand": "Zebra Pen",
+      "cat": "Office Products",
+      "bestSellerCategories": [
+        {
+          "categoryId": 1064954,
+          "name": "Office Products",
+          "slug": "office-products",
+          "rank": 93
+        }
+      ],
+      "bestSellerRank": 93,
+      "image": "https://m.media-amazon.com/images/I/51MpBIlWJ6L._SL500_.jpg",
+      "price": "$6.99",
+      "price_amount": 6.99,
+      "currency": "USD",
+      "was": "$7.78",
+      "pct": 10,
+      "discount": "-10%",
+      "dealReasons": [
+        "amazon_savings_drop"
+      ],
+      "keepaAvg30": 6.99,
+      "keepaMin30": null,
+      "keepaCurrent": 6.99,
+      "link": "https://www.amazon.com/dp/B00M382RJO?tag=sawdustsavings-20&linkCode=ogi&th=1&psc=1",
+      "hot": false,
+      "desc": "Top Amazon best seller with a verified price drop",
+      "seen_at": "2026-05-02T07:13:58.856766+00:00",
+      "updated_at": "2026-05-06T23:10:55.546367+00:00"
+    },
+    {
+      "asin": "B0C4ZJMSW2",
+      "title": "TECEUM Paracord Type IV 750 lb Dark Emerald Green \u2013 50 ft \u2013 4mm \u2013 Nylon Strong Tactical MIL\u2013SPEC Parachute Cord \u2013 Survival Rope para Cord Camping Hiking Military Gear 022\u0430",
+      "brand": "TECEUM",
+      "cat": "Sports & Outdoors",
+      "bestSellerCategories": [
+        {
+          "categoryId": 3375251,
+          "name": "Sports & Outdoors",
+          "slug": "sports-outdoors",
+          "rank": 92
+        }
+      ],
+      "bestSellerRank": 92,
+      "image": "https://m.media-amazon.com/images/I/51CZg9cPfuL._SL500_.jpg",
+      "price": "$8.99",
+      "price_amount": 8.99,
+      "currency": "USD",
+      "was": "$9.99",
+      "pct": 10,
+      "discount": "-10%",
+      "dealReasons": [
+        "amazon_savings_drop"
+      ],
+      "keepaAvg30": null,
+      "keepaMin30": null,
+      "keepaCurrent": null,
+      "link": "https://www.amazon.com/dp/B0C4ZJMSW2?tag=sawdustsavings-20&linkCode=ogi&th=1&psc=1",
+      "hot": false,
+      "desc": "Top Amazon best seller with a verified price drop",
+      "seen_at": "2026-05-02T07:13:58.856677+00:00",
+      "updated_at": "2026-05-06T23:10:55.546303+00:00"
+    },
+    {
+      "asin": "B0BLXZ4YBJ",
+      "title": "YANIBEST Adjustable Satin Bonnet for Sleeping Women Double Layer Hair Wrap Reduce Friction Prevent Frizz Natural Curly Hair, Blush Pink",
+      "brand": "YANIBEST",
+      "cat": "Beauty & Personal Care",
+      "bestSellerCategories": [
+        {
+          "categoryId": 3760911,
+          "name": "Beauty & Personal Care",
+          "slug": "beauty-personal-care",
+          "rank": 92
+        }
+      ],
+      "bestSellerRank": 92,
+      "image": "https://m.media-amazon.com/images/I/41vpGKEr5dL._SL500_.jpg",
+      "price": "$12.99",
+      "price_amount": 12.99,
+      "currency": "USD",
+      "was": "$14.99",
+      "pct": 13,
+      "discount": "-13%",
+      "dealReasons": [
+        "amazon_savings_drop"
+      ],
+      "keepaAvg30": null,
+      "keepaMin30": null,
+      "keepaCurrent": null,
+      "link": "https://www.amazon.com/dp/B0BLXZ4YBJ?tag=sawdustsavings-20&linkCode=ogi&th=1&psc=1",
+      "hot": false,
+      "desc": "Top Amazon best seller with a verified price drop",
+      "seen_at": "2026-05-02T07:13:58.856642+00:00",
+      "updated_at": "2026-05-06T23:10:55.546281+00:00"
+    },
+    {
+      "asin": "B09F2XPJ47",
+      "title": "Surge Protector Power Strip - Nuetsa Flat Plug Extension Cord with 8 Outlets and 4 USB Ports, 6 Feet Power Cord (1625W/13A), 2700 Joules, ETL Listed, Black",
+      "brand": "Nuetsa",
+      "cat": "Electronics",
+      "bestSellerCategories": [
+        {
+          "categoryId": 172282,
+          "name": "Electronics",
+          "slug": "electronics",
+          "rank": 92
+        }
+      ],
+      "bestSellerRank": 92,
+      "image": "https://m.media-amazon.com/images/I/41J41Z-k38L._SL500_.jpg",
+      "price": "$15.99",
+      "price_amount": 15.99,
+      "currency": "USD",
+      "was": "$17.99",
+      "pct": 11,
+      "discount": "-11%",
+      "dealReasons": [
+        "amazon_savings_drop"
+      ],
+      "keepaAvg30": null,
+      "keepaMin30": null,
+      "keepaCurrent": null,
+      "link": "https://www.amazon.com/dp/B09F2XPJ47?tag=sawdustsavings-20&linkCode=ogi&th=1&psc=1",
+      "hot": false,
+      "desc": "Top Amazon best seller with a verified price drop",
+      "seen_at": "2026-05-02T07:13:58.856573+00:00",
+      "updated_at": "2026-05-06T23:10:55.546247+00:00"
+    },
+    {
+      "asin": "B08MFJYCV8",
+      "title": "BESTTEN Keyed Entry Door Knob with Lock, Heavy Duty Interior and Exterior Door Lock, Standard Ball, Satin Nickel",
+      "brand": "BESTTEN",
+      "cat": "Tools & Home Improvement",
+      "bestSellerCategories": [
+        {
+          "categoryId": 228013,
+          "name": "Tools & Home Improvement",
+          "slug": "tools-home-improvement",
+          "rank": 92
+        }
+      ],
+      "bestSellerRank": 92,
+      "image": "https://m.media-amazon.com/images/I/31o-v8iNGqL._SL500_.jpg",
+      "price": "$8.99",
+      "price_amount": 8.99,
+      "currency": "USD",
+      "was": "$11.99",
+      "pct": 25,
+      "discount": "-25%",
+      "dealReasons": [
+        "amazon_savings_drop"
+      ],
+      "keepaAvg30": null,
+      "keepaMin30": null,
+      "keepaCurrent": null,
+      "link": "https://www.amazon.com/dp/B08MFJYCV8?tag=sawdustsavings-20&linkCode=ogi&th=1&psc=1",
+      "hot": false,
+      "desc": "Top Amazon best seller with a verified price drop",
+      "seen_at": "2026-05-02T07:13:58.856543+00:00",
+      "updated_at": "2026-05-06T23:10:55.546227+00:00"
+    },
+    {
+      "asin": "B0791ZPVTY",
+      "title": "Ensure Max Protein Cafe Mocha Nutrition Shake | 30g Protein, 1g Sugar, 4g Fiber Blend | 12 Pack",
+      "brand": "Ensure",
+      "cat": "Health & Household",
+      "bestSellerCategories": [
+        {
+          "categoryId": 3760901,
+          "name": "Health & Household",
+          "slug": "health-household",
+          "rank": 92
+        }
+      ],
+      "bestSellerRank": 92,
+      "image": "https://m.media-amazon.com/images/I/41h0RZOWsZL._SL500_.jpg",
+      "price": "$28.78",
+      "price_amount": 28.78,
+      "currency": "USD",
+      "was": "$37.41",
+      "pct": 23,
+      "discount": "-23%",
+      "dealReasons": [
+        "amazon_savings_drop"
+      ],
+      "keepaAvg30": 28.95,
+      "keepaMin30": null,
+      "keepaCurrent": 28.78,
+      "link": "https://www.amazon.com/dp/B0791ZPVTY?tag=sawdustsavings-20&linkCode=ogi&th=1&psc=1",
+      "hot": false,
+      "desc": "Top Amazon best seller with a verified price drop",
+      "seen_at": "2026-05-02T07:13:58.856470+00:00",
+      "updated_at": "2026-05-06T23:10:55.546178+00:00"
+    },
+    {
+      "asin": "B072J8Z28F",
+      "title": "HARRIS Diatomaceous Earth Food Grade, 4lb with Powder Duster Included in The Bag",
+      "brand": "HARRIS",
+      "cat": "Patio, Lawn & Garden",
+      "bestSellerCategories": [
+        {
+          "categoryId": 2972638011,
+          "name": "Patio, Lawn & Garden",
+          "slug": "patio-lawn-garden",
+          "rank": 92
+        }
+      ],
+      "bestSellerRank": 92,
+      "image": "https://m.media-amazon.com/images/I/4171WINyGmL._SL500_.jpg",
+      "price": "$17.85",
+      "price_amount": 17.85,
+      "currency": "USD",
+      "was": "$24.99",
+      "pct": 29,
+      "discount": "-29%",
+      "dealReasons": [
+        "amazon_savings_drop"
+      ],
+      "keepaAvg30": 17.85,
+      "keepaMin30": null,
+      "keepaCurrent": 17.85,
+      "link": "https://www.amazon.com/dp/B072J8Z28F?tag=sawdustsavings-20&linkCode=ogi&th=1&psc=1",
+      "hot": false,
+      "desc": "Top Amazon best seller with a verified price drop",
+      "seen_at": "2026-05-02T07:13:58.856441+00:00",
+      "updated_at": "2026-05-06T23:10:55.546155+00:00"
+    },
+    {
+      "asin": "B0B45LL4DD",
+      "title": "Beauty of Joseon Revive Eye Serum with Retinal Niacinamide Correction for Puffy Eye Bags Fine Lines Dark Circles Wrinkles, Korean Skin Care 30ml, 1.01 fl.oz",
+      "brand": "Beauty of Joseon",
+      "cat": "Beauty & Personal Care",
+      "bestSellerCategories": [
+        {
+          "categoryId": 3760911,
+          "name": "Beauty & Personal Care",
+          "slug": "beauty-personal-care",
+          "rank": 91
+        }
+      ],
+      "bestSellerRank": 91,
+      "image": "https://m.media-amazon.com/images/I/31xwENu+2wL._SL500_.jpg",
+      "price": "$11.90",
+      "price_amount": 11.9,
+      "currency": "USD",
+      "was": "$17.0",
+      "pct": 30,
+      "discount": "-30%",
+      "dealReasons": [
+        "amazon_savings_drop"
+      ],
+      "keepaAvg30": null,
+      "keepaMin30": null,
+      "keepaCurrent": null,
+      "link": "https://www.amazon.com/dp/B0B45LL4DD?tag=sawdustsavings-20&linkCode=ogi&th=1&psc=1",
+      "hot": true,
+      "desc": "Top Amazon best seller with a verified price drop",
+      "seen_at": "2026-05-02T07:13:58.856301+00:00",
+      "updated_at": "2026-05-06T23:10:55.546065+00:00"
+    },
+    {
+      "asin": "B08DKHHTFX",
+      "title": "VANMASS Car Phone Holder [Upgraded Strongest Suction & Clip] Cell Phone Mount for Dashboard Windshield Vent Wall,Truck Cradle Stand for iPhone 17 Pro Max 16 15 14 13 12 11 SE Samsung S26 Android,Black",
+      "brand": "VANMASS",
+      "cat": "Cell Phones & Accessories",
+      "bestSellerCategories": [
+        {
+          "categoryId": 2335752011,
+          "name": "Cell Phones & Accessories",
+          "slug": "cell-phones-accessories",
+          "rank": 91
+        }
+      ],
+      "bestSellerRank": 91,
+      "image": "https://m.media-amazon.com/images/I/512X87YSVuL._SL500_.jpg",
+      "price": "$25.98",
+      "price_amount": 25.98,
+      "currency": "USD",
+      "was": "$39.99",
+      "pct": 35,
+      "discount": "-35%",
+      "dealReasons": [
+        "amazon_savings_drop"
+      ],
+      "keepaAvg30": null,
+      "keepaMin30": null,
+      "keepaCurrent": null,
+      "link": "https://www.amazon.com/dp/B08DKHHTFX?tag=sawdustsavings-20&linkCode=ogi&th=1&psc=1",
+      "hot": true,
+      "desc": "Top Amazon best seller with a verified price drop",
+      "seen_at": "2026-05-02T07:13:58.856243+00:00",
+      "updated_at": "2026-05-06T23:10:55.546027+00:00"
+    },
+    {
+      "asin": "B01H1R0K68",
+      "title": "TempPro TP50 Digital Hygrometer Indoor Thermometer Room Thermometer and Humidity Gauge with Temperature Humidity Monitor(Previously ThermoPro)",
+      "brand": "TempPro",
+      "cat": "Patio, Lawn & Garden",
+      "bestSellerCategories": [
+        {
+          "categoryId": 2972638011,
+          "name": "Patio, Lawn & Garden",
+          "slug": "patio-lawn-garden",
+          "rank": 91
+        }
+      ],
+      "bestSellerRank": 91,
+      "image": "https://m.media-amazon.com/images/I/41z6KMQMWAL._SL500_.jpg",
+      "price": "$10.99",
+      "price_amount": 10.99,
+      "currency": "USD",
+      "was": "$15.99",
+      "pct": 31,
+      "discount": "-31%",
+      "dealReasons": [
+        "amazon_savings_drop"
+      ],
+      "keepaAvg30": null,
+      "keepaMin30": null,
+      "keepaCurrent": null,
+      "link": "https://www.amazon.com/dp/B01H1R0K68?tag=sawdustsavings-20&linkCode=ogi&th=1&psc=1",
+      "hot": true,
+      "desc": "Top Amazon best seller with a verified price drop",
+      "seen_at": "2026-05-02T07:13:58.856175+00:00",
+      "updated_at": "2026-05-06T23:10:55.545978+00:00"
+    },
+    {
+      "asin": "B005PLQIQ4",
+      "title": "Crest + Scope Whitening Toothpaste - Pack of 3, 5.4 Oz Tubes - Anticavity Fluoride Toothpaste, Fresh Breath, Kills Germs - Tartar Protection, Enamel Protection - Minty Fresh Flavor",
+      "brand": "Crest",
+      "cat": "Health & Household",
+      "bestSellerCategories": [
+        {
+          "categoryId": 3760901,
+          "name": "Health & Household",
+          "slug": "health-household",
+          "rank": 91
+        }
+      ],
+      "bestSellerRank": 91,
+      "image": "https://m.media-amazon.com/images/I/51BVb0DLYzL._SL500_.jpg",
+      "price": "$8.99",
+      "price_amount": 8.99,
+      "currency": "USD",
+      "was": "$9.99",
+      "pct": 10,
+      "discount": "-10%",
+      "dealReasons": [
+        "amazon_savings_drop"
+      ],
+      "keepaAvg30": 8.99,
+      "keepaMin30": null,
+      "keepaCurrent": 8.99,
+      "link": "https://www.amazon.com/dp/B005PLQIQ4?tag=sawdustsavings-20&linkCode=ogi&th=1&psc=1",
+      "hot": false,
+      "desc": "Top Amazon best seller with a verified price drop",
+      "seen_at": "2026-05-02T07:13:58.856119+00:00",
+      "updated_at": "2026-05-06T23:10:55.545938+00:00"
+    },
+    {
+      "asin": "B0GBYRJ4WZ",
+      "title": "Magnetic Wireless Magsafe Charger iPhone: Charging Pad for iPhone 17/16/15/14/13/12 Series & AirPods Pro 4-2, Strong Magnet, Dual Ports, Case-Friendly, Lightweight for Travel Home Office Desk",
+      "brand": "LMOYPD",
+      "cat": "Cell Phones & Accessories",
+      "bestSellerCategories": [
+        {
+          "categoryId": 2335752011,
+          "name": "Cell Phones & Accessories",
+          "slug": "cell-phones-accessories",
+          "rank": 90
+        }
+      ],
+      "bestSellerRank": 90,
+      "image": "https://m.media-amazon.com/images/I/31jeYJRaUkL._SL500_.jpg",
+      "price": "$5.99",
+      "price_amount": 5.99,
+      "currency": "USD",
+      "was": "$9.99",
+      "pct": 40,
+      "discount": "-40%",
+      "dealReasons": [
+        "amazon_savings_drop"
+      ],
+      "keepaAvg30": null,
+      "keepaMin30": null,
+      "keepaCurrent": null,
+      "link": "https://www.amazon.com/dp/B0GBYRJ4WZ?tag=sawdustsavings-20&linkCode=ogi&th=1&psc=1",
+      "hot": true,
+      "desc": "Top Amazon best seller with a verified price drop",
+      "seen_at": "2026-05-02T07:13:58.856070+00:00",
+      "updated_at": "2026-05-06T23:10:55.545905+00:00"
+    },
+    {
+      "asin": "B0FCM8KP9R",
+      "title": "Underwear Washing Machine, Upgrade 1.5L Mini Portable Washing Machine Rechargeable Underwear Washer Deep Cleans Small Clothes for Apartment, Dorm, RV, Travel & Hotel Use (White)",
+      "brand": "scbestuygo",
+      "cat": "Appliances",
+      "bestSellerCategories": [
+        {
+          "categoryId": 2619525011,
+          "name": "Appliances",
+          "slug": "appliances",
+          "rank": 90
+        }
+      ],
+      "bestSellerRank": 90,
+      "image": "https://m.media-amazon.com/images/I/41oVJel3A4L._SL500_.jpg",
+      "price": "$23.93",
+      "price_amount": 23.93,
+      "currency": "USD",
+      "was": "$26.99",
+      "pct": 11,
+      "discount": "-11%",
+      "dealReasons": [
+        "amazon_savings_drop"
+      ],
+      "keepaAvg30": null,
+      "keepaMin30": null,
+      "keepaCurrent": null,
+      "link": "https://www.amazon.com/dp/B0FCM8KP9R?tag=sawdustsavings-20&linkCode=ogi&th=1&psc=1",
+      "hot": false,
+      "desc": "Top Amazon best seller with a verified price drop",
+      "seen_at": "2026-05-02T07:13:58.856039+00:00",
+      "updated_at": "2026-05-06T23:10:55.545886+00:00"
+    },
+    {
+      "asin": "B07TDN9MKC",
+      "title": "Philips Avent Soothie Baby Pacifiers - 100% Silicone Pacifiers for Babies 0-3 Months, One-Piece Design, BPA-Free, Extra Durable, Green, 4 Pack, Model SCF190/41",
+      "brand": "Philips Avent",
+      "cat": "Baby Products",
+      "bestSellerCategories": [
+        {
+          "categoryId": 165796011,
+          "name": "Baby Products",
+          "slug": "baby-products",
+          "rank": 90
+        }
+      ],
+      "bestSellerRank": 90,
+      "image": "https://m.media-amazon.com/images/I/41iTGY7NSwL._SL500_.jpg",
+      "price": "$8.94",
+      "price_amount": 8.94,
+      "currency": "USD",
+      "was": "$11.89",
+      "pct": 25,
+      "discount": "-25%",
+      "dealReasons": [
+        "amazon_savings_drop"
+      ],
+      "keepaAvg30": 8.02,
+      "keepaMin30": null,
+      "keepaCurrent": 8.94,
+      "link": "https://www.amazon.com/dp/B07TDN9MKC?tag=sawdustsavings-20&linkCode=ogi&th=1&psc=1",
+      "hot": false,
+      "desc": "Top Amazon best seller with a verified price drop",
+      "seen_at": "2026-05-02T07:13:58.855873+00:00",
+      "updated_at": "2026-05-06T23:10:55.545810+00:00"
+    },
+    {
+      "asin": "B07B421VFF",
+      "title": "New Balance Men's 608 V5 Casual Comfort Cross Trainer",
+      "brand": "New Balance",
+      "cat": "Clothing, Shoes & Jewelry",
+      "bestSellerCategories": [
+        {
+          "categoryId": 7141123011,
+          "name": "Clothing, Shoes & Jewelry",
+          "slug": "clothing-shoes-jewelry",
+          "rank": 90
+        }
+      ],
+      "bestSellerRank": 90,
+      "image": "https://m.media-amazon.com/images/I/41X6IsgSFIL._SL500_.jpg",
+      "price": "$55.99",
+      "price_amount": 55.99,
+      "currency": "USD",
+      "was": "$79.99",
+      "pct": 30,
+      "discount": "-30%",
+      "dealReasons": [
+        "amazon_savings_drop"
+      ],
+      "keepaAvg30": 61.85,
+      "keepaMin30": null,
+      "keepaCurrent": 55.99,
+      "link": "https://www.amazon.com/dp/B07B421VFF?tag=sawdustsavings-20&linkCode=ogi&th=1&psc=1",
+      "hot": true,
+      "desc": "Top Amazon best seller with a verified price drop",
+      "seen_at": "2026-05-02T07:13:58.855828+00:00",
+      "updated_at": "2026-05-06T23:10:55.545788+00:00"
+    },
+    {
+      "asin": "B00DI89WDW",
+      "title": "KabelDirekt TOSLINK \u2013 Optical Audio Cable \u2013 6ft \u2013 Fiber Optic Cord, S/PDIF Digital Audio Optical Cable for Soundbar, Stereo Systems, Home Cinema, Xbox One/PS4 \u2013 Designed in Germany",
+      "brand": "KabelDirekt",
+      "cat": "Electronics",
+      "bestSellerCategories": [
+        {
+          "categoryId": 172282,
+          "name": "Electronics",
+          "slug": "electronics",
+          "rank": 90
+        }
+      ],
+      "bestSellerRank": 90,
+      "image": "https://m.media-amazon.com/images/I/41HCfKOqCsL._SL500_.jpg",
+      "price": "$7.99",
+      "price_amount": 7.99,
+      "currency": "USD",
+      "was": "$10.99",
+      "pct": 27,
+      "discount": "-27%",
+      "dealReasons": [
+        "amazon_savings_drop"
+      ],
+      "keepaAvg30": null,
+      "keepaMin30": null,
+      "keepaCurrent": null,
+      "link": "https://www.amazon.com/dp/B00DI89WDW?tag=sawdustsavings-20&linkCode=ogi&th=1&psc=1",
+      "hot": false,
+      "desc": "Top Amazon best seller with a verified price drop",
+      "seen_at": "2026-05-02T00:08:55.208321+00:00",
+      "updated_at": "2026-05-06T23:10:55.545762+00:00"
+    },
+    {
+      "asin": "B000J3Z7TC",
+      "title": "Hoyle Waterproof Playing Cards, Clear Plastic Deck of Cards for Outdoor Card Games, Camping, Beach, Pool & Travel Games (1 Deck)",
+      "brand": "Hoyle",
+      "cat": "Toys & Games",
+      "bestSellerCategories": [
+        {
+          "categoryId": 165793011,
+          "name": "Toys & Games",
+          "slug": "toys-games",
+          "rank": 90
+        }
+      ],
+      "bestSellerRank": 90,
+      "image": "https://m.media-amazon.com/images/I/419FJBuzJFL._SL500_.jpg",
+      "price": "$5.99",
+      "price_amount": 5.99,
+      "currency": "USD",
+      "was": "$7.49",
+      "pct": 20,
+      "discount": "-20%",
+      "dealReasons": [
+        "amazon_savings_drop"
+      ],
+      "keepaAvg30": 5.99,
+      "keepaMin30": null,
+      "keepaCurrent": 5.99,
+      "link": "https://www.amazon.com/dp/B000J3Z7TC?tag=sawdustsavings-20&linkCode=ogi&th=1&psc=1",
+      "hot": false,
+      "desc": "Top Amazon best seller with a verified price drop",
+      "seen_at": "2026-05-02T00:08:55.208293+00:00",
+      "updated_at": "2026-05-06T23:10:55.545739+00:00"
+    },
+    {
+      "asin": "B0D6J5B98H",
+      "title": "ROVE R2-4K DUAL Dash Cam Front and Rear, STARVIS 2 Sensor, FREE 128GB Card Included, 5G WiFi - up to 20MB/s Fastest Download Speed with App, 4K 2160P/FHD Dash Camera for Cars, 3\" IPS, 24H Parking Mode",
+      "brand": "ROVE",
+      "cat": "Electronics",
+      "bestSellerCategories": [
+        {
+          "categoryId": 172282,
+          "name": "Electronics",
+          "slug": "electronics",
+          "rank": 89
+        }
+      ],
+      "bestSellerRank": 89,
+      "image": "https://m.media-amazon.com/images/I/512vbO5vOGL._SL500_.jpg",
+      "price": "$129.99",
+      "price_amount": 129.99,
+      "currency": "USD",
+      "was": "$149.99",
+      "pct": 13,
+      "discount": "-13%",
+      "dealReasons": [
+        "amazon_savings_drop"
+      ],
+      "keepaAvg30": null,
+      "keepaMin30": null,
+      "keepaCurrent": null,
+      "link": "https://www.amazon.com/dp/B0D6J5B98H?tag=sawdustsavings-20&linkCode=ogi&th=1&psc=1",
+      "hot": false,
+      "desc": "Top Amazon best seller with a verified price drop",
+      "seen_at": "2026-05-02T00:08:55.208245+00:00",
+      "updated_at": "2026-05-06T23:10:55.545700+00:00"
+    },
+    {
+      "asin": "B0C54CYDS3",
+      "title": "Dr. Brown's Milestones Baby's First Straw Cup, Training Cup with Weighted Straw, 9 oz/270 mL, BPA-free, 6m+, Dark Blue, 1-Pack",
+      "brand": "Dr. Brown's",
+      "cat": "Baby Products",
+      "bestSellerCategories": [
+        {
+          "categoryId": 165796011,
+          "name": "Baby Products",
+          "slug": "baby-products",
+          "rank": 89
+        }
+      ],
+      "bestSellerRank": 89,
+      "image": "https://m.media-amazon.com/images/I/31K0c+Xo-gL._SL500_.jpg",
+      "price": "$5.44",
+      "price_amount": 5.44,
+      "currency": "USD",
+      "was": "$6.99",
+      "pct": 22,
+      "discount": "-22%",
+      "dealReasons": [
+        "amazon_savings_drop"
+      ],
+      "keepaAvg30": 5.89,
+      "keepaMin30": null,
+      "keepaCurrent": 5.97,
+      "link": "https://www.amazon.com/dp/B0C54CYDS3?tag=sawdustsavings-20&linkCode=ogi&th=1&psc=1",
+      "hot": false,
+      "desc": "Top Amazon best seller with a verified price drop",
+      "seen_at": "2026-05-02T00:08:55.208203+00:00",
+      "updated_at": "2026-05-06T23:10:55.545667+00:00"
+    },
+    {
+      "asin": "B0C2C9QT91",
+      "title": "ALTSON 60 LED Portable Selfie Light Video Conference Lighting with Clip & Camera Tripod Adapter Rechargeable 2200mAh CRI 97+, 3 Light Modes for Phone iPhone Webcam Laptop Photo Makeup",
+      "brand": "ALTSON",
+      "cat": "Cell Phones & Accessories",
+      "bestSellerCategories": [
+        {
+          "categoryId": 2335752011,
+          "name": "Cell Phones & Accessories",
+          "slug": "cell-phones-accessories",
+          "rank": 89
+        }
+      ],
+      "bestSellerRank": 89,
+      "image": "https://m.media-amazon.com/images/I/41DFP3dJ-xL._SL500_.jpg",
+      "price": "$13.89",
+      "price_amount": 13.89,
+      "currency": "USD",
+      "was": "$24.99",
+      "pct": 44,
+      "discount": "-44%",
+      "dealReasons": [
+        "amazon_savings_drop"
+      ],
+      "keepaAvg30": 13.75,
+      "keepaMin30": null,
+      "keepaCurrent": 13.89,
+      "link": "https://www.amazon.com/dp/B0C2C9QT91?tag=sawdustsavings-20&linkCode=ogi&th=1&psc=1",
+      "hot": true,
+      "desc": "Top Amazon best seller with a verified price drop",
+      "seen_at": "2026-05-02T00:08:55.208178+00:00",
+      "updated_at": "2026-05-06T23:10:55.545644+00:00"
+    },
+    {
+      "asin": "B099JZT1WR",
+      "title": "YOLEO Adjustable Weight Bench for Home Gym, ASTM-Certified 827LBS, 98% Pre-Assembled, Foldable Gym Bench with 84 Positions Incline Decline Flat, Wider Seat",
+      "brand": "YOLEO",
+      "cat": "Sports & Outdoors",
+      "bestSellerCategories": [
+        {
+          "categoryId": 3375251,
+          "name": "Sports & Outdoors",
+          "slug": "sports-outdoors",
+          "rank": 89
+        }
+      ],
+      "bestSellerRank": 89,
+      "image": "https://m.media-amazon.com/images/I/41Y5Lro-ohL._SL500_.jpg",
+      "price": "$75.99",
+      "price_amount": 75.99,
+      "currency": "USD",
+      "was": "$89.99",
+      "pct": 16,
+      "discount": "-16%",
+      "dealReasons": [
+        "amazon_savings_drop"
+      ],
+      "keepaAvg30": null,
+      "keepaMin30": null,
+      "keepaCurrent": null,
+      "link": "https://www.amazon.com/dp/B099JZT1WR?tag=sawdustsavings-20&linkCode=ogi&th=1&psc=1",
+      "hot": false,
+      "desc": "Top Amazon best seller with a verified price drop",
+      "seen_at": "2026-05-02T00:08:55.208129+00:00",
+      "updated_at": "2026-05-06T23:10:55.545606+00:00"
+    },
+    {
+      "asin": "B082YGFMQZ",
+      "title": "BLACK+DECKER BCED37 Compact Dryer for Standard Wall Outlet, Small, 4 Modes, Load Volume 13.2 lbs., White",
+      "brand": "BLACK+DECKER",
+      "cat": "Appliances",
+      "bestSellerCategories": [
+        {
+          "categoryId": 2619525011,
+          "name": "Appliances",
+          "slug": "appliances",
+          "rank": 89
+        }
+      ],
+      "bestSellerRank": 89,
+      "image": "https://m.media-amazon.com/images/I/41jWjYdwjbL._SL500_.jpg",
+      "price": "$378.10",
+      "price_amount": 378.1,
+      "currency": "USD",
+      "was": "$419.99",
+      "pct": 10,
+      "discount": "-10%",
+      "dealReasons": [
+        "amazon_savings_drop"
+      ],
+      "keepaAvg30": 378.1,
+      "keepaMin30": null,
+      "keepaCurrent": 378.1,
+      "link": "https://www.amazon.com/dp/B082YGFMQZ?tag=sawdustsavings-20&linkCode=ogi&th=1&psc=1",
+      "hot": false,
+      "desc": "Top Amazon best seller with a verified price drop",
+      "seen_at": "2026-05-02T00:08:55.208098+00:00",
+      "updated_at": "2026-05-06T23:10:55.545580+00:00"
+    },
+    {
+      "asin": "B078R3NDPH",
+      "title": "Ultra Soft Pillow Protectors with Zipper Standard Size - Set of 4 Breathable Pillow Covers - 100% Protection Against Stains, Dust & Dirt - Machine Washable (White)",
+      "brand": "Niagara Sleep Solution",
+      "cat": "Home & Kitchen",
+      "bestSellerCategories": [
+        {
+          "categoryId": 1055398,
+          "name": "Home & Kitchen",
+          "slug": "home-kitchen",
+          "rank": 89
+        }
+      ],
+      "bestSellerRank": 89,
+      "image": "https://m.media-amazon.com/images/I/31O91GbP5zL._SL500_.jpg",
+      "price": "$8.99",
+      "price_amount": 8.99,
+      "currency": "USD",
+      "was": "$16.99",
+      "pct": 47,
+      "discount": "-47%",
+      "dealReasons": [
+        "amazon_savings_drop"
+      ],
+      "keepaAvg30": null,
+      "keepaMin30": null,
+      "keepaCurrent": null,
+      "link": "https://www.amazon.com/dp/B078R3NDPH?tag=sawdustsavings-20&linkCode=ogi&th=1&psc=1",
+      "hot": true,
+      "desc": "Top Amazon best seller with a verified price drop",
+      "seen_at": "2026-05-02T00:08:55.208070+00:00",
+      "updated_at": "2026-05-06T23:10:55.545558+00:00"
+    },
+    {
+      "asin": "B00TUDHVO6",
+      "title": "Filtrete 20x25x1 Air Filter MERV 12, MPR 1500 Certified Asthma & Allergy Friendly 2-Pack, AC Furnace HVAC Filters for Home, 3-Month Pleated Electrostatic (Actual Size 19.719x24.688x0.78 in)",
+      "brand": "Filtrete",
+      "cat": "Tools & Home Improvement",
+      "bestSellerCategories": [
+        {
+          "categoryId": 228013,
+          "name": "Tools & Home Improvement",
+          "slug": "tools-home-improvement",
+          "rank": 89
+        }
+      ],
+      "bestSellerRank": 89,
+      "image": "https://m.media-amazon.com/images/I/41KUDxJGM1L._SL500_.jpg",
+      "price": "$26.49",
+      "price_amount": 26.49,
+      "currency": "USD",
+      "was": "$43.99",
+      "pct": 40,
+      "discount": "-40%",
+      "dealReasons": [
+        "keepa_30_day_avg_drop",
+        "amazon_savings_drop"
+      ],
+      "keepaAvg30": 32.41,
+      "keepaMin30": null,
+      "keepaCurrent": 26.49,
+      "link": "https://www.amazon.com/dp/B00TUDHVO6?tag=sawdustsavings-20&linkCode=ogi&th=1&psc=1",
+      "hot": true,
+      "desc": "Top Amazon best seller with a verified price drop",
+      "seen_at": "2026-05-02T00:08:55.208042+00:00",
+      "updated_at": "2026-05-06T23:10:55.545536+00:00"
+    },
+    {
+      "asin": "B004Y9GTOO",
+      "title": "Maybelline Instant Age Rewind Eraser Dark Circles Treatment Multi-Use Concealer, 110, 1 Count (Packaging May Vary)",
+      "brand": "MAYBELLINE",
+      "cat": "Beauty & Personal Care",
+      "bestSellerCategories": [
+        {
+          "categoryId": 3760911,
+          "name": "Beauty & Personal Care",
+          "slug": "beauty-personal-care",
+          "rank": 89
+        }
+      ],
+      "bestSellerRank": 89,
+      "image": "https://m.media-amazon.com/images/I/31A3MZjwE+L._SL500_.jpg",
+      "price": "$9.98",
+      "price_amount": 9.98,
+      "currency": "USD",
+      "was": "$12.99",
+      "pct": 23,
+      "discount": "-23%",
+      "dealReasons": [
+        "amazon_savings_drop"
+      ],
+      "keepaAvg30": 9.97,
+      "keepaMin30": null,
+      "keepaCurrent": 9.98,
+      "link": "https://www.amazon.com/dp/B004Y9GTOO?tag=sawdustsavings-20&linkCode=ogi&th=1&psc=1",
+      "hot": false,
+      "desc": "Top Amazon best seller with a verified price drop",
+      "seen_at": "2026-05-02T00:08:55.208013+00:00",
+      "updated_at": "2026-05-06T23:10:55.545511+00:00"
+    },
+    {
+      "asin": "B004U3Y8OM",
+      "title": "Nature Made Vitamin D3 1000 IU (25 mcg), Vitamin D Supplement for Bone, Teeth, Muscle and Immune Health Support, 300 Softgels, 300 Day Supply",
+      "brand": "Nature Made",
+      "cat": "Health & Household",
+      "bestSellerCategories": [
+        {
+          "categoryId": 3760901,
+          "name": "Health & Household",
+          "slug": "health-household",
+          "rank": 89
+        }
+      ],
+      "bestSellerRank": 89,
+      "image": "https://m.media-amazon.com/images/I/41onyKf1B1L._SL500_.jpg",
+      "price": "$9.98",
+      "price_amount": 9.98,
+      "currency": "USD",
+      "was": "$19.29",
+      "pct": 48,
+      "discount": "-48%",
+      "dealReasons": [
+        "keepa_30_day_avg_drop",
+        "amazon_savings_drop"
+      ],
+      "keepaAvg30": 11.18,
+      "keepaMin30": null,
+      "keepaCurrent": 9.99,
+      "link": "https://www.amazon.com/dp/B004U3Y8OM?tag=sawdustsavings-20&linkCode=ogi&th=1&psc=1",
+      "hot": true,
+      "desc": "Top Amazon best seller with a verified price drop",
+      "seen_at": "2026-05-02T00:08:55.207981+00:00",
+      "updated_at": "2026-05-06T23:10:55.545486+00:00"
+    },
+    {
+      "asin": "B0FQFH75KL",
+      "title": "Apple iPhone 17 Pro Max Clear Case with MagSafe MagSafe and Camera Control: Lightweight Phone Case, Wireless Charging Compatible, Smooth Glossy Finish",
+      "brand": "Apple",
+      "cat": "Cell Phones & Accessories",
+      "bestSellerCategories": [
+        {
+          "categoryId": 2335752011,
+          "name": "Cell Phones & Accessories",
+          "slug": "cell-phones-accessories",
+          "rank": 88
+        }
+      ],
+      "bestSellerRank": 88,
+      "image": "https://m.media-amazon.com/images/I/31zKutHrb5L._SL500_.jpg",
+      "price": "$39.99",
+      "price_amount": 39.99,
+      "currency": "USD",
+      "was": "$49.0",
+      "pct": 18,
+      "discount": "-18%",
+      "dealReasons": [
+        "amazon_savings_drop"
+      ],
+      "keepaAvg30": 39.99,
+      "keepaMin30": null,
+      "keepaCurrent": 39.99,
+      "link": "https://www.amazon.com/dp/B0FQFH75KL?tag=sawdustsavings-20&linkCode=ogi&th=1&psc=1",
+      "hot": false,
+      "desc": "Top Amazon best seller with a verified price drop",
+      "seen_at": "2026-05-02T00:08:55.207891+00:00",
+      "updated_at": "2026-05-06T23:10:55.545394+00:00"
+    },
+    {
+      "asin": "B0CXXQVVFP",
+      "title": "SIXCAR Weed Remover Tool,Portable Garden Weeder Tool,New Gardening Weeding Tools,for Garden Hand Tools for Vegetable Gardening Backyard Farm Planting & Uprooting Weeding Tool (Rubber Handle)",
+      "brand": "SIXCAR",
+      "cat": "Patio, Lawn & Garden",
+      "bestSellerCategories": [
+        {
+          "categoryId": 2972638011,
+          "name": "Patio, Lawn & Garden",
+          "slug": "patio-lawn-garden",
+          "rank": 88
+        }
+      ],
+      "bestSellerRank": 88,
+      "image": "https://m.media-amazon.com/images/I/41PVeaQf43L._SL500_.jpg",
+      "price": "$19.99",
+      "price_amount": 19.99,
+      "currency": "USD",
+      "was": "$22.99",
+      "pct": 13,
+      "discount": "-13%",
+      "dealReasons": [
+        "amazon_savings_drop"
+      ],
+      "keepaAvg30": null,
+      "keepaMin30": null,
+      "keepaCurrent": null,
+      "link": "https://www.amazon.com/dp/B0CXXQVVFP?tag=sawdustsavings-20&linkCode=ogi&th=1&psc=1",
+      "hot": false,
+      "desc": "Top Amazon best seller with a verified price drop",
+      "seen_at": "2026-05-02T00:08:55.207781+00:00",
+      "updated_at": "2026-05-06T23:10:55.545325+00:00"
+    },
+    {
+      "asin": "B0BFQ9RD5B",
+      "title": "d'alba Piedmont Italian White Truffle First Spray Serum, Vegan Skin Care, Light-weight Face Moisturizer, Glow Serum for Radiant Skin, Non Comedogenic, All In One Mist, Korean Skin Care (3.38 fl oz.)",
+      "brand": "d'alba Piedmont",
+      "cat": "Beauty & Personal Care",
+      "bestSellerCategories": [
+        {
+          "categoryId": 3760911,
+          "name": "Beauty & Personal Care",
+          "slug": "beauty-personal-care",
+          "rank": 88
+        }
+      ],
+      "bestSellerRank": 88,
+      "image": "https://m.media-amazon.com/images/I/31Q6NCEzGJL._SL500_.jpg",
+      "price": "$17.09",
+      "price_amount": 17.09,
+      "currency": "USD",
+      "was": "$26.0",
+      "pct": 34,
+      "discount": "-34%",
+      "dealReasons": [
+        "amazon_savings_drop"
+      ],
+      "keepaAvg30": null,
+      "keepaMin30": null,
+      "keepaCurrent": null,
+      "link": "https://www.amazon.com/dp/B0BFQ9RD5B?tag=sawdustsavings-20&linkCode=ogi&th=1&psc=1",
+      "hot": true,
+      "desc": "Top Amazon best seller with a verified price drop",
+      "seen_at": "2026-05-02T00:08:55.207739+00:00",
+      "updated_at": "2026-05-06T23:10:55.545284+00:00"
+    },
+    {
+      "asin": "B08LBB2RT2",
+      "title": "Buself Shoe Covers Disposable Non Slip - Pack of 100 (50 Pairs), Premium Waterproof and Recyclable Shoe Booties Covers for Indoors, Fits Up To 11 US Men and 13 US Women Size",
+      "brand": "Buself",
+      "cat": "Tools & Home Improvement",
+      "bestSellerCategories": [
+        {
+          "categoryId": 228013,
+          "name": "Tools & Home Improvement",
+          "slug": "tools-home-improvement",
+          "rank": 88
+        }
+      ],
+      "bestSellerRank": 88,
+      "image": "https://m.media-amazon.com/images/I/51EW4XjD4PL._SL500_.jpg",
+      "price": "$9.99",
+      "price_amount": 9.99,
+      "currency": "USD",
+      "was": "$14.97",
+      "pct": 33,
+      "discount": "-33%",
+      "dealReasons": [
+        "amazon_savings_drop"
+      ],
+      "keepaAvg30": null,
+      "keepaMin30": null,
+      "keepaCurrent": null,
+      "link": "https://www.amazon.com/dp/B08LBB2RT2?tag=sawdustsavings-20&linkCode=ogi&th=1&psc=1",
+      "hot": true,
+      "desc": "Top Amazon best seller with a verified price drop",
+      "seen_at": "2026-05-02T00:08:55.207712+00:00",
+      "updated_at": "2026-05-06T23:10:55.545261+00:00"
+    },
+    {
+      "asin": "B0DLP157QH",
+      "title": "MagSafe Charger 2 Pack 15W Magnetic Wireless Charger Fast Charging Pad Compatible with iPhone 17/16/15/14/13/12 Series & AirPods 4/3/2/Pro Magnetic MagSafe Charging Pad with Dual Ports",
+      "brand": "TNDAJI",
+      "cat": "Cell Phones & Accessories",
+      "bestSellerCategories": [
+        {
+          "categoryId": 2335752011,
+          "name": "Cell Phones & Accessories",
+          "slug": "cell-phones-accessories",
+          "rank": 87
+        }
+      ],
+      "bestSellerRank": 87,
+      "image": "https://m.media-amazon.com/images/I/41IpMp0ti2L._SL500_.jpg",
+      "price": "$13.98",
+      "price_amount": 13.98,
+      "currency": "USD",
+      "was": "$19.99",
+      "pct": 30,
+      "discount": "-30%",
+      "dealReasons": [
+        "amazon_savings_drop"
+      ],
+      "keepaAvg30": null,
+      "keepaMin30": null,
+      "keepaCurrent": null,
+      "link": "https://www.amazon.com/dp/B0DLP157QH?tag=sawdustsavings-20&linkCode=ogi&th=1&psc=1",
+      "hot": true,
+      "desc": "Top Amazon best seller with a verified price drop",
+      "seen_at": "2026-05-02T00:08:55.207616+00:00",
+      "updated_at": "2026-05-06T23:10:55.545178+00:00"
+    },
+    {
+      "asin": "B0CTJGJL2T",
+      "title": "GODONLIF Candle Warmer Lamp with Timer Dimmable, Birthday Gifts for Women Mom, House Warming Gifts New Home Decor, Wax Melt Warmer for Jar Candles with 2 Bulbs",
+      "brand": "GODONLIF",
+      "cat": "Home & Kitchen",
+      "bestSellerCategories": [
+        {
+          "categoryId": 1055398,
+          "name": "Home & Kitchen",
+          "slug": "home-kitchen",
+          "rank": 87
+        }
+      ],
+      "bestSellerRank": 87,
+      "image": "https://m.media-amazon.com/images/I/41Ahz+ihkiL._SL500_.jpg",
+      "price": "$19.99",
+      "price_amount": 19.99,
+      "currency": "USD",
+      "was": "$27.99",
+      "pct": 29,
+      "discount": "-29%",
+      "dealReasons": [
+        "amazon_savings_drop"
+      ],
+      "keepaAvg30": null,
+      "keepaMin30": null,
+      "keepaCurrent": null,
+      "link": "https://www.amazon.com/dp/B0CTJGJL2T?tag=sawdustsavings-20&linkCode=ogi&th=1&psc=1",
+      "hot": false,
+      "desc": "Top Amazon best seller with a verified price drop",
+      "seen_at": "2026-05-02T00:08:55.207562+00:00",
+      "updated_at": "2026-05-06T23:10:55.545143+00:00"
+    },
+    {
+      "asin": "B0CBV96TQ1",
+      "title": "URMYWO Black and White Baby Toy, Tummy Time High Contrast Newborn Toys 0-3 Months, Soft Baby Book, Visual Stimulation Montessori Sensory Infant Toys 0-6-12 Months, Boy Girl Shower Gift",
+      "brand": "URMYWO",
+      "cat": "Toys & Games",
+      "bestSellerCategories": [
+        {
+          "categoryId": 165793011,
+          "name": "Toys & Games",
+          "slug": "toys-games",
+          "rank": 87
+        }
+      ],
+      "bestSellerRank": 87,
+      "image": "https://m.media-amazon.com/images/I/51NtGsKPj5L._SL500_.jpg",
+      "price": "$8.99",
+      "price_amount": 8.99,
+      "currency": "USD",
+      "was": "$12.99",
+      "pct": 31,
+      "discount": "-31%",
+      "dealReasons": [
+        "amazon_savings_drop"
+      ],
+      "keepaAvg30": null,
+      "keepaMin30": null,
+      "keepaCurrent": null,
+      "link": "https://www.amazon.com/dp/B0CBV96TQ1?tag=sawdustsavings-20&linkCode=ogi&th=1&psc=1",
+      "hot": true,
+      "desc": "Top Amazon best seller with a verified price drop",
+      "seen_at": "2026-05-02T00:08:55.207535+00:00",
+      "updated_at": "2026-05-06T23:10:55.545119+00:00"
+    },
+    {
+      "asin": "B0C859YMN6",
+      "title": "\ud835\udfd0\ud835\udfce\ud835\udfd0\ud835\udfd4 \ud835\udc14\ud835\udc29\ud835\udc20\ud835\udc2b\ud835\udc1a\ud835\udc1d\ud835\udc1e\ud835\udc1d Magnetic Charging Cable for Apple Watch Charger,[USB C Port] Wireless Charging Cable Compatible with iWatch Series Ultra/10/9/8/7/6/SE/SE2/5/4/3/2[3.3FT/1M]-White",
+      "brand": "xiwxi",
+      "cat": "Electronics",
+      "bestSellerCategories": [
+        {
+          "categoryId": 172282,
+          "name": "Electronics",
+          "slug": "electronics",
+          "rank": 87
+        }
+      ],
+      "bestSellerRank": 87,
+      "image": "https://m.media-amazon.com/images/I/31iygFKcpwL._SL500_.jpg",
+      "price": "$8.99",
+      "price_amount": 8.99,
+      "currency": "USD",
+      "was": "$9.99",
+      "pct": 10,
+      "discount": "-10%",
+      "dealReasons": [
+        "amazon_savings_drop"
+      ],
+      "keepaAvg30": 9.76,
+      "keepaMin30": null,
+      "keepaCurrent": null,
+      "link": "https://www.amazon.com/dp/B0C859YMN6?tag=sawdustsavings-20&linkCode=ogi&th=1&psc=1",
+      "hot": false,
+      "desc": "Top Amazon best seller with a verified price drop",
+      "seen_at": "2026-05-02T00:08:55.207508+00:00",
+      "updated_at": "2026-05-06T23:10:55.545096+00:00"
+    },
+    {
+      "asin": "B09JZZJ2Y1",
+      "title": "Broan-NuTone PM300SS Custom Power Pack Range Hood Insert with 2-Speed Exhaust Fan and Light, 300 Max Blower CFM, Stainless Steel, 21-Inch Built",
+      "brand": "Broan-NuTone",
+      "cat": "Appliances",
+      "bestSellerCategories": [
+        {
+          "categoryId": 2619525011,
+          "name": "Appliances",
+          "slug": "appliances",
+          "rank": 87
+        }
+      ],
+      "bestSellerRank": 87,
+      "image": "https://m.media-amazon.com/images/I/31XgsYIwELL._SL500_.jpg",
+      "price": "$201.97",
+      "price_amount": 201.97,
+      "currency": "USD",
+      "was": "$284.0",
+      "pct": 29,
+      "discount": "-29%",
+      "dealReasons": [
+        "amazon_savings_drop"
+      ],
+      "keepaAvg30": 201.97,
+      "keepaMin30": null,
+      "keepaCurrent": 201.97,
+      "link": "https://www.amazon.com/dp/B09JZZJ2Y1?tag=sawdustsavings-20&linkCode=ogi&th=1&psc=1",
+      "hot": false,
+      "desc": "Top Amazon best seller with a verified price drop",
+      "seen_at": "2026-05-02T00:08:55.207475+00:00",
+      "updated_at": "2026-05-06T23:10:55.545065+00:00"
+    },
+    {
+      "asin": "B01BUNHFAS",
+      "title": "OxiClean Odor Blasters Versatile Odor and Laundry Stain Remover Powder, 5 lb",
+      "brand": "OxiClean",
+      "cat": "Health & Household",
+      "bestSellerCategories": [
+        {
+          "categoryId": 3760901,
+          "name": "Health & Household",
+          "slug": "health-household",
+          "rank": 87
+        }
+      ],
+      "bestSellerRank": 87,
+      "image": "https://m.media-amazon.com/images/I/51Efiv80RFL._SL500_.jpg",
+      "price": "$11.78",
+      "price_amount": 11.78,
+      "currency": "USD",
+      "was": "$13.99",
+      "pct": 16,
+      "discount": "-16%",
+      "dealReasons": [
+        "amazon_savings_drop"
+      ],
+      "keepaAvg30": 11.77,
+      "keepaMin30": null,
+      "keepaCurrent": 11.78,
+      "link": "https://www.amazon.com/dp/B01BUNHFAS?tag=sawdustsavings-20&linkCode=ogi&th=1&psc=1",
+      "hot": false,
+      "desc": "Top Amazon best seller with a verified price drop",
+      "seen_at": "2026-05-02T00:08:55.207343+00:00",
+      "updated_at": "2026-05-06T23:10:55.544943+00:00"
+    },
+    {
+      "asin": "B00006IFIK",
+      "title": "EXPO Dry Erase Markers, Low Odor Ink, Assorted Colors, Chisel Tip, 4 Count - Whiteboard, Calendar, Organization, Essential Supplies for Office, School, Classroom, Teachers",
+      "brand": "EXPO",
+      "cat": "Office Products",
+      "bestSellerCategories": [
+        {
+          "categoryId": 1064954,
+          "name": "Office Products",
+          "slug": "office-products",
+          "rank": 87
+        }
+      ],
+      "bestSellerRank": 87,
+      "image": "https://m.media-amazon.com/images/I/41FbWKbM6dL._SL500_.jpg",
+      "price": "$5.24",
+      "price_amount": 5.24,
+      "currency": "USD",
+      "was": "$10.47",
+      "pct": 50,
+      "discount": "-50%",
+      "dealReasons": [
+        "amazon_savings_drop"
+      ],
+      "keepaAvg30": 5.12,
+      "keepaMin30": null,
+      "keepaCurrent": 5.24,
+      "link": "https://www.amazon.com/dp/B00006IFIK?tag=sawdustsavings-20&linkCode=ogi&th=1&psc=1",
+      "hot": true,
+      "desc": "Top Amazon best seller with a verified price drop",
+      "seen_at": "2026-05-06T23:10:55.544896+00:00",
+      "updated_at": "2026-05-06T23:10:55.544897+00:00"
+    },
+    {
+      "asin": "B0FVXMHHRP",
+      "title": "Samsung Galaxy Tab A11+ 6GB RAM, 128GB Storage, Optimized Performance, Long Lasting Battery, Expandable Storage, Large Display, Dolby Atmos Speakers, AI Assist, Slim, Light, 2 Year Warranty, Gray",
+      "brand": "Samsung",
+      "cat": "Electronics",
+      "bestSellerCategories": [
+        {
+          "categoryId": 172282,
+          "name": "Electronics",
+          "slug": "electronics",
+          "rank": 86
+        }
+      ],
+      "bestSellerRank": 86,
+      "image": "https://m.media-amazon.com/images/I/31ZtB0EJsaL._SL500_.jpg",
+      "price": "$209.99",
+      "price_amount": 209.99,
+      "currency": "USD",
+      "was": "$249.99",
+      "pct": 16,
+      "discount": "-16%",
+      "dealReasons": [
+        "amazon_savings_drop"
+      ],
+      "keepaAvg30": 225.94,
+      "keepaMin30": null,
+      "keepaCurrent": 209.99,
+      "link": "https://www.amazon.com/dp/B0FVXMHHRP?tag=sawdustsavings-20&linkCode=ogi&th=1&psc=1",
+      "hot": false,
+      "desc": "Top Amazon best seller with a verified price drop",
+      "seen_at": "2026-05-02T00:08:55.207274+00:00",
+      "updated_at": "2026-05-06T23:10:55.544868+00:00"
+    },
+    {
+      "asin": "B0D46FMQTJ",
+      "title": "4 Pack LCD Writing Tablet for Kids, 8.5 Inch Colorful Doodle Board Drawing Tablet, Educational Learning Toys Birthday Gifts for Boys Girls Age 3 4 5 6 7 8",
+      "brand": "TQU",
+      "cat": "Toys & Games",
+      "bestSellerCategories": [
+        {
+          "categoryId": 165793011,
+          "name": "Toys & Games",
+          "slug": "toys-games",
+          "rank": 86
+        }
+      ],
+      "bestSellerRank": 86,
+      "image": "https://m.media-amazon.com/images/I/51wv5RB3LmL._SL500_.jpg",
+      "price": "$8.99",
+      "price_amount": 8.99,
+      "currency": "USD",
+      "was": "$9.99",
+      "pct": 10,
+      "discount": "-10%",
+      "dealReasons": [
+        "amazon_savings_drop"
+      ],
+      "keepaAvg30": null,
+      "keepaMin30": null,
+      "keepaCurrent": null,
+      "link": "https://www.amazon.com/dp/B0D46FMQTJ?tag=sawdustsavings-20&linkCode=ogi&th=1&psc=1",
+      "hot": false,
+      "desc": "Top Amazon best seller with a verified price drop",
+      "seen_at": "2026-05-02T00:08:55.207211+00:00",
+      "updated_at": "2026-05-06T23:10:55.544791+00:00"
+    },
     {
       "asin": "B08XZRJMHF",
       "title": "Canon PG-275 Genuine Black Ink Cartridge, Compatible with TS3520/3522, TR4720/4722, TS3720/3722",
