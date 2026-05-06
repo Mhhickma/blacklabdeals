@@ -1,1 +1,253 @@
-const MODE=document.body.dataset.mode||'all',PAGE_CATEGORY=(document.body.dataset.category||'').toLowerCase().trim(),PAGE_CATEGORY_LABEL=document.body.dataset.categoryLabel||'',DEALS_PER_PAGE=50,DEALS_LIMIT=100;let allDeals=[],visibleDealsCount=DEALS_PER_PAGE,currentFilter='all';const $=id=>document.getElementById(id);function title(d){return d.title||d.name||d.product_title||d.productTitle||'Amazon Deal'}function img(d){return d.image||d.image_url||d.imageUrl||d.img||d.thumbnail||''}function link(d){return d.url||d.link||d.affiliate_url||d.affiliateUrl||d.product_url||'#'}function price(d){return Number(d.price_amount??d.current_price??d.currentPrice??d.price??d.sale_price??0)||0}function pct(d){return Number(d.pct??d.discount_percent??d.discountPercent??d.percent_off??d.percentOff??0)||0}function was(d){return d.was||d.old_price||d.previous_price||d.previousPrice||null}function cat(d){return String(d.cat||d.category||'Amazon Deals')}function hot(d){return Boolean(d.hot||d.is_hot||d.isHot||pct(d)>=30)}function coupon(d){return Boolean(d.hasCoupon||d.has_coupon||d.couponDisplay||d.coupon)}function updated(d){return Date.parse(d.updated_at||d.updatedAt||d.seen_at||d.seenAt||0)||0}function money(v){return v?new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(v):''}function ago(ts){if(!ts)return'—';const m=Math.floor(Math.max(0,Date.now()-ts)/60000);if(m<60)return`${m}m ago`;const h=Math.floor(m/60);return h<24?`${h}h ago`:`${Math.floor(h/24)}d ago`}function avg(a){return a.length?a.reduce((s,v)=>s+v,0)/a.length:0}function esc(s){return String(s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}function norm(s){return String(s||'').toLowerCase().replace(/&/g,'and').replace(/[^a-z0-9]+/g,' ').trim()}const CATEGORY_KEYWORDS={electronics:['electronics','cell phones','cell phone','computers','computer','camera','audio','headphones','tablet','tv','television'],automotive:['automotive','car','truck','vehicle','garage'],patio:['patio','lawn','garden','outdoor','yard'],sports:['sports','outdoors','outdoor','camping','fitness','hunting','fishing'],pet:['pet','pets','pet supplies','dog','cat'],toys:['toys','games','toy','game'],office:['office','office products','school supplies'],health:['health','household','beauty','personal care','cleaning'],baby:['baby','baby products'],music:['musical instruments','music','instrument'],appliances:['appliances','appliance'],handmade:['handmade'],industrial:['industrial','scientific'],arts:['arts','crafts','sewing','craft'],tools:['tools','home improvement','tool'],home:['home','kitchen']};function matchCategory(d,key){const c=norm(cat(d)),k=norm(key),words=CATEGORY_KEYWORDS[k]||[k];return words.some(w=>c.includes(norm(w)))}function pageMatch(d){const c=cat(d).toLowerCase().trim(),p=price(d);if(PAGE_CATEGORY)return matchCategory(d,PAGE_CATEGORY);if(MODE==='tools')return c==='tools & home improvement'||c.includes('tool')||c.includes('home improvement');if(MODE==='home')return c==='home & kitchen'||c.includes('home')||c.includes('kitchen');if(MODE==='under50')return p>0&&p<=50;return p>0||title(d)}function topFilter(d){const c=cat(d).toLowerCase(),p=price(d);if(currentFilter==='hot')return hot(d);if(currentFilter==='coupon')return coupon(d);if(currentFilter==='under50')return p>0&&p<=50;if(currentFilter==='home')return c.includes('home')||c.includes('kitchen');if(currentFilter==='electronics')return matchCategory(d,'electronics');if(currentFilter==='tools')return matchCategory(d,'tools');return true}function score(d){return(hot(d)?1000:0)+(coupon(d)?180:0)+pct(d)*12+(was(d)?60:0)+updated(d)/1000000000+Math.max(0,80-price(d))}function sorted(a){return[...a].sort((x,y)=>score(y)-score(x))}function shown(){let d=allDeals;if(MODE==='top100')d=d.filter(topFilter).slice(0,DEALS_LIMIT);return sorted(d)}function stats(d){const label=PAGE_CATEGORY_LABEL||'deals';if($('hero-pill'))$('hero-pill').textContent=PAGE_CATEGORY?`${d.length} ${label} deals live right now`:`${d.length} deals live right now`;if($('stat-active'))$('stat-active').textContent=d.length;if($('stat-hot'))$('stat-hot').textContent=d.filter(hot).length;const ap=avg(d.map(price).filter(Boolean));if($('stat-price'))$('stat-price').textContent=ap?money(ap):'—';const ad=avg(d.map(pct).filter(Boolean));if($('stat-discount'))$('stat-discount').textContent=ad?`${Math.round(ad)}% off`:'—';const n=Math.max(...d.map(updated),0);if($('stat-updated'))$('stat-updated').textContent=n?ago(n):'—'}function cardImage(d,t){const i=img(d);return i?`<img src="${esc(i)}" alt="${esc(t)}" loading="lazy" onerror="this.outerHTML='&lt;div class=\\'img-fallback\\'&gt;Deal image unavailable&lt;/div&gt;'">`:`<div class="img-fallback">Deal image unavailable</div>`}function ensureLoadMoreButton(){if($('load-more-btn'))return;const g=$('hot-grid');if(!g)return;g.insertAdjacentHTML('afterend','<div id="load-more-wrap" class="load-more-wrap hidden"><button id="load-more-btn" class="load-more-btn" type="button">Load More Deals</button></div>');const b=$('load-more-btn');if(b)b.addEventListener('click',()=>{visibleDealsCount+=DEALS_PER_PAGE;render()})}function more(c){ensureLoadMoreButton();const w=$('load-more-wrap'),b=$('load-more-btn');if(!w||!b)return;if(visibleDealsCount<c){w.classList.remove('hidden');b.textContent=`Load 50 More Deals (${c-visibleDealsCount} remaining)`}else w.classList.add('hidden')}function render(){const g=$('hot-grid'),s=$('status-line'),f=shown();stats(f);if($('deal-count'))$('deal-count').textContent=`${Math.min(visibleDealsCount,f.length)} of ${f.length} deals`;if(s)s.textContent=PAGE_CATEGORY?`Showing live ${PAGE_CATEGORY_LABEL||'category'} deals from the Black Lab Deals feed.`:'Showing live Black Lab Deals with the same sitewide header and footer.';if(!g)return;if(!f.length){g.innerHTML='<div class="empty-state">No matching deals found right now.</div>';more(0);return}const list=f.slice(0,visibleDealsCount);g.innerHTML=list.map((d,i)=>{const t=title(d),p=money(price(d)),w=was(d),off=pct(d),badge=hot(d)?'Hot Deal':coupon(d)?'Coupon':'Deal';return`<a class="hot-card" href="${esc(link(d))}" target="_blank" rel="nofollow sponsored noopener"><div class="hot-card-img">${cardImage(d,t)}${MODE==='top100'?`<div class="rank-badge">#${i+1}</div>`:''}<div class="hot-card-badge">${badge}</div></div><div class="hot-card-body">${(MODE==='top100'||PAGE_CATEGORY)?`<div class="category-pill">${esc(cat(d))}</div>`:''}<div class="stars">${hot(d)?'★★★★★':'★★★★☆'} ${esc((d.brand||'').slice(0,24))}</div><div class="hot-card-title">${esc(t)}</div><div class="hot-card-prices"><span class="hot-price-now">${p||'See deal'}</span>${w?`<span class="hot-price-was">${esc(w)}</span>`:''}${off?`<span class="hot-off">${off}% off</span>`:''}</div><span class="hot-btn">See Deal on Amazon →</span></div></a>`}).join('');more(f.length)}function ensureBrowseSection(){if(PAGE_CATEGORY||document.querySelector('.browse-pages-section'))return;const target=document.querySelector('.stats-bar')||document.querySelector('.hot-strip');if(!target)return;const html=`<section class="browse-pages-section"><h2>Browse deal pages</h2><p>Quick links to the completed live deal pages.</p><div class="browse-page-grid"><a class="browse-page-card" href="/best-amazon-tool-deals/"><span class="browse-page-kicker">Category</span><h3>Best Amazon Tool Deals</h3><p>Power tools, hand tools, storage, and workshop finds.</p></a><a class="browse-page-card" href="/best-amazon-deals-under-50/"><span class="browse-page-kicker">Budget</span><h3>Best Amazon Deals Under $50</h3><p>Budget-friendly deals across home, tech, kitchen, and more.</p></a><a class="browse-page-card" href="/best-amazon-home-kitchen-deals/"><span class="browse-page-kicker">Home</span><h3>Best Amazon Home &amp; Kitchen Deals</h3><p>Kitchen gadgets, cookware, storage, bedding, and essentials.</p></a><a class="browse-page-card" href="/top-100-amazon-deals-today/"><span class="browse-page-kicker">Top 100</span><h3>Top 100 Amazon Deals Today</h3><p>Ranked daily deals, hot price drops, coupons, and best finds.</p></a></div></section>`;if(target.classList.contains('stats-bar'))target.insertAdjacentHTML('beforebegin',html);else target.insertAdjacentHTML('afterend',html)}async function loadDeals(){ensureBrowseSection();const s=$('status-line');try{const r=await fetch('/deals.json',{cache:'no-store'});if(!r.ok)throw new Error('Could not load deals.json');const data=await r.json(),source=Array.isArray(data)?data:Array.isArray(data.deals)?data.deals:[];allDeals=source.filter(pageMatch);visibleDealsCount=DEALS_PER_PAGE;render()}catch(e){console.error(e);if(s)s.textContent='Could not load live deals right now.';if($('hero-pill'))$('hero-pill').textContent='Deals unavailable right now';if($('hot-grid'))$('hot-grid').innerHTML='<div class="empty-state">This page is live, but the deal feed could not be loaded right now.</div>'}}document.querySelectorAll('.filter-btn').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('.filter-btn').forEach(x=>x.classList.remove('active'));b.classList.add('active');currentFilter=b.dataset.filter;visibleDealsCount=DEALS_PER_PAGE;render()}));const lm=$('load-more-btn');if(lm)lm.addEventListener('click',()=>{visibleDealsCount+=DEALS_PER_PAGE;render()});loadDeals();
+const MODE = document.body.dataset.mode || 'all';
+const PAGE_CATEGORY = (document.body.dataset.category || '').toLowerCase().trim();
+const PAGE_CATEGORY_LABEL = document.body.dataset.categoryLabel || '';
+const DEALS_PER_PAGE = 50;
+const DEALS_LIMIT = 100;
+
+let allDeals = [];
+let visibleDealsCount = DEALS_PER_PAGE;
+let currentFilter = 'all';
+
+const $ = id => document.getElementById(id);
+
+function title(d) { return d.title || d.name || d.product_title || d.productTitle || 'Amazon Deal'; }
+function img(d) { return d.image || d.image_url || d.imageUrl || d.img || d.thumbnail || ''; }
+function link(d) { return d.url || d.link || d.affiliate_url || d.affiliateUrl || d.product_url || '#'; }
+function price(d) { return Number(d.price_amount ?? d.current_price ?? d.currentPrice ?? d.price ?? d.sale_price ?? 0) || 0; }
+function pct(d) { return Number(d.pct ?? d.discount_percent ?? d.discountPercent ?? d.percent_off ?? d.percentOff ?? 0) || 0; }
+function was(d) { return d.was || d.old_price || d.previous_price || d.previousPrice || null; }
+function cat(d) { return String(d.cat || d.category || 'Amazon Deals'); }
+function hot(d) { return Boolean(d.hot || d.is_hot || d.isHot || pct(d) >= 30); }
+function coupon(d) { return Boolean(d.hasCoupon || d.has_coupon || d.couponDisplay || d.coupon); }
+function updated(d) { return Date.parse(d.updated_at || d.updatedAt || d.seen_at || d.seenAt || 0) || 0; }
+function money(v) { return v ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(v) : ''; }
+function ago(ts) {
+  if (!ts) return '—';
+  const m = Math.floor(Math.max(0, Date.now() - ts) / 60000);
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  return h < 24 ? `${h}h ago` : `${Math.floor(h / 24)}d ago`;
+}
+function avg(a) { return a.length ? a.reduce((s, v) => s + v, 0) / a.length : 0; }
+function esc(s) {
+  return String(s || '').replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m]));
+}
+function norm(s) {
+  return String(s || '').toLowerCase().replace(/&/g, 'and').replace(/[^a-z0-9]+/g, ' ').trim();
+}
+
+const CATEGORY_KEYWORDS = {
+  electronics: ['electronics', 'cell phones', 'cell phone', 'computers', 'computer', 'camera', 'audio', 'headphones', 'tablet', 'tv', 'television'],
+  automotive: ['automotive', 'car', 'truck', 'vehicle', 'garage'],
+  patio: ['patio', 'lawn', 'garden', 'outdoor', 'yard'],
+  sports: ['sports', 'outdoors', 'outdoor', 'camping', 'fitness', 'hunting', 'fishing'],
+  pet: ['pet', 'pets', 'pet supplies', 'dog', 'cat'],
+  toys: ['toys', 'games', 'toy', 'game'],
+  office: ['office', 'office products', 'school supplies'],
+  health: ['health', 'household', 'beauty', 'personal care', 'cleaning'],
+  baby: ['baby', 'baby products'],
+  music: ['musical instruments', 'music', 'instrument'],
+  appliances: ['appliances', 'appliance'],
+  handmade: ['handmade'],
+  industrial: ['industrial', 'scientific'],
+  arts: ['arts', 'crafts', 'sewing', 'craft'],
+  tools: ['tools', 'home improvement', 'tool'],
+  home: ['home', 'kitchen']
+};
+
+function matchCategory(d, key) {
+  const c = norm(cat(d));
+  const k = norm(key);
+  const words = CATEGORY_KEYWORDS[k] || [k];
+  return words.some(w => c.includes(norm(w)));
+}
+
+function pageMatch(d) {
+  const c = cat(d).toLowerCase().trim();
+  const p = price(d);
+  if (PAGE_CATEGORY) return matchCategory(d, PAGE_CATEGORY);
+  if (MODE === 'tools') return c === 'tools & home improvement' || c.includes('tool') || c.includes('home improvement');
+  if (MODE === 'home') return c === 'home & kitchen' || c.includes('home') || c.includes('kitchen');
+  if (MODE === 'under50') return p > 0 && p <= 50;
+  return p > 0 || title(d);
+}
+
+function topFilter(d) {
+  const c = cat(d).toLowerCase();
+  const p = price(d);
+  if (currentFilter === 'hot') return hot(d);
+  if (currentFilter === 'coupon') return coupon(d);
+  if (currentFilter === 'under50') return p > 0 && p <= 50;
+  if (currentFilter === 'home') return c.includes('home') || c.includes('kitchen');
+  if (currentFilter === 'electronics') return matchCategory(d, 'electronics');
+  if (currentFilter === 'tools') return matchCategory(d, 'tools');
+  return true;
+}
+
+function score(d) {
+  return (hot(d) ? 1000 : 0) + (coupon(d) ? 180 : 0) + pct(d) * 12 + (was(d) ? 60 : 0) + updated(d) / 1000000000 + Math.max(0, 80 - price(d));
+}
+function sorted(a) { return [...a].sort((x, y) => score(y) - score(x)); }
+function shown() {
+  let d = allDeals;
+  if (MODE === 'top100') d = d.filter(topFilter).slice(0, DEALS_LIMIT);
+  return sorted(d);
+}
+
+function stats(d) {
+  const label = PAGE_CATEGORY_LABEL || 'deals';
+  if ($('hero-pill')) $('hero-pill').textContent = PAGE_CATEGORY ? `${d.length} ${label} deals live right now` : `${d.length} deals live right now`;
+  if ($('stat-active')) $('stat-active').textContent = d.length;
+  if ($('stat-hot')) $('stat-hot').textContent = d.filter(hot).length;
+  const ap = avg(d.map(price).filter(Boolean));
+  if ($('stat-price')) $('stat-price').textContent = ap ? money(ap) : '—';
+  const ad = avg(d.map(pct).filter(Boolean));
+  if ($('stat-discount')) $('stat-discount').textContent = ad ? `${Math.round(ad)}% off` : '—';
+  const n = Math.max(...d.map(updated), 0);
+  if ($('stat-updated')) $('stat-updated').textContent = n ? ago(n) : '—';
+}
+
+function cardImage(d, t) {
+  const i = img(d);
+  return i ? `<img src="${esc(i)}" alt="${esc(t)}" loading="lazy" onerror="this.outerHTML='&lt;div class=\\'img-fallback\\'&gt;Deal image unavailable&lt;/div&gt;'">` : `<div class="img-fallback">Deal image unavailable</div>`;
+}
+
+function ensureLoadMoreButton() {
+  if ($('load-more-btn')) return;
+  const g = $('hot-grid');
+  if (!g) return;
+  g.insertAdjacentHTML('afterend', '<div id="load-more-wrap" class="load-more-wrap hidden"><button id="load-more-btn" class="load-more-btn" type="button">Load 50 More Deals</button></div>');
+  const b = $('load-more-btn');
+  if (b) b.addEventListener('click', () => { visibleDealsCount += DEALS_PER_PAGE; render(); });
+}
+
+function more(c) {
+  ensureLoadMoreButton();
+  const w = $('load-more-wrap');
+  const b = $('load-more-btn');
+  if (!w || !b) return;
+  if (visibleDealsCount < c) {
+    w.classList.remove('hidden');
+    b.textContent = `Load 50 More Deals (${c - visibleDealsCount} remaining)`;
+  } else {
+    w.classList.add('hidden');
+  }
+}
+
+function render() {
+  const g = $('hot-grid');
+  const s = $('status-line');
+  const f = shown();
+  stats(f);
+  if ($('deal-count')) $('deal-count').textContent = `${Math.min(visibleDealsCount, f.length)} of ${f.length} deals`;
+  if (s) s.textContent = PAGE_CATEGORY ? `Showing live ${PAGE_CATEGORY_LABEL || 'category'} deals from the Black Lab Deals feed.` : 'Showing live Black Lab Deals with the same sitewide header and footer.';
+  if (!g) return;
+  if (!f.length) {
+    g.innerHTML = '<div class="empty-state">No matching deals found right now.</div>';
+    more(0);
+    return;
+  }
+  const list = f.slice(0, visibleDealsCount);
+  g.innerHTML = list.map((d, i) => {
+    const t = title(d), p = money(price(d)), w = was(d), off = pct(d), badge = hot(d) ? 'Hot Deal' : coupon(d) ? 'Coupon' : 'Deal';
+    return `<a class="hot-card" href="${esc(link(d))}" target="_blank" rel="nofollow sponsored noopener"><div class="hot-card-img">${cardImage(d, t)}${MODE === 'top100' ? `<div class="rank-badge">#${i + 1}</div>` : ''}<div class="hot-card-badge">${badge}</div></div><div class="hot-card-body">${(MODE === 'top100' || PAGE_CATEGORY) ? `<div class="category-pill">${esc(cat(d))}</div>` : ''}<div class="stars">${hot(d) ? '★★★★★' : '★★★★☆'} ${esc((d.brand || '').slice(0, 24))}</div><div class="hot-card-title">${esc(t)}</div><div class="hot-card-prices"><span class="hot-price-now">${p || 'See deal'}</span>${w ? `<span class="hot-price-was">${esc(w)}</span>` : ''}${off ? `<span class="hot-off">${off}% off</span>` : ''}</div><span class="hot-btn">See Deal on Amazon →</span></div></a>`;
+  }).join('');
+  more(f.length);
+}
+
+function ensureBrowseSection() {
+  if (PAGE_CATEGORY || document.querySelector('.browse-pages-section')) return;
+  const target = document.querySelector('.stats-bar') || document.querySelector('.hot-strip');
+  if (!target) return;
+  const html = `<section class="browse-pages-section"><h2>Browse deal pages</h2><p>Quick links to the completed live deal pages.</p><div class="browse-page-grid"><a class="browse-page-card" href="/best-amazon-tool-deals/"><span class="browse-page-kicker">Category</span><h3>Best Amazon Tool Deals</h3><p>Power tools, hand tools, storage, and workshop finds.</p></a><a class="browse-page-card" href="/best-amazon-deals-under-50/"><span class="browse-page-kicker">Budget</span><h3>Best Amazon Deals Under $50</h3><p>Budget-friendly deals across home, tech, kitchen, and more.</p></a><a class="browse-page-card" href="/best-amazon-home-kitchen-deals/"><span class="browse-page-kicker">Home</span><h3>Best Amazon Home &amp; Kitchen Deals</h3><p>Kitchen gadgets, cookware, storage, bedding, and essentials.</p></a><a class="browse-page-card" href="/top-100-amazon-deals-today/"><span class="browse-page-kicker">Top 100</span><h3>Top 100 Amazon Deals Today</h3><p>Ranked daily deals, hot price drops, coupons, and best finds.</p></a></div></section>`;
+  if (target.classList.contains('stats-bar')) target.insertAdjacentHTML('beforebegin', html);
+  else target.insertAdjacentHTML('afterend', html);
+}
+
+async function loadDeals() {
+  ensureBrowseSection();
+  const s = $('status-line');
+  try {
+    const r = await fetch('/deals.json', { cache: 'no-store' });
+    if (!r.ok) throw new Error('Could not load deals.json');
+    const data = await r.json();
+    const source = Array.isArray(data) ? data : Array.isArray(data.deals) ? data.deals : [];
+    allDeals = source.filter(pageMatch);
+    visibleDealsCount = DEALS_PER_PAGE;
+    render();
+  } catch (e) {
+    console.error(e);
+    if (s) s.textContent = 'Could not load live deals right now.';
+    if ($('hero-pill')) $('hero-pill').textContent = 'Deals unavailable right now';
+    if ($('hot-grid')) $('hot-grid').innerHTML = '<div class="empty-state">This page is live, but the deal feed could not be loaded right now.</div>';
+  }
+}
+
+function initFilters() {
+  document.querySelectorAll('.filter-btn').forEach(b => b.addEventListener('click', () => {
+    document.querySelectorAll('.filter-btn').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    currentFilter = b.dataset.filter;
+    visibleDealsCount = DEALS_PER_PAGE;
+    render();
+  }));
+}
+
+function initUniversalDealPagination() {
+  const state = new WeakMap();
+  const getCards = grid => [...grid.children].filter(el => el.matches && el.matches('.hot-card,.deal-card,.product-card,.card'));
+
+  function applyGrid(grid) {
+    if (!grid || grid.dataset.bldUniversalPager === 'off') return;
+    const cards = getCards(grid);
+    if (cards.length <= DEALS_PER_PAGE) return;
+
+    let current = state.get(grid) || DEALS_PER_PAGE;
+    current = Math.min(current, cards.length);
+    state.set(grid, current);
+
+    cards.forEach((card, index) => {
+      card.style.display = index < current ? '' : 'none';
+    });
+
+    let wrap = grid.nextElementSibling && grid.nextElementSibling.classList && grid.nextElementSibling.classList.contains('bld-load-more-wrap')
+      ? grid.nextElementSibling
+      : null;
+
+    if (!wrap) {
+      wrap = document.createElement('div');
+      wrap.className = 'bld-load-more-wrap load-more-wrap';
+      wrap.innerHTML = '<button class="bld-load-more-btn load-more-btn" type="button">Load 50 More Deals</button>';
+      grid.insertAdjacentElement('afterend', wrap);
+      wrap.querySelector('button').addEventListener('click', () => {
+        state.set(grid, Math.min((state.get(grid) || DEALS_PER_PAGE) + DEALS_PER_PAGE, getCards(grid).length));
+        applyGrid(grid);
+      });
+    }
+
+    const button = wrap.querySelector('button');
+    const remaining = cards.length - current;
+    if (remaining > 0) {
+      wrap.classList.remove('hidden');
+      button.textContent = `Load 50 More Deals (${remaining} remaining)`;
+    } else {
+      wrap.classList.add('hidden');
+    }
+  }
+
+  function applyAll() {
+    document.querySelectorAll('.hot-grid,.deals-grid').forEach(applyGrid);
+  }
+
+  applyAll();
+  window.addEventListener('load', applyAll);
+  setTimeout(applyAll, 300);
+  setTimeout(applyAll, 1000);
+
+  const observer = new MutationObserver(() => applyAll());
+  observer.observe(document.body, { childList: true, subtree: true });
+}
+
+initFilters();
+loadDeals();
+initUniversalDealPagination();
