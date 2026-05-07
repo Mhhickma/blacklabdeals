@@ -10,6 +10,20 @@ let currentFilter = 'all';
 
 const $ = id => document.getElementById(id);
 
+function bldTrack(eventName, params = {}) {
+  try {
+    if (typeof window.gtag !== 'function') return;
+    window.gtag('event', eventName, {
+      page_location: window.location.href,
+      page_path: window.location.pathname,
+      page_title: document.title,
+      ...params
+    });
+  } catch (e) {
+    console.warn('Analytics event failed', eventName, e);
+  }
+}
+
 function title(d) { return d.title || d.name || d.product_title || d.productTitle || 'Amazon Deal'; }
 function img(d) { return d.image || d.image_url || d.imageUrl || d.img || d.thumbnail || ''; }
 function link(d) { return d.url || d.link || d.affiliate_url || d.affiliateUrl || d.product_url || '#'; }
@@ -118,7 +132,16 @@ function ensureLoadMoreButton() {
   if (!g) return;
   g.insertAdjacentHTML('afterend', '<div id="load-more-wrap" class="load-more-wrap hidden"><button id="load-more-btn" class="load-more-btn" type="button">Load 50 More Deals</button></div>');
   const b = $('load-more-btn');
-  if (b) b.addEventListener('click', () => { visibleDealsCount += DEALS_PER_PAGE; render(); });
+  if (b) b.addEventListener('click', () => {
+    bldTrack('load_more_deals', {
+      visible_before: visibleDealsCount,
+      visible_after: visibleDealsCount + DEALS_PER_PAGE,
+      page_mode: MODE,
+      page_category: PAGE_CATEGORY || 'all'
+    });
+    visibleDealsCount += DEALS_PER_PAGE;
+    render();
+  });
 }
 
 function more(c) {
@@ -150,7 +173,7 @@ function render() {
   const list = f.slice(0, visibleDealsCount);
   g.innerHTML = list.map((d, i) => {
     const t = title(d), p = money(price(d)), w = was(d), off = pct(d), badge = hot(d) ? 'Hot Deal' : coupon(d) ? 'Coupon' : 'Deal';
-    return `<a class="hot-card" href="${esc(link(d))}" target="_blank" rel="nofollow sponsored noopener"><div class="hot-card-img">${cardImage(d, t)}${MODE === 'top100' ? `<div class="rank-badge">#${i + 1}</div>` : ''}<div class="hot-card-badge">${badge}</div></div><div class="hot-card-body">${(MODE === 'top100' || PAGE_CATEGORY) ? `<div class="category-pill">${esc(cat(d))}</div>` : ''}<div class="stars">${hot(d) ? '★★★★★' : '★★★★☆'} ${esc((d.brand || '').slice(0, 24))}</div><div class="hot-card-title">${esc(t)}</div><div class="hot-card-prices"><span class="hot-price-now">${p || 'See deal'}</span>${w ? `<span class="hot-price-was">${esc(w)}</span>` : ''}${off ? `<span class="hot-off">${off}% off</span>` : ''}</div><span class="hot-btn">See Deal on Amazon →</span></div></a>`;
+    return `<a class="hot-card" href="${esc(link(d))}" target="_blank" rel="nofollow sponsored noopener" data-asin="${esc(d.asin || '')}" data-deal-title="${esc(t)}" data-deal-category="${esc(cat(d))}" data-deal-price="${esc(price(d))}" data-deal-discount="${esc(off)}"><div class="hot-card-img">${cardImage(d, t)}${MODE === 'top100' ? `<div class="rank-badge">#${i + 1}</div>` : ''}<div class="hot-card-badge">${badge}</div></div><div class="hot-card-body">${(MODE === 'top100' || PAGE_CATEGORY) ? `<div class="category-pill">${esc(cat(d))}</div>` : ''}<div class="stars">${hot(d) ? '★★★★★' : '★★★★☆'} ${esc((d.brand || '').slice(0, 24))}</div><div class="hot-card-title">${esc(t)}</div><div class="hot-card-prices"><span class="hot-price-now">${p || 'See deal'}</span>${w ? `<span class="hot-price-was">${esc(w)}</span>` : ''}${off ? `<span class="hot-off">${off}% off</span>` : ''}</div><span class="hot-btn">See Deal on Amazon →</span></div></a>`;
   }).join('');
   more(f.length);
 }
@@ -189,6 +212,12 @@ function initFilters() {
     b.classList.add('active');
     currentFilter = b.dataset.filter;
     visibleDealsCount = DEALS_PER_PAGE;
+    bldTrack('category_click', {
+      category_name: currentFilter || b.textContent.trim() || 'all',
+      button_text: b.textContent.trim(),
+      page_mode: MODE,
+      page_category: PAGE_CATEGORY || 'all'
+    });
     render();
   }));
 }
@@ -220,7 +249,15 @@ function initUniversalDealPagination() {
       wrap.innerHTML = '<button class="bld-load-more-btn load-more-btn" type="button">Load 50 More Deals</button>';
       grid.insertAdjacentElement('afterend', wrap);
       wrap.querySelector('button').addEventListener('click', () => {
-        state.set(grid, Math.min((state.get(grid) || DEALS_PER_PAGE) + DEALS_PER_PAGE, getCards(grid).length));
+        const before = state.get(grid) || DEALS_PER_PAGE;
+        const after = Math.min(before + DEALS_PER_PAGE, getCards(grid).length);
+        bldTrack('load_more_deals', {
+          visible_before: before,
+          visible_after: after,
+          page_mode: MODE,
+          page_category: PAGE_CATEGORY || 'all'
+        });
+        state.set(grid, after);
         applyGrid(grid);
       });
     }
@@ -248,6 +285,119 @@ function initUniversalDealPagination() {
   observer.observe(document.body, { childList: true, subtree: true });
 }
 
+function initDealClickTracking() {
+  document.addEventListener('click', event => {
+    const shareButton = event.target.closest('.share-btn, [data-share], .copy-btn, [data-copy]');
+    if (shareButton) {
+      bldTrack('share_click', {
+        button_text: shareButton.textContent.trim().slice(0, 80),
+        page_mode: MODE,
+        page_category: PAGE_CATEGORY || 'all'
+      });
+      return;
+    }
+
+    const categoryLink = event.target.closest('.browse-page-card, .category-link, .nav-category-link');
+    if (categoryLink) {
+      bldTrack('category_click', {
+        category_name: categoryLink.textContent.trim().replace(/\s+/g, ' ').slice(0, 80),
+        outbound_url: categoryLink.href || '',
+        page_mode: MODE,
+        page_category: PAGE_CATEGORY || 'all'
+      });
+    }
+
+    const dealLink = event.target.closest('a.hot-card, a.deal-card, a.product-card, a.card, a[href*="amazon.com"], a[href*="joylink.io"]');
+    if (!dealLink) return;
+
+    const href = dealLink.href || '';
+    const isDealOutbound = href.includes('amazon.com') || href.includes('amzn.to') || href.includes('joylink.io');
+    if (!isDealOutbound) return;
+
+    bldTrack('deal_click', {
+      deal_title: dealLink.dataset.dealTitle || dealLink.querySelector('.hot-card-title,.card-title,.product-title')?.textContent?.trim()?.slice(0, 120) || dealLink.textContent.trim().slice(0, 120),
+      deal_asin: dealLink.dataset.asin || '',
+      deal_category: dealLink.dataset.dealCategory || PAGE_CATEGORY_LABEL || PAGE_CATEGORY || 'all',
+      deal_price: dealLink.dataset.dealPrice || '',
+      deal_discount: dealLink.dataset.dealDiscount || '',
+      outbound_url: href,
+      page_mode: MODE,
+      page_category: PAGE_CATEGORY || 'all'
+    });
+  }, true);
+}
+
+function initSearchTracking() {
+  let searchTimer;
+  document.addEventListener('input', event => {
+    const input = event.target;
+    if (!input || !input.matches('input[type="search"], input[placeholder*="Search"], input[placeholder*="search"], #site-search, #search, #searchBox')) return;
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => {
+      const term = input.value.trim();
+      if (term.length < 2 || input.dataset.lastTrackedSearch === term) return;
+      input.dataset.lastTrackedSearch = term;
+      bldTrack('site_search', {
+        search_term: term.slice(0, 100),
+        page_mode: MODE,
+        page_category: PAGE_CATEGORY || 'all'
+      });
+    }, 900);
+  });
+
+  document.addEventListener('submit', event => {
+    const input = event.target.querySelector('input[type="search"], input[placeholder*="Search"], input[placeholder*="search"], #site-search, #search, #searchBox');
+    if (!input) return;
+    const term = input.value.trim();
+    if (!term) return;
+    bldTrack('site_search', {
+      search_term: term.slice(0, 100),
+      page_mode: MODE,
+      page_category: PAGE_CATEGORY || 'all'
+    });
+  }, true);
+}
+
+function initScrollDepthTracking() {
+  const marks = [25, 50, 75, 90];
+  const tracked = new Set();
+  function checkScroll() {
+    const doc = document.documentElement;
+    const height = Math.max(doc.scrollHeight, document.body.scrollHeight) - window.innerHeight;
+    if (height <= 0) return;
+    const percent = Math.round((window.scrollY / height) * 100);
+    marks.forEach(mark => {
+      if (percent >= mark && !tracked.has(mark)) {
+        tracked.add(mark);
+        bldTrack('scroll_depth', {
+          percent_scrolled: mark,
+          page_mode: MODE,
+          page_category: PAGE_CATEGORY || 'all'
+        });
+      }
+    });
+  }
+  window.addEventListener('scroll', checkScroll, { passive: true });
+  window.addEventListener('load', checkScroll);
+  setTimeout(checkScroll, 1000);
+}
+
+function initTimeOnPageTracking() {
+  [30, 60, 120, 300].forEach(seconds => {
+    setTimeout(() => {
+      bldTrack('time_on_page', {
+        seconds_on_page: seconds,
+        page_mode: MODE,
+        page_category: PAGE_CATEGORY || 'all'
+      });
+    }, seconds * 1000);
+  });
+}
+
 initFilters();
 loadDeals();
 initUniversalDealPagination();
+initDealClickTracking();
+initSearchTracking();
+initScrollDepthTracking();
+initTimeOnPageTracking();
