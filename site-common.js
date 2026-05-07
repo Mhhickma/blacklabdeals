@@ -3,6 +3,10 @@ const PAGE_CATEGORY = (document.body.dataset.category || '').toLowerCase().trim(
 const PAGE_CATEGORY_LABEL = document.body.dataset.categoryLabel || '';
 const DEALS_PER_PAGE = 50;
 const DEALS_LIMIT = 100;
+const DEAL_FEED_URLS = [
+  'https://raw.githubusercontent.com/Mhhickma/Dashboard/main/data/deals.json',
+  '/deals.json'
+];
 
 let allDeals = [];
 let visibleDealsCount = DEALS_PER_PAGE;
@@ -26,14 +30,14 @@ function bldTrack(eventName, params = {}) {
 
 function title(d) { return d.title || d.name || d.product_title || d.productTitle || 'Amazon Deal'; }
 function img(d) { return d.image || d.image_url || d.imageUrl || d.img || d.thumbnail || ''; }
-function link(d) { return d.url || d.link || d.affiliate_url || d.affiliateUrl || d.product_url || '#'; }
+function link(d) { return d.amazon_url || d.url || d.link || d.affiliate_url || d.affiliateUrl || d.product_url || '#'; }
 function price(d) { return Number(d.price_amount ?? d.current_price ?? d.currentPrice ?? d.price ?? d.sale_price ?? 0) || 0; }
-function pct(d) { return Number(d.pct ?? d.discount_percent ?? d.discountPercent ?? d.percent_off ?? d.percentOff ?? 0) || 0; }
-function was(d) { return d.was || d.old_price || d.previous_price || d.previousPrice || null; }
-function cat(d) { return String(d.cat || d.category || 'Amazon Deals'); }
+function pct(d) { return Number(d.pct ?? d.drop_percent ?? d.discount_percent ?? d.discountPercent ?? d.percent_off ?? d.percentOff ?? 0) || 0; }
+function was(d) { return d.was || d.old_price || d.previous_price || d.previousPrice || (d.avg_30_price ? `$${d.avg_30_price}` : null); }
+function cat(d) { return String(d.cat || d.category || d.product_category || 'Amazon Deals'); }
 function hot(d) { return Boolean(d.hot || d.is_hot || d.isHot || pct(d) >= 30); }
 function coupon(d) { return Boolean(d.hasCoupon || d.has_coupon || d.couponDisplay || d.coupon); }
-function updated(d) { return Date.parse(d.updated_at || d.updatedAt || d.seen_at || d.seenAt || 0) || 0; }
+function updated(d) { return Date.parse(d.updated_at || d.updatedAt || d.posted_at || d.first_seen_at || d.checked_at || d.seen_at || d.seenAt || 0) || 0; }
 function money(v) { return v ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(v) : ''; }
 function ago(ts) {
   if (!ts) return '—';
@@ -73,14 +77,14 @@ function matchCategory(d, key) {
   const c = norm(cat(d));
   const k = norm(key);
   const words = CATEGORY_KEYWORDS[k] || [k];
-  return words.some(w => c.includes(norm(w)));
+  return words.some(w => c.includes(norm(w))) || norm(title(d)).includes(k);
 }
 
 function pageMatch(d) {
   const c = cat(d).toLowerCase().trim();
   const p = price(d);
   if (PAGE_CATEGORY) return matchCategory(d, PAGE_CATEGORY);
-  if (MODE === 'tools') return c === 'tools & home improvement' || c.includes('tool') || c.includes('home improvement');
+  if (MODE === 'tools') return c === 'tools & home improvement' || c.includes('tool') || c.includes('home improvement') || norm(title(d)).includes('tool');
   if (MODE === 'home') return c === 'home & kitchen' || c.includes('home') || c.includes('kitchen');
   if (MODE === 'under50') return p > 0 && p <= 50;
   return p > 0 || title(d);
@@ -111,12 +115,16 @@ function shown() {
 function stats(d) {
   const label = PAGE_CATEGORY_LABEL || 'deals';
   if ($('hero-pill')) $('hero-pill').textContent = PAGE_CATEGORY ? `${d.length} ${label} deals live right now` : `${d.length} deals live right now`;
+  if ($('hero-pill-text')) $('hero-pill-text').textContent = `${d.length} deals loaded`;
   if ($('stat-active')) $('stat-active').textContent = d.length;
+  if ($('stat-total')) $('stat-total').textContent = d.length;
   if ($('stat-hot')) $('stat-hot').textContent = d.filter(hot).length;
   const ap = avg(d.map(price).filter(Boolean));
   if ($('stat-price')) $('stat-price').textContent = ap ? money(ap) : '—';
+  if ($('stat-avg-price')) $('stat-avg-price').textContent = ap ? money(ap) : '—';
   const ad = avg(d.map(pct).filter(Boolean));
   if ($('stat-discount')) $('stat-discount').textContent = ad ? `${Math.round(ad)}% off` : '—';
+  if ($('stat-avg-discount')) $('stat-avg-discount').textContent = ad ? `${Math.round(ad)}% off` : '—';
   const n = Math.max(...d.map(updated), 0);
   if ($('stat-updated')) $('stat-updated').textContent = n ? ago(n) : '—';
 }
@@ -157,8 +165,6 @@ function ensureLoadMoreButton() {
         page_category: PAGE_CATEGORY || 'all'
       });
       render();
-      const nextCard = findDealsGrid()?.querySelector('.hot-card:nth-child(' + (before + 1) + '),.deal-card:nth-child(' + (before + 1) + ')');
-      if (nextCard) nextCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
   }
 
@@ -212,14 +218,30 @@ function ensureBrowseSection() {
   else target.insertAdjacentHTML('afterend', html);
 }
 
+async function fetchDealsFeed() {
+  let lastError;
+  for (const url of DEAL_FEED_URLS) {
+    try {
+      const cacheBust = url.includes('?') ? `&v=${Date.now()}` : `?v=${Date.now()}`;
+      const r = await fetch(url + cacheBust, { cache: 'no-store' });
+      if (!r.ok) throw new Error(`Could not load ${url}`);
+      const data = await r.json();
+      const source = Array.isArray(data) ? data : Array.isArray(data.deals) ? data.deals : [];
+      if (!source.length) throw new Error(`${url} had no deals`);
+      return source;
+    } catch (error) {
+      lastError = error;
+      console.warn('Deal feed failed:', url, error);
+    }
+  }
+  throw lastError || new Error('Could not load deals');
+}
+
 async function loadDeals() {
   ensureBrowseSection();
   const s = $('status-line');
   try {
-    const r = await fetch('/deals.json', { cache: 'no-store' });
-    if (!r.ok) throw new Error('Could not load deals.json');
-    const data = await r.json();
-    const source = Array.isArray(data) ? data : Array.isArray(data.deals) ? data.deals : [];
+    const source = await fetchDealsFeed();
     allDeals = source.filter(pageMatch);
     visibleDealsCount = DEALS_PER_PAGE;
     render();
@@ -227,6 +249,7 @@ async function loadDeals() {
     console.error(e);
     if (s) s.textContent = 'Could not load live deals right now.';
     if ($('hero-pill')) $('hero-pill').textContent = 'Deals unavailable right now';
+    if ($('hero-pill-text')) $('hero-pill-text').textContent = 'Deals unavailable right now';
     if (findDealsGrid()) findDealsGrid().innerHTML = '<div class="empty-state">This page is live, but the deal feed could not be loaded right now.</div>';
   }
 }
@@ -252,7 +275,7 @@ function initUniversalDealPagination() {
   const getCards = grid => [...grid.children].filter(el => el.matches && el.matches('.hot-card,.deal-card,.product-card,.card'));
 
   function applyGrid(grid) {
-    if (!grid || grid.dataset.bldUniversalPager === 'off') return;
+    if (!grid || grid.dataset.bldUniversalPager === 'off' || grid.id === 'hot-grid') return;
     const cards = getCards(grid);
     if (cards.length <= DEALS_PER_PAGE) return;
 
@@ -276,12 +299,6 @@ function initUniversalDealPagination() {
       wrap.querySelector('button').addEventListener('click', () => {
         const before = state.get(grid) || DEALS_PER_PAGE;
         const after = Math.min(before + DEALS_PER_PAGE, getCards(grid).length);
-        bldTrack('load_more_deals', {
-          visible_before: before,
-          visible_after: after,
-          page_mode: MODE,
-          page_category: PAGE_CATEGORY || 'all'
-        });
         state.set(grid, after);
         applyGrid(grid);
       });
