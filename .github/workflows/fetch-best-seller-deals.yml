@@ -2,7 +2,7 @@ name: Fetch Best Seller Deals
 
 on:
   schedule:
-    - cron: '7 * * * *'
+    - cron: '0 */4 * * *'
   workflow_dispatch:
 
 permissions:
@@ -10,7 +10,7 @@ permissions:
 
 concurrency:
   group: fetch-best-seller-deals-main
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   fetch-best-seller-deals:
