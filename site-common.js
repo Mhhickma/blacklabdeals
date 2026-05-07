@@ -126,39 +126,64 @@ function cardImage(d, t) {
   return i ? `<img src="${esc(i)}" alt="${esc(t)}" loading="lazy" onerror="this.outerHTML='&lt;div class=\\'img-fallback\\'&gt;Deal image unavailable&lt;/div&gt;'">` : `<div class="img-fallback">Deal image unavailable</div>`;
 }
 
+function findDealsGrid() {
+  return $('hot-grid') || document.querySelector('.hot-grid,.deals-grid');
+}
+
 function ensureLoadMoreButton() {
-  if ($('load-more-btn')) return;
-  const g = $('hot-grid');
-  if (!g) return;
-  g.insertAdjacentHTML('afterend', '<div id="load-more-wrap" class="load-more-wrap hidden"><button id="load-more-btn" class="load-more-btn" type="button">Load 50 More Deals</button></div>');
-  const b = $('load-more-btn');
-  if (b) b.addEventListener('click', () => {
-    bldTrack('load_more_deals', {
-      visible_before: visibleDealsCount,
-      visible_after: visibleDealsCount + DEALS_PER_PAGE,
-      page_mode: MODE,
-      page_category: PAGE_CATEGORY || 'all'
+  let wrap = $('load-more-wrap');
+  let button = $('load-more-btn');
+
+  if (wrap && button) return { wrap, button };
+
+  const grid = findDealsGrid();
+  if (!grid) return { wrap: null, button: null };
+
+  wrap = document.createElement('div');
+  wrap.id = 'load-more-wrap';
+  wrap.className = 'load-more-wrap hidden';
+  wrap.innerHTML = '<button id="load-more-btn" class="load-more-btn" type="button">Load 50 More Deals</button>';
+  grid.insertAdjacentElement('afterend', wrap);
+
+  button = $('load-more-btn');
+  if (button) {
+    button.addEventListener('click', () => {
+      const before = visibleDealsCount;
+      visibleDealsCount += DEALS_PER_PAGE;
+      bldTrack('load_more_deals', {
+        visible_before: before,
+        visible_after: visibleDealsCount,
+        page_mode: MODE,
+        page_category: PAGE_CATEGORY || 'all'
+      });
+      render();
+      const nextCard = findDealsGrid()?.querySelector('.hot-card:nth-child(' + (before + 1) + '),.deal-card:nth-child(' + (before + 1) + ')');
+      if (nextCard) nextCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
-    visibleDealsCount += DEALS_PER_PAGE;
-    render();
-  });
+  }
+
+  return { wrap, button };
 }
 
 function more(c) {
-  ensureLoadMoreButton();
-  const w = $('load-more-wrap');
-  const b = $('load-more-btn');
-  if (!w || !b) return;
-  if (visibleDealsCount < c) {
-    w.classList.remove('hidden');
-    b.textContent = `Load 50 More Deals (${c - visibleDealsCount} remaining)`;
+  const { wrap, button } = ensureLoadMoreButton();
+  if (!wrap || !button) return;
+
+  const remaining = Math.max(0, c - visibleDealsCount);
+  if (remaining > 0) {
+    wrap.classList.remove('hidden');
+    wrap.hidden = false;
+    button.hidden = false;
+    button.disabled = false;
+    button.textContent = `Load ${Math.min(DEALS_PER_PAGE, remaining)} More Deals (${remaining} remaining)`;
   } else {
-    w.classList.add('hidden');
+    wrap.classList.add('hidden');
+    wrap.hidden = true;
   }
 }
 
 function render() {
-  const g = $('hot-grid');
+  const g = findDealsGrid();
   const s = $('status-line');
   const f = shown();
   stats(f);
@@ -202,7 +227,7 @@ async function loadDeals() {
     console.error(e);
     if (s) s.textContent = 'Could not load live deals right now.';
     if ($('hero-pill')) $('hero-pill').textContent = 'Deals unavailable right now';
-    if ($('hot-grid')) $('hot-grid').innerHTML = '<div class="empty-state">This page is live, but the deal feed could not be loaded right now.</div>';
+    if (findDealsGrid()) findDealsGrid().innerHTML = '<div class="empty-state">This page is live, but the deal feed could not be loaded right now.</div>';
   }
 }
 
