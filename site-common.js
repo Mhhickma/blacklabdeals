@@ -3,10 +3,7 @@ const PAGE_CATEGORY = (document.body.dataset.category || '').toLowerCase().trim(
 const PAGE_CATEGORY_LABEL = document.body.dataset.categoryLabel || '';
 const DEALS_PER_PAGE = 50;
 const DEALS_LIMIT = 100;
-const DEAL_FEED_URLS = [
-  'https://raw.githubusercontent.com/Mhhickma/Dashboard/main/data/deals.json',
-  '/deals.json'
-];
+const DEAL_FEED_URL = '/deals.json';
 
 let allDeals = [];
 let visibleDealsCount = DEALS_PER_PAGE;
@@ -196,6 +193,7 @@ function render() {
   if ($('deal-count')) $('deal-count').textContent = `${Math.min(visibleDealsCount, f.length)} of ${f.length} deals`;
   if (s) s.textContent = PAGE_CATEGORY ? `Showing live ${PAGE_CATEGORY_LABEL || 'category'} deals from the Black Lab Deals feed.` : 'Showing live Black Lab Deals with the same sitewide header and footer.';
   if (!g) return;
+  g.dataset.bldDynamicPager = 'true';
   if (!f.length) {
     g.innerHTML = '<div class="empty-state">No matching deals found right now.</div>';
     more(0);
@@ -219,22 +217,13 @@ function ensureBrowseSection() {
 }
 
 async function fetchDealsFeed() {
-  let lastError;
-  for (const url of DEAL_FEED_URLS) {
-    try {
-      const cacheBust = url.includes('?') ? `&v=${Date.now()}` : `?v=${Date.now()}`;
-      const r = await fetch(url + cacheBust, { cache: 'no-store' });
-      if (!r.ok) throw new Error(`Could not load ${url}`);
-      const data = await r.json();
-      const source = Array.isArray(data) ? data : Array.isArray(data.deals) ? data.deals : [];
-      if (!source.length) throw new Error(`${url} had no deals`);
-      return source;
-    } catch (error) {
-      lastError = error;
-      console.warn('Deal feed failed:', url, error);
-    }
-  }
-  throw lastError || new Error('Could not load deals');
+  const cacheBust = DEAL_FEED_URL.includes('?') ? `&v=${Date.now()}` : `?v=${Date.now()}`;
+  const r = await fetch(DEAL_FEED_URL + cacheBust, { cache: 'no-store' });
+  if (!r.ok) throw new Error('Could not load Black Lab deals.json');
+  const data = await r.json();
+  const source = Array.isArray(data) ? data : Array.isArray(data.deals) ? data.deals : [];
+  if (!source.length) throw new Error('Black Lab deals.json had no deals');
+  return source;
 }
 
 async function loadDeals() {
@@ -250,7 +239,7 @@ async function loadDeals() {
     if (s) s.textContent = 'Could not load live deals right now.';
     if ($('hero-pill')) $('hero-pill').textContent = 'Deals unavailable right now';
     if ($('hero-pill-text')) $('hero-pill-text').textContent = 'Deals unavailable right now';
-    if (findDealsGrid()) findDealsGrid().innerHTML = '<div class="empty-state">This page is live, but the deal feed could not be loaded right now.</div>';
+    if (findDealsGrid()) findDealsGrid().innerHTML = '<div class="empty-state">This page is live, but the Black Lab deal feed could not be loaded right now.</div>';
   }
 }
 
@@ -275,9 +264,9 @@ function initUniversalDealPagination() {
   const getCards = grid => [...grid.children].filter(el => el.matches && el.matches('.hot-card,.deal-card,.product-card,.card'));
 
   function applyGrid(grid) {
-    if (!grid || grid.dataset.bldUniversalPager === 'off' || grid.id === 'hot-grid') return;
+    if (!grid || grid.dataset.bldUniversalPager === 'off' || grid.dataset.bldDynamicPager === 'true') return;
     const cards = getCards(grid);
-    if (cards.length <= DEALS_PER_PAGE) return;
+    if (!cards.length) return;
 
     let current = state.get(grid) || DEALS_PER_PAGE;
     current = Math.min(current, cards.length);
@@ -299,6 +288,12 @@ function initUniversalDealPagination() {
       wrap.querySelector('button').addEventListener('click', () => {
         const before = state.get(grid) || DEALS_PER_PAGE;
         const after = Math.min(before + DEALS_PER_PAGE, getCards(grid).length);
+        bldTrack('load_more_deals', {
+          visible_before: before,
+          visible_after: after,
+          page_mode: MODE,
+          page_category: PAGE_CATEGORY || 'all'
+        });
         state.set(grid, after);
         applyGrid(grid);
       });
@@ -308,9 +303,13 @@ function initUniversalDealPagination() {
     const remaining = cards.length - current;
     if (remaining > 0) {
       wrap.classList.remove('hidden');
-      button.textContent = `Load 50 More Deals (${remaining} remaining)`;
+      wrap.hidden = false;
+      button.hidden = false;
+      button.disabled = false;
+      button.textContent = `Load ${Math.min(DEALS_PER_PAGE, remaining)} More Deals (${remaining} remaining)`;
     } else {
       wrap.classList.add('hidden');
+      wrap.hidden = true;
     }
   }
 
