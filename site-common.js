@@ -132,7 +132,7 @@ function cardImage(d, t) {
 }
 
 function findDealsGrid() {
-  return $('hot-grid') || document.querySelector('.hot-grid,.deals-grid');
+  return $('hot-grid') || document.querySelector('.hot-grid,.deals-grid,[id*="hot"][id*="grid"],[class*="hot"][class*="grid"],[id*="deal"][id*="grid"],[class*="deal"][class*="grid"]');
 }
 
 function ensureLoadMoreButton() {
@@ -261,7 +261,9 @@ function initFilters() {
 
 function initUniversalDealPagination() {
   const state = new WeakMap();
-  const getCards = grid => [...grid.children].filter(el => el.matches && el.matches('.hot-card,.deal-card,.product-card,.card'));
+  const gridSelector = '.hot-grid,.deals-grid,#hot-grid,#deals-grid,#hot-deals-grid,#hotDealsGrid,#hot-deals-list,#hotDealsList,#deals-list,#dealsList,[id*="hot"][id*="grid"],[class*="hot"][class*="grid"],[id*="hot"][id*="list"],[class*="hot"][class*="list"],[id*="deal"][id*="grid"],[class*="deal"][class*="grid"],[id*="deal"][id*="list"],[class*="deal"][class*="list"]';
+  const cardSelector = '.hot-card,.deal-card,.product-card,.card,a[href*="amazon.com"],a[href*="amzn.to"],a[href*="joylink.io"]';
+  const getCards = grid => [...grid.children].filter(el => el.matches && el.matches(cardSelector));
 
   function applyGrid(grid) {
     if (!grid || grid.dataset.bldUniversalPager === 'off' || grid.dataset.bldDynamicPager === 'true') return;
@@ -314,13 +316,14 @@ function initUniversalDealPagination() {
   }
 
   function applyAll() {
-    document.querySelectorAll('.hot-grid,.deals-grid').forEach(applyGrid);
+    document.querySelectorAll(gridSelector).forEach(applyGrid);
   }
 
   applyAll();
   window.addEventListener('load', applyAll);
   setTimeout(applyAll, 300);
   setTimeout(applyAll, 1000);
+  setTimeout(applyAll, 2500);
 
   const observer = new MutationObserver(() => applyAll());
   observer.observe(document.body, { childList: true, subtree: true });
