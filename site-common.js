@@ -20,9 +20,7 @@ function bldTrack(eventName, params = {}) {
       page_title: document.title,
       ...params
     });
-  } catch (e) {
-    console.warn('Analytics event failed', eventName, e);
-  }
+  } catch (e) {}
 }
 
 function title(d) { return d.title || d.name || d.product_title || d.productTitle || 'Amazon Deal'; }
@@ -132,46 +130,28 @@ function cardImage(d, t) {
 }
 
 function findDealsGrid() {
-  return $('hot-grid') || document.querySelector('.hot-grid,.deals-grid,[id*="hot"][id*="grid"],[class*="hot"][class*="grid"],[id*="deal"][id*="grid"],[class*="deal"][class*="grid"]');
+  return $('hot-grid') || $('deals-grid') || $('dealsGrid') || document.querySelector('.hot-grid,.deals-grid,[id*="hot"][id*="grid"],[class*="hot"][class*="grid"],[id*="deal"][id*="grid"],[class*="deal"][class*="grid"]');
 }
 
 function ensureLoadMoreButton() {
   let wrap = $('load-more-wrap');
   let button = $('load-more-btn');
-
   if (wrap && button) return { wrap, button };
-
   const grid = findDealsGrid();
   if (!grid) return { wrap: null, button: null };
-
   wrap = document.createElement('div');
   wrap.id = 'load-more-wrap';
   wrap.className = 'load-more-wrap hidden';
   wrap.innerHTML = '<button id="load-more-btn" class="load-more-btn" type="button">Load 50 More Deals</button>';
   grid.insertAdjacentElement('afterend', wrap);
-
   button = $('load-more-btn');
-  if (button) {
-    button.addEventListener('click', () => {
-      const before = visibleDealsCount;
-      visibleDealsCount += DEALS_PER_PAGE;
-      bldTrack('load_more_deals', {
-        visible_before: before,
-        visible_after: visibleDealsCount,
-        page_mode: MODE,
-        page_category: PAGE_CATEGORY || 'all'
-      });
-      render();
-    });
-  }
-
+  if (button) button.addEventListener('click', () => { visibleDealsCount += DEALS_PER_PAGE; render(); });
   return { wrap, button };
 }
 
 function more(c) {
   const { wrap, button } = ensureLoadMoreButton();
   if (!wrap || !button) return;
-
   const remaining = Math.max(0, c - visibleDealsCount);
   if (remaining > 0) {
     wrap.classList.remove('hidden');
@@ -249,39 +229,42 @@ function initFilters() {
     b.classList.add('active');
     currentFilter = b.dataset.filter;
     visibleDealsCount = DEALS_PER_PAGE;
-    bldTrack('category_click', {
-      category_name: currentFilter || b.textContent.trim() || 'all',
-      button_text: b.textContent.trim(),
-      page_mode: MODE,
-      page_category: PAGE_CATEGORY || 'all'
-    });
+    bldTrack('category_click', { category_name: currentFilter || b.textContent.trim() || 'all', button_text: b.textContent.trim(), page_mode: MODE, page_category: PAGE_CATEGORY || 'all' });
     render();
   }));
 }
 
 function initUniversalDealPagination() {
   const state = new WeakMap();
-  const gridSelector = '.hot-grid,.deals-grid,#hot-grid,#deals-grid,#hot-deals-grid,#hotDealsGrid,#hot-deals-list,#hotDealsList,#deals-list,#dealsList,[id*="hot"][id*="grid"],[class*="hot"][class*="grid"],[id*="hot"][id*="list"],[class*="hot"][class*="list"],[id*="deal"][id*="grid"],[class*="deal"][class*="grid"],[id*="deal"][id*="list"],[class*="deal"][class*="list"]';
-  const cardSelector = '.hot-card,.deal-card,.product-card,.card,a[href*="amazon.com"],a[href*="amzn.to"],a[href*="joylink.io"]';
-  const getCards = grid => [...grid.children].filter(el => el.matches && el.matches(cardSelector));
+  const gridSelector = '.hot-grid,.deals-grid,.product-grid,.products-grid,.best-seller-grid,#hot-grid,#deals-grid,#dealsGrid,#products-grid,#hot-deals-grid,#hotDealsGrid,#hot-deals-list,#hotDealsList,#deals-list,#dealsList,[id*="hot"][id*="grid"],[class*="hot"][class*="grid"],[id*="hot"][id*="list"],[class*="hot"][class*="list"],[id*="deal"][id*="grid"],[class*="deal"][class*="grid"],[id*="deal"][id*="list"],[class*="deal"][class*="list"],[id*="product"][id*="grid"],[class*="product"][class*="grid"]';
+  const cardSelector = '.hot-card,.deal-card,.product-card,.best-seller-card,.amazon-card,a[href*="amazon.com"],a[href*="amzn.to"],a[href*="joylink.io"]';
+
+  function isCard(el) {
+    if (!el || !el.matches || !el.matches(cardSelector)) return false;
+    if (el.closest('header,nav,footer,.bld-header-shell,.bld-mobile-drawer,.bld-mega-menu,.browse-pages-section,.browse-pages-grid,.panel,.link-list,.seo-info-section,.seo-content')) return false;
+    if (el.matches('.share-btn,.copy-btn,[data-share],[data-copy]')) return false;
+    return true;
+  }
+
+  function getCards(grid) {
+    const direct = [...grid.children].filter(isCard);
+    if (direct.length) return direct;
+    return [...grid.querySelectorAll(cardSelector)].filter(card => {
+      if (!isCard(card)) return false;
+      const parentGrid = card.parentElement && card.parentElement.closest(gridSelector);
+      return !parentGrid || parentGrid === grid;
+    });
+  }
 
   function applyGrid(grid) {
-    if (!grid || grid.dataset.bldUniversalPager === 'off' || grid.dataset.bldDynamicPager === 'true') return;
+    if (!grid || grid.dataset.bldUniversalPager === 'off') return;
     const cards = getCards(grid);
-    if (!cards.length) return;
-
+    if (cards.length <= DEALS_PER_PAGE) return;
     let current = state.get(grid) || DEALS_PER_PAGE;
     current = Math.min(current, cards.length);
     state.set(grid, current);
-
-    cards.forEach((card, index) => {
-      card.style.display = index < current ? '' : 'none';
-    });
-
-    let wrap = grid.nextElementSibling && grid.nextElementSibling.classList && grid.nextElementSibling.classList.contains('bld-load-more-wrap')
-      ? grid.nextElementSibling
-      : null;
-
+    cards.forEach((card, index) => { card.style.display = index < current ? '' : 'none'; });
+    let wrap = grid.nextElementSibling && grid.nextElementSibling.classList && grid.nextElementSibling.classList.contains('bld-load-more-wrap') ? grid.nextElementSibling : null;
     if (!wrap) {
       wrap = document.createElement('div');
       wrap.className = 'bld-load-more-wrap load-more-wrap';
@@ -289,18 +272,10 @@ function initUniversalDealPagination() {
       grid.insertAdjacentElement('afterend', wrap);
       wrap.querySelector('button').addEventListener('click', () => {
         const before = state.get(grid) || DEALS_PER_PAGE;
-        const after = Math.min(before + DEALS_PER_PAGE, getCards(grid).length);
-        bldTrack('load_more_deals', {
-          visible_before: before,
-          visible_after: after,
-          page_mode: MODE,
-          page_category: PAGE_CATEGORY || 'all'
-        });
-        state.set(grid, after);
+        state.set(grid, Math.min(before + DEALS_PER_PAGE, getCards(grid).length));
         applyGrid(grid);
       });
     }
-
     const button = wrap.querySelector('button');
     const remaining = cards.length - current;
     if (remaining > 0) {
@@ -315,59 +290,21 @@ function initUniversalDealPagination() {
     }
   }
 
-  function applyAll() {
-    document.querySelectorAll(gridSelector).forEach(applyGrid);
-  }
-
+  function applyAll() { document.querySelectorAll(gridSelector).forEach(applyGrid); }
   applyAll();
   window.addEventListener('load', applyAll);
-  setTimeout(applyAll, 300);
-  setTimeout(applyAll, 1000);
-  setTimeout(applyAll, 2500);
-
+  [300, 1000, 2500, 5000, 8000].forEach(ms => setTimeout(applyAll, ms));
   const observer = new MutationObserver(() => applyAll());
   observer.observe(document.body, { childList: true, subtree: true });
 }
 
 function initDealClickTracking() {
   document.addEventListener('click', event => {
-    const shareButton = event.target.closest('.share-btn, [data-share], .copy-btn, [data-copy]');
-    if (shareButton) {
-      bldTrack('share_click', {
-        button_text: shareButton.textContent.trim().slice(0, 80),
-        page_mode: MODE,
-        page_category: PAGE_CATEGORY || 'all'
-      });
-      return;
-    }
-
-    const categoryLink = event.target.closest('.browse-page-card, .category-link, .nav-category-link');
-    if (categoryLink) {
-      bldTrack('category_click', {
-        category_name: categoryLink.textContent.trim().replace(/\s+/g, ' ').slice(0, 80),
-        outbound_url: categoryLink.href || '',
-        page_mode: MODE,
-        page_category: PAGE_CATEGORY || 'all'
-      });
-    }
-
     const dealLink = event.target.closest('a.hot-card, a.deal-card, a.product-card, a.card, a[href*="amazon.com"], a[href*="joylink.io"]');
     if (!dealLink) return;
-
     const href = dealLink.href || '';
-    const isDealOutbound = href.includes('amazon.com') || href.includes('amzn.to') || href.includes('joylink.io');
-    if (!isDealOutbound) return;
-
-    bldTrack('deal_click', {
-      deal_title: dealLink.dataset.dealTitle || dealLink.querySelector('.hot-card-title,.card-title,.product-title')?.textContent?.trim()?.slice(0, 120) || dealLink.textContent.trim().slice(0, 120),
-      deal_asin: dealLink.dataset.asin || '',
-      deal_category: dealLink.dataset.dealCategory || PAGE_CATEGORY_LABEL || PAGE_CATEGORY || 'all',
-      deal_price: dealLink.dataset.dealPrice || '',
-      deal_discount: dealLink.dataset.dealDiscount || '',
-      outbound_url: href,
-      page_mode: MODE,
-      page_category: PAGE_CATEGORY || 'all'
-    });
+    if (!href.includes('amazon.com') && !href.includes('amzn.to') && !href.includes('joylink.io')) return;
+    bldTrack('deal_click', { deal_title: dealLink.dataset.dealTitle || dealLink.textContent.trim().slice(0, 120), outbound_url: href, page_mode: MODE, page_category: PAGE_CATEGORY || 'all' });
   }, true);
 }
 
@@ -381,25 +318,9 @@ function initSearchTracking() {
       const term = input.value.trim();
       if (term.length < 2 || input.dataset.lastTrackedSearch === term) return;
       input.dataset.lastTrackedSearch = term;
-      bldTrack('site_search', {
-        search_term: term.slice(0, 100),
-        page_mode: MODE,
-        page_category: PAGE_CATEGORY || 'all'
-      });
+      bldTrack('site_search', { search_term: term.slice(0, 100), page_mode: MODE, page_category: PAGE_CATEGORY || 'all' });
     }, 900);
   });
-
-  document.addEventListener('submit', event => {
-    const input = event.target.querySelector('input[type="search"], input[placeholder*="Search"], input[placeholder*="search"], #site-search, #search, #searchBox');
-    if (!input) return;
-    const term = input.value.trim();
-    if (!term) return;
-    bldTrack('site_search', {
-      search_term: term.slice(0, 100),
-      page_mode: MODE,
-      page_category: PAGE_CATEGORY || 'all'
-    });
-  }, true);
 }
 
 function initScrollDepthTracking() {
@@ -413,29 +334,24 @@ function initScrollDepthTracking() {
     marks.forEach(mark => {
       if (percent >= mark && !tracked.has(mark)) {
         tracked.add(mark);
-        bldTrack('scroll_depth', {
-          percent_scrolled: mark,
-          page_mode: MODE,
-          page_category: PAGE_CATEGORY || 'all'
-        });
+        bldTrack('scroll_depth', { percent_scrolled: mark, page_mode: MODE, page_category: PAGE_CATEGORY || 'all' });
       }
     });
   }
   window.addEventListener('scroll', checkScroll, { passive: true });
   window.addEventListener('load', checkScroll);
-  setTimeout(checkScroll, 1000);
 }
 
 function initTimeOnPageTracking() {
-  [30, 60, 120, 300].forEach(seconds => {
-    setTimeout(() => {
-      bldTrack('time_on_page', {
-        seconds_on_page: seconds,
-        page_mode: MODE,
-        page_category: PAGE_CATEGORY || 'all'
-      });
-    }, seconds * 1000);
-  });
+  [30, 60, 120, 300].forEach(seconds => setTimeout(() => bldTrack('time_on_page', { seconds_on_page: seconds, page_mode: MODE, page_category: PAGE_CATEGORY || 'all' }), seconds * 1000));
+}
+
+function loadHomePaginationScript() {
+  if (document.querySelector('script[src="/home-product-pagination.js"]')) return;
+  const script = document.createElement('script');
+  script.src = '/home-product-pagination.js?v=2';
+  script.defer = true;
+  document.body.appendChild(script);
 }
 
 initFilters();
@@ -445,3 +361,4 @@ initDealClickTracking();
 initSearchTracking();
 initScrollDepthTracking();
 initTimeOnPageTracking();
+loadHomePaginationScript();
