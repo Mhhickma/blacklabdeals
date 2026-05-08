@@ -1135,6 +1135,7 @@ gtag('config', 'G-ES3MC2ZTTM');
 <script>
 const DEALS_URL = "https://raw.githubusercontent.com/Mhhickma/blacklabdeals/main/deals.json";
 const SHEET_ENDPOINT = "https://script.google.com/macros/s/AKfycbw_7DAtiZJQWFwhphywmmnKuAssYQlumY32lPlJSwaSEQ9lWYx5PXOEP8BDW8_QeSsQ/exec";
+const DEALS_PER_PAGE = 50;
 
 const CATEGORIES = [
   { id:'All', label:'All Deals' },
@@ -1162,6 +1163,7 @@ let allDeals = [];
 let lastUpdatedISO = null;
 let searchQuery = '';
 let currentCategory = 'All';
+let visibleDealsCount = DEALS_PER_PAGE;
 
 const filterRow = document.getElementById('filter-row');
 
@@ -1259,6 +1261,7 @@ async function loadDeals() {
     document.getElementById('stat-avg-discount').textContent = avgDiscount ? avgDiscount + '% off' : '—';
 
     lastUpdatedISO = data.updatedAt || null;
+    resetVisibleDeals();
     updateTimeLabels();
 
     document.getElementById('loading-bar').style.display = 'none';
@@ -1299,7 +1302,7 @@ function renderHotDeals() {
     : '<div class="loading-bar" style="grid-column:1/-1;">No hot deals yet — check back soon.</div>';
 }
 
-function renderDeals() {
+function getFilteredDeals() {
   let filtered = currentCategory === 'All'
     ? allDeals
     : allDeals.filter(d => d.cat === currentCategory);
@@ -1312,12 +1315,67 @@ function renderDeals() {
     );
   }
 
-  filtered = sortDeals(filtered);
+  return sortDeals(filtered);
+}
 
-  document.getElementById('count-label').textContent = filtered.length + ' deal' + (filtered.length !== 1 ? 's' : '');
+function ensureLoadMoreButton() {
+  let wrap = document.getElementById('main-load-more-wrap');
+  let button = document.getElementById('main-load-more-btn');
+
+  if (!wrap) {
+    wrap = document.createElement('div');
+    wrap.id = 'main-load-more-wrap';
+    wrap.className = 'load-more-wrap hidden';
+    wrap.hidden = true;
+    wrap.innerHTML = '<button id="main-load-more-btn" class="load-more-btn" type="button">Load 50 More Deals</button>';
+
+    const grid = document.getElementById('deals-grid');
+    if (grid) grid.insertAdjacentElement('afterend', wrap);
+    button = document.getElementById('main-load-more-btn');
+  }
+
+  if (button && !button.dataset.bound) {
+    button.dataset.bound = 'true';
+    button.addEventListener('click', () => {
+      visibleDealsCount += DEALS_PER_PAGE;
+      renderDeals();
+    });
+  }
+
+  return { wrap, button };
+}
+
+function updateLoadMoreButton(total) {
+  const { wrap, button } = ensureLoadMoreButton();
+  if (!wrap || !button) return;
+
+  const remaining = Math.max(0, total - visibleDealsCount);
+  if (remaining > 0) {
+    wrap.hidden = false;
+    wrap.classList.remove('hidden');
+    button.hidden = false;
+    button.disabled = false;
+    button.textContent = 'Load ' + Math.min(DEALS_PER_PAGE, remaining) + ' More Deals (' + remaining + ' remaining)';
+  } else {
+    wrap.hidden = true;
+    wrap.classList.add('hidden');
+  }
+}
+
+function resetVisibleDeals() {
+  visibleDealsCount = DEALS_PER_PAGE;
+}
+
+function renderDeals() {
+  const filtered = getFilteredDeals();
+  const visibleDeals = filtered.slice(0, visibleDealsCount);
+
+  document.getElementById('count-label').textContent = filtered.length
+    ? 'Showing ' + Math.min(visibleDeals.length, filtered.length) + ' of ' + filtered.length + ' deal' + (filtered.length !== 1 ? 's' : '')
+    : '0 deals';
 
   document.getElementById('deals-grid').innerHTML = filtered.length
-    ? filtered.map(d => {
+    ? visibleDeals.map(d => {
       return '<a class="deal-card" href="' + escUrl(d.link || '#') + '" target="_blank" rel="noopener sponsored">' +
         '<div class="card-img">' +
           img(d.image, d.emoji, 'card') +
@@ -1345,15 +1403,19 @@ function renderDeals() {
     : '<div class="loading-bar" style="grid-column:1/-1;text-align:center;padding:48px;">' +
         (searchQuery ? 'No deals found for "' + esc(searchQuery) + '". Try a different search.' : 'No deals in this category right now — check back soon!') +
       '</div>';
+
+  updateLoadMoreButton(filtered.length);
 }
 
 function handleSearch() {
   const input = document.getElementById('search-input');
   searchQuery = input.value.trim().toLowerCase();
+  resetVisibleDeals();
   renderDeals();
 }
 
 function handleSort() {
+  resetVisibleDeals();
   renderDeals();
 }
 
@@ -1361,6 +1423,7 @@ function filterDeals(cat, btn) {
   currentCategory = cat;
   document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
   if (btn) btn.classList.add('active');
+  resetVisibleDeals();
   renderDeals();
 }
 
