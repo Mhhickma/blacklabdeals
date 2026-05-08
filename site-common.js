@@ -133,10 +133,22 @@ function findDealsGrid() {
   return $('hot-grid') || $('deals-grid') || $('dealsGrid') || document.querySelector('.hot-grid,.deals-grid,[id*="hot"][id*="grid"],[class*="hot"][class*="grid"],[id*="deal"][id*="grid"],[class*="deal"][class*="grid"]');
 }
 
+function bindLoadMoreButton(button) {
+  if (!button || button.dataset.bldLoadMoreBound) return;
+  button.dataset.bldLoadMoreBound = 'true';
+  button.addEventListener('click', () => {
+    visibleDealsCount += DEALS_PER_PAGE;
+    render();
+  });
+}
+
 function ensureLoadMoreButton() {
   let wrap = $('load-more-wrap');
   let button = $('load-more-btn');
-  if (wrap && button) return { wrap, button };
+  if (wrap && button) {
+    bindLoadMoreButton(button);
+    return { wrap, button };
+  }
   const grid = findDealsGrid();
   if (!grid) return { wrap: null, button: null };
   wrap = document.createElement('div');
@@ -145,7 +157,7 @@ function ensureLoadMoreButton() {
   wrap.innerHTML = '<button id="load-more-btn" class="load-more-btn" type="button">Load 50 More Deals</button>';
   grid.insertAdjacentElement('afterend', wrap);
   button = $('load-more-btn');
-  if (button) button.addEventListener('click', () => { visibleDealsCount += DEALS_PER_PAGE; render(); });
+  bindLoadMoreButton(button);
   return { wrap, button };
 }
 
