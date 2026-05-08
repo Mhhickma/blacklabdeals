@@ -71,6 +71,7 @@ jobs:
           git config user.email "bot@dealdrop.com"
 
           git add -f *.html || true
+          git add -f */index.html || true
           git add -f deals.json || true
           git add -f deals_memory.json || true
           [ -f notified_deals.json ] && git add -f notified_deals.json || true
