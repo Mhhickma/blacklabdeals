@@ -2,7 +2,9 @@
 // Isolated from site-common.js to avoid global variable conflicts.
 (function () {
   const DATA_URL = 'https://raw.githubusercontent.com/Mhhickma/blacklabdeals/main/best_seller_deals.json';
+  const PAGE_SIZE = 50;
   let bestSellerDeals = [];
+  let visibleDealsCount = PAGE_SIZE;
 
   function getEl(id) {
     return document.getElementById(id);
@@ -66,7 +68,66 @@
     </article>`;
   }
 
-  function renderDeals() {
+  function ensureLoadMoreButton() {
+    const grid = getEl('dealsGrid');
+    if (!grid) return null;
+
+    let wrap = getEl('best-seller-load-more-wrap');
+    if (!wrap) {
+      wrap = document.createElement('div');
+      wrap.id = 'best-seller-load-more-wrap';
+      wrap.className = 'load-more-wrap hidden';
+      wrap.innerHTML = '<button id="best-seller-load-more-btn" class="load-more-btn" type="button">Load 50 More Deals</button>';
+      grid.insertAdjacentElement('afterend', wrap);
+      wrap.querySelector('button').addEventListener('click', function () {
+        visibleDealsCount += PAGE_SIZE;
+        renderDeals(false);
+      });
+    }
+    return wrap;
+  }
+
+  function renderLoadMore(total) {
+    const wrap = ensureLoadMoreButton();
+    if (!wrap) return;
+    const button = getEl('best-seller-load-more-btn');
+    const remaining = Math.max(0, total - visibleDealsCount);
+
+    if (remaining > 0) {
+      wrap.classList.remove('hidden');
+      wrap.hidden = false;
+      button.hidden = false;
+      button.disabled = false;
+      button.textContent = `Load ${Math.min(PAGE_SIZE, remaining)} More Deals (${remaining} remaining)`;
+    } else {
+      wrap.classList.add('hidden');
+      wrap.hidden = true;
+    }
+  }
+
+  function filteredSortedDeals() {
+    const searchBox = getEl('searchBox');
+    const categoryFilter = getEl('categoryFilter');
+    const sortFilter = getEl('sortFilter');
+    const q = searchBox ? searchBox.value.trim().toLowerCase() : '';
+    const cat = categoryFilter ? categoryFilter.value : 'all';
+
+    let deals = bestSellerDeals.filter(d => {
+      const matchesSearch = !q || `${d.title || ''} ${d.brand || ''} ${d.cat || ''}`.toLowerCase().includes(q);
+      const matchesCat = cat === 'all' || d.cat === cat;
+      return matchesSearch && matchesCat;
+    });
+
+    const sort = sortFilter ? sortFilter.value : 'newest';
+    if (sort === 'discount') deals.sort((a, b) => (b.pct || 0) - (a.pct || 0));
+    if (sort === 'price-low') deals.sort((a, b) => (a.price_amount || 999999) - (b.price_amount || 999999));
+    if (sort === 'rank') deals.sort((a, b) => (a.bestSellerRank || 999999) - (b.bestSellerRank || 999999));
+    if (sort === 'newest') deals.sort((a, b) => String(b.updated_at || '').localeCompare(String(a.updated_at || '')));
+
+    return deals;
+  }
+
+  function renderDeals(shouldReset = false) {
     const grid = getEl('dealsGrid');
     const statusEl = getEl('status');
     const searchBox = getEl('searchBox');
@@ -74,25 +135,17 @@
     const sortFilter = getEl('sortFilter');
     if (!grid || !statusEl || !searchBox || !categoryFilter || !sortFilter) return;
 
-    const q = searchBox.value.trim().toLowerCase();
-    const cat = categoryFilter.value;
-    let deals = bestSellerDeals.filter(d => {
-      const matchesSearch = !q || `${d.title || ''} ${d.brand || ''} ${d.cat || ''}`.toLowerCase().includes(q);
-      const matchesCat = cat === 'all' || d.cat === cat;
-      return matchesSearch && matchesCat;
-    });
+    if (shouldReset) visibleDealsCount = PAGE_SIZE;
 
-    const sort = sortFilter.value;
-    if (sort === 'discount') deals.sort((a, b) => (b.pct || 0) - (a.pct || 0));
-    if (sort === 'price-low') deals.sort((a, b) => (a.price_amount || 999999) - (b.price_amount || 999999));
-    if (sort === 'rank') deals.sort((a, b) => (a.bestSellerRank || 999999) - (b.bestSellerRank || 999999));
-    if (sort === 'newest') deals.sort((a, b) => String(b.updated_at || '').localeCompare(String(a.updated_at || '')));
+    const deals = filteredSortedDeals();
+    const visibleDeals = deals.slice(0, visibleDealsCount);
 
-    grid.innerHTML = deals.map(dealCard).join('');
+    grid.innerHTML = visibleDeals.map(dealCard).join('');
     const dealCount = getEl('deal-count');
-    if (dealCount) dealCount.textContent = `${deals.length} deals`;
+    if (dealCount) dealCount.textContent = deals.length ? `${Math.min(visibleDealsCount, deals.length)} of ${deals.length} deals` : '0 deals';
     statusEl.textContent = deals.length ? '' : 'No matching best seller deals are showing yet. Check back after the next hourly update.';
     statusEl.className = deals.length ? 'best-seller-status hidden' : 'best-seller-status';
+    renderLoadMore(deals.length);
   }
 
   async function loadDeals() {
@@ -102,6 +155,7 @@
       if (!res.ok) throw new Error('Missing best_seller_deals.json');
       const data = await res.json();
       bestSellerDeals = Array.isArray(data.deals) ? data.deals : [];
+      visibleDealsCount = PAGE_SIZE;
 
       const dealCount = getEl('dealCount');
       const watchCount = getEl('watchCount');
@@ -118,7 +172,7 @@
       if (heroPill) heroPill.textContent = `${data.count ?? bestSellerDeals.length} best seller deals found`;
 
       renderFilters();
-      renderDeals();
+      renderDeals(true);
     } catch (err) {
       if (statusEl) {
         statusEl.textContent = 'Best seller deals are not loaded yet. Try refreshing in a few minutes.';
@@ -132,9 +186,9 @@
     const searchBox = getEl('searchBox');
     const categoryFilter = getEl('categoryFilter');
     const sortFilter = getEl('sortFilter');
-    if (searchBox) searchBox.addEventListener('input', renderDeals);
-    if (categoryFilter) categoryFilter.addEventListener('change', renderDeals);
-    if (sortFilter) sortFilter.addEventListener('change', renderDeals);
+    if (searchBox) searchBox.addEventListener('input', () => renderDeals(true));
+    if (categoryFilter) categoryFilter.addEventListener('change', () => renderDeals(true));
+    if (sortFilter) sortFilter.addEventListener('change', () => renderDeals(true));
     loadDeals();
   }
 
