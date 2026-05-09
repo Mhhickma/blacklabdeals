@@ -2,7 +2,7 @@ name: Fetch Best Seller Deals
 
 on:
   schedule:
-    - cron: '15 1,5,9,13,17,21 * * *'
+    - cron: '5 * * * *'
   workflow_dispatch:
 
 permissions:
@@ -41,6 +41,7 @@ jobs:
           CREATORS_CREDENTIAL_ID:     ${{ secrets.CREATORS_CREDENTIAL_ID }}
           CREATORS_CREDENTIAL_SECRET: ${{ secrets.CREATORS_CREDENTIAL_SECRET }}
           BEST_SELLER_ASINS_PER_RUN:  125
+          BEST_SELLER_REFRESH_WATCHLIST: false
         run: python fetch_best_seller_deals.py
 
       - name: Patch homepage navigation
