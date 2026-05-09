@@ -1,0 +1,74 @@
+name: Patch Bad Deal Count Text
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/triggers/bad-deal-count-text.txt'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: blacklabdeals-main-writer
+  cancel-in-progress: false
+
+jobs:
+  patch-bad-deal-count-text:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Sync to latest main
+        run: |
+          git fetch origin main
+          git reset --hard origin/main
+
+      - name: Patch broken deal count text
+        run: python patch_bad_deal_count_text.py
+
+      - name: Commit and deploy text fix
+        env:
+          VERCEL_DEPLOY_HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
+        run: |
+          git config user.name "DealDrop Bot"
+          git config user.email "bot@dealdrop.com"
+
+          git add -f *.html || true
+          git add -f */index.html || true
+          git add -f patch_bad_deal_count_text.py || true
+
+          git status
+
+          if git diff --staged --quiet; then
+            echo "No broken deal count text found"
+            exit 0
+          fi
+
+          git commit -m "Fix broken deal count text"
+
+          pushed=false
+          for attempt in 1 2 3; do
+            if git push origin main; then
+              pushed=true
+              break
+            fi
+            echo "Push failed because main moved; rebasing and retrying ($attempt/3)"
+            git fetch origin main
+            git rebase origin/main
+          done
+
+          if [ "$pushed" != "true" ]; then
+            echo "Could not push deal count text fix after retries"
+            exit 1
+          fi
+
+          if [ -n "$VERCEL_DEPLOY_HOOK_URL" ]; then
+            curl -fsS -X POST "$VERCEL_DEPLOY_HOOK_URL"
+            echo "Triggered Vercel deploy hook"
+          else
+            echo "VERCEL_DEPLOY_HOOK_URL is not set; skipping Vercel deploy hook"
+          fi
