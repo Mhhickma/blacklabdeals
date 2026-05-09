@@ -212,13 +212,73 @@ function render() {
   more(f.length);
 }
 
+const POPULAR_CATEGORY_LINKS = [
+  { href: '/top-100-amazon-deals-today/', title: 'Top 100 Deals Found on Amazon Today', desc: 'Ranked deals and current price drops.' },
+  { href: '/best-amazon-tool-deals/', title: 'Best Amazon Tool Deals', desc: 'Power tools, hand tools, and workshop finds.' },
+  { href: '/best-amazon-home-kitchen-deals/', title: 'Best Amazon Home & Kitchen Deals', desc: 'Kitchen, storage, bedding, and home essentials.' },
+  { href: '/best-amazon-deals-under-50/', title: 'Best Amazon Deals Under $50', desc: 'Budget-friendly deals across popular categories.' },
+  { href: '/best-amazon-electronics-deals/', title: 'Best Amazon Electronics Deals', desc: 'Tech accessories, audio, smart home, and gadgets.' },
+  { href: '/best-amazon-health-household-deals/', title: 'Best Amazon Health & Household Deals', desc: 'Cleaning, personal care, and household basics.' },
+  { href: '/best-amazon-patio-lawn-garden-deals/', title: 'Best Amazon Patio, Lawn & Garden Deals', desc: 'Outdoor tools, yard care, patio, and garden finds.' },
+  { href: '/best-amazon-pet-supplies-deals/', title: 'Best Amazon Pet Supplies Deals', desc: 'Pet essentials, grooming, toys, beds, and cleanup.' },
+  { href: '/best-amazon-sports-outdoors-deals/', title: 'Best Amazon Sports & Outdoors Deals', desc: 'Fitness, camping, outdoor, and recreation deals.' },
+  { href: '/best-amazon-automotive-deals/', title: 'Best Amazon Automotive Deals', desc: 'Car care, garage, tools, and vehicle accessories.' },
+  { href: '/best-amazon-toys-games-deals/', title: 'Best Amazon Toys & Games Deals', desc: 'Toys, games, puzzles, gifts, and learning finds.' },
+  { href: '/best-amazon-office-products-deals/', title: 'Best Amazon Office Products Deals', desc: 'Desk supplies, printer items, school, and workspace gear.' },
+  { href: '/best-amazon-baby-products-deals/', title: 'Best Amazon Baby Product Deals', desc: 'Nursery, feeding, bath, travel, and family supplies.' },
+  { href: '/best-amazon-musical-instruments-deals/', title: 'Best Amazon Musical Instrument Deals', desc: 'Music accessories, stands, strings, and audio gear.' }
+];
+
+function cleanPath(path) {
+  return (`/${String(path || '').split('?')[0].split('#')[0].replace(/^\/+|\/+$/g, '')}/`).replace('//', '/');
+}
+
+function renderPopularCategoryNav() {
+  const currentPath = cleanPath(window.location.pathname || '/');
+  const links = POPULAR_CATEGORY_LINKS.map(item => {
+    const itemPath = cleanPath(item.href);
+    const isCurrent = currentPath === itemPath;
+    return `<a class="popular-category-link${isCurrent ? ' is-current' : ''}" href="${esc(item.href)}"${isCurrent ? ' aria-current="page"' : ''}><span>${esc(item.title)}${isCurrent ? '<em class="current-page-label">Current page</em>' : ''}</span><small>${esc(item.desc)}</small></a>`;
+  }).join('');
+  return `<!-- BLD POPULAR CATEGORY NAV START --><section class="popular-category-nav" aria-labelledby="popular-category-nav-title"><div class="popular-category-nav-head"><h2 id="popular-category-nav-title">Popular Amazon Deal Categories</h2><p>Jump to current deal pages by category, price range, and trending finds.</p></div><div class="popular-category-grid">${links}</div></section><!-- BLD POPULAR CATEGORY NAV END -->`;
+}
+
+function markCurrentPopularCategoryNav(nav) {
+  if (!nav) return;
+  const currentPath = cleanPath(window.location.pathname || '/');
+  nav.querySelectorAll('.popular-category-link').forEach(link => {
+    const isCurrent = cleanPath(link.getAttribute('href')) === currentPath;
+    link.classList.toggle('is-current', isCurrent);
+    if (isCurrent) {
+      link.setAttribute('aria-current', 'page');
+      const title = link.querySelector('span');
+      if (title && !title.querySelector('.current-page-label')) title.insertAdjacentHTML('beforeend', '<em class="current-page-label">Current page</em>');
+    } else {
+      link.removeAttribute('aria-current');
+      link.querySelectorAll('.current-page-label').forEach(label => label.remove());
+    }
+  });
+}
+
 function ensureBrowseSection() {
-  if (document.querySelector('.popular-category-nav')) return;
-  const target = document.querySelector('.hot-strip') || document.querySelector('.stats-bar') || document.querySelector('main');
-  if (!target) return;
-  const html = `<!-- BLD POPULAR CATEGORY NAV START --><section class="popular-category-nav" aria-labelledby="popular-category-nav-title">  <div class="popular-category-nav-head">    <h2 id="popular-category-nav-title">Popular Amazon Deal Categories</h2>    <p>Jump to current deal pages by category, price range, and trending finds.</p>  </div>  <div class="popular-category-grid">    <a class="popular-category-link" href="/top-100-amazon-deals-today/"><span>Top 100 Deals Found on Amazon Today</span><small>Ranked deals and current price drops.</small></a>    <a class="popular-category-link" href="/best-amazon-tool-deals/"><span>Best Amazon Tool Deals</span><small>Power tools, hand tools, and workshop finds.</small></a>    <a class="popular-category-link" href="/best-amazon-home-kitchen-deals/"><span>Best Amazon Home & Kitchen Deals</span><small>Kitchen, storage, bedding, and home essentials.</small></a>    <a class="popular-category-link" href="/best-amazon-deals-under-50/"><span>Best Amazon Deals Under $50</span><small>Budget-friendly deals across popular categories.</small></a>    <a class="popular-category-link" href="/best-amazon-electronics-deals/"><span>Best Amazon Electronics Deals</span><small>Tech accessories, audio, smart home, and gadgets.</small></a>    <a class="popular-category-link" href="/best-amazon-health-household-deals/"><span>Best Amazon Health & Household Deals</span><small>Cleaning, personal care, and household basics.</small></a>    <a class="popular-category-link" href="/best-amazon-patio-lawn-garden-deals/"><span>Best Amazon Patio, Lawn & Garden Deals</span><small>Outdoor tools, yard care, patio, and garden finds.</small></a>    <a class="popular-category-link" href="/best-amazon-pet-supplies-deals/"><span>Best Amazon Pet Supplies Deals</span><small>Pet essentials, grooming, toys, beds, and cleanup.</small></a>    <a class="popular-category-link" href="/best-amazon-sports-outdoors-deals/"><span>Best Amazon Sports & Outdoors Deals</span><small>Fitness, camping, outdoor, and recreation deals.</small></a>    <a class="popular-category-link" href="/best-amazon-automotive-deals/"><span>Best Amazon Automotive Deals</span><small>Car care, garage, tools, and vehicle accessories.</small></a>    <a class="popular-category-link" href="/best-amazon-toys-games-deals/"><span>Best Amazon Toys & Games Deals</span><small>Toys, games, puzzles, gifts, and learning finds.</small></a>    <a class="popular-category-link" href="/best-amazon-office-products-deals/"><span>Best Amazon Office Products Deals</span><small>Desk supplies, printer items, school, and workspace gear.</small></a>    <a class="popular-category-link" href="/best-amazon-baby-products-deals/"><span>Best Amazon Baby Product Deals</span><small>Nursery, feeding, bath, travel, and family supplies.</small></a>    <a class="popular-category-link" href="/best-amazon-musical-instruments-deals/"><span>Best Amazon Musical Instrument Deals</span><small>Music accessories, stands, strings, and audio gear.</small></a>  </div></section><!-- BLD POPULAR CATEGORY NAV END -->`;
-  if (target.classList && target.classList.contains('hot-strip')) target.insertAdjacentHTML('afterend', html);
-  else target.insertAdjacentHTML('afterend', html);
+  const main = document.querySelector('main.page-shell') || document.querySelector('main');
+  if (!main) return;
+
+  let nav = document.querySelector('.popular-category-nav');
+  if (!nav) {
+    const holder = document.createElement('div');
+    holder.innerHTML = renderPopularCategoryNav();
+    nav = holder.firstElementChild;
+  }
+
+  markCurrentPopularCategoryNav(nav);
+
+  const anchor = main.querySelector('.hot-strip') || main.querySelector('.section-head') || main.querySelector('.filter-row');
+  if (anchor && anchor.parentNode) {
+    anchor.parentNode.insertBefore(nav, anchor);
+  } else {
+    main.appendChild(nav);
+  }
 }
 
 async function fetchDealsFeed() {
