@@ -70,4 +70,15 @@ jobs:
           fi
 
           git commit -m "Update best seller deals $(date -u '+%Y-%m-%d %H:%M UTC')"
-          git push origin main
+
+          for attempt in 1 2 3; do
+            if git push origin main; then
+              exit 0
+            fi
+            echo "Push failed because main moved; rebasing and retrying ($attempt/3)"
+            git fetch origin main
+            git rebase origin/main
+          done
+
+          echo "Could not push best seller deal update after retries"
+          exit 1
