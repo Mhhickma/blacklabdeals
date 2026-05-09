@@ -1,0 +1,64 @@
+name: Patch pagination guards
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/triggers/pagination-guards.txt'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Patch pagination guards
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          site = Path('site-common.js')
+          text = site.read_text(encoding='utf-8')
+
+          helper = """\nfunction removeCompetingLoadMoreButtons(grid) {\n  if (!grid) return;\n  let next = grid.nextElementSibling;\n  while (next && next.classList && (next.classList.contains('bld-load-more-wrap') || next.classList.contains('bld-home-load-more-wrap'))) {\n    const current = next;\n    next = next.nextElementSibling;\n    current.remove();\n  }\n}\n"""
+          if 'function removeCompetingLoadMoreButtons(grid)' not in text:
+            text = text.replace('\nfunction render() {', helper + '\nfunction render() {')
+
+          old = "  g.dataset.bldDynamicPager = 'true';\n"
+          new = "  g.dataset.bldDynamicPager = 'true';\n  g.dataset.bldUniversalPager = 'off';\n  g.dataset.bldPagerOff = 'true';\n  removeCompetingLoadMoreButtons(g);\n"
+          if new not in text:
+            text = text.replace(old, new)
+
+          old = "  function applyGrid(grid) {\n    if (!grid || grid.dataset.bldUniversalPager === 'off') return;\n"
+          new = "  function applyGrid(grid) {\n    if (!grid || grid.dataset.bldUniversalPager === 'off') return;\n    if (grid.dataset.bldDynamicPager === 'true') {\n      removeCompetingLoadMoreButtons(grid);\n      return;\n    }\n"
+          if new not in text:
+            text = text.replace(old, new)
+
+          site.write_text(text, encoding='utf-8')
+
+          home = Path('home-product-pagination.js')
+          text = home.read_text(encoding='utf-8')
+          old = "  function applyContainer(container) {\n    if (!container || container.dataset.bldPagerOff === 'true') return;\n"
+          new = "  function applyContainer(container) {\n    if (!container || container.dataset.bldPagerOff === 'true') return;\n    if (container.dataset.bldDynamicPager === 'true') {\n      const next = container.nextElementSibling;\n      if (next && next.classList && next.classList.contains('bld-home-load-more-wrap')) next.remove();\n      return;\n    }\n"
+          if new not in text:
+            text = text.replace(old, new)
+          home.write_text(text, encoding='utf-8')
+          PY
+
+      - name: Commit pagination guard fixes
+        run: |
+          git config user.name "DealDrop Bot"
+          git config user.email "bot@dealdrop.com"
+          git add site-common.js home-product-pagination.js
+          if git diff --staged --quiet; then
+            echo "No pagination guard changes to commit"
+            exit 0
+          fi
+          git commit -m "Fix load more pagination guards"
+          git push origin main
