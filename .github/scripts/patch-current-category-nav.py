@@ -5,7 +5,8 @@ css_path = Path('site-common.css')
 js = js_path.read_text(encoding='utf-8')
 css = css_path.read_text(encoding='utf-8')
 
-start = js.index('function ensureBrowseSection() {')
+existing_nav_start = js.find('const POPULAR_CATEGORY_LINKS = [')
+start = existing_nav_start if existing_nav_start != -1 else js.index('function ensureBrowseSection() {')
 end = js.index('\n\nasync function fetchDealsFeed()', start)
 
 new_nav = r'''const POPULAR_CATEGORY_LINKS = [
