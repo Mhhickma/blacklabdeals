@@ -2,14 +2,14 @@ name: Fetch Best Seller Deals
 
 on:
   schedule:
-    - cron: '0 */4 * * *'
+    - cron: '15 1,5,9,13,17,21 * * *'
   workflow_dispatch:
 
 permissions:
   contents: write
 
 concurrency:
-  group: fetch-best-seller-deals-main
+  group: blacklabdeals-main-writer
   cancel-in-progress: false
 
 jobs:
