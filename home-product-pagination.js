@@ -75,6 +75,11 @@
 
   function applyContainer(container) {
     if (!container || container.dataset.bldPagerOff === 'true') return;
+    if (container.dataset.bldDynamicPager === 'true') {
+      const next = container.nextElementSibling;
+      if (next && next.classList && next.classList.contains('bld-home-load-more-wrap')) next.remove();
+      return;
+    }
     const cards = cardsFor(container);
     if (cards.length <= PAGE_SIZE) return;
 

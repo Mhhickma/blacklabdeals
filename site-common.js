@@ -177,6 +177,16 @@ function more(c) {
   }
 }
 
+function removeCompetingLoadMoreButtons(grid) {
+  if (!grid) return;
+  let next = grid.nextElementSibling;
+  while (next && next.classList && (next.classList.contains('bld-load-more-wrap') || next.classList.contains('bld-home-load-more-wrap'))) {
+    const current = next;
+    next = next.nextElementSibling;
+    current.remove();
+  }
+}
+
 function render() {
   const g = findDealsGrid();
   const s = $('status-line');
@@ -186,6 +196,9 @@ function render() {
   if (s) s.textContent = PAGE_CATEGORY ? `Showing live ${PAGE_CATEGORY_LABEL || 'category'} deals from the Black Lab Deals feed.` : 'Showing live Black Lab Deals with the same sitewide header and footer.';
   if (!g) return;
   g.dataset.bldDynamicPager = 'true';
+  g.dataset.bldUniversalPager = 'off';
+  g.dataset.bldPagerOff = 'true';
+  removeCompetingLoadMoreButtons(g);
   if (!f.length) {
     g.innerHTML = '<div class="empty-state">No matching deals found right now.</div>';
     more(0);
@@ -270,6 +283,10 @@ function initUniversalDealPagination() {
 
   function applyGrid(grid) {
     if (!grid || grid.dataset.bldUniversalPager === 'off') return;
+    if (grid.dataset.bldDynamicPager === 'true') {
+      removeCompetingLoadMoreButtons(grid);
+      return;
+    }
     const cards = getCards(grid);
     if (cards.length <= DEALS_PER_PAGE) return;
     let current = state.get(grid) || DEALS_PER_PAGE;
