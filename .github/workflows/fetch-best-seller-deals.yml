@@ -49,7 +49,9 @@ jobs:
       - name: Patch best seller page navigation to shared nav
         run: python patch_best_seller_shared_nav.py
 
-      - name: Commit and push updated best seller deal files
+      - name: Commit, push, and deploy updated best seller deal files
+        env:
+          VERCEL_DEPLOY_HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
         run: |
           git config user.name "DealDrop Bot"
           git config user.email "bot@dealdrop.com"
@@ -71,14 +73,26 @@ jobs:
 
           git commit -m "Update best seller deals $(date -u '+%Y-%m-%d %H:%M UTC')"
 
+          pushed=false
           for attempt in 1 2 3; do
             if git push origin main; then
-              exit 0
+              pushed=true
+              break
             fi
             echo "Push failed because main moved; rebasing and retrying ($attempt/3)"
             git fetch origin main
             git rebase origin/main
           done
 
-          echo "Could not push best seller deal update after retries"
-          exit 1
+          if [ "$pushed" != "true" ]; then
+            echo "Could not push best seller deal update after retries"
+            exit 1
+          fi
+
+          if [ -z "$VERCEL_DEPLOY_HOOK_URL" ]; then
+            echo "VERCEL_DEPLOY_HOOK_URL is not set; skipping Vercel deploy hook"
+            exit 0
+          fi
+
+          curl -fsS -X POST "$VERCEL_DEPLOY_HOOK_URL"
+          echo "Triggered Vercel deploy hook"
