@@ -2,8 +2,8 @@
 Best Seller Deals Fetcher
 -------------------------
 Weekly: builds a watchlist from the top 200 Keepa best sellers in each configured category.
-Hourly: checks the next 125 ASINs with Amazon Creators API for live price, and uses Keepa-style
-price-drop rules to decide what appears on the separate Best Seller Deals page.
+Hourly: checks the next saved ASINs with Amazon Creators API for live price, and uses
+Keepa-style price-drop rules to decide what appears on the Best Seller Deals page.
 """
 
 import json
@@ -46,6 +46,13 @@ def utc_now():
 
 def iso_now():
     return utc_now().isoformat()
+
+
+def env_bool(name, default=False):
+    value = os.getenv(name)
+    if value is None:
+        return default
+    return value.strip().lower() in {"1", "true", "yes", "on"}
 
 
 def load_json(path, default):
@@ -358,18 +365,32 @@ def purge_old_deals(deals, ttl_hours):
 def main():
     if not KEEPA_API_KEY:
         raise RuntimeError("Missing KEEPA_API_KEY")
-    if not CREDENTIAL_ID or not CREDENTIAL_SECRET:
-        raise RuntimeError("Missing CREATORS_CREDENTIAL_ID or CREATORS_CREDENTIAL_SECRET")
 
     config = load_config()
     refresh_hours = int(config.get("refreshBestSellerListHours", 168))
+    refresh_watchlist = env_bool("BEST_SELLER_REFRESH_WATCHLIST", False)
+    watchlist_only = env_bool("BEST_SELLER_WATCHLIST_ONLY", False)
+
+    watchlist = load_json(WATCHLIST_FILE, {})
+    has_saved_watchlist = bool(watchlist.get("items"))
+    should_refresh = refresh_watchlist and refresh_needed(watchlist, refresh_hours)
+
+    if not has_saved_watchlist or should_refresh:
+        watchlist = build_watchlist(config)
+    elif refresh_needed(watchlist, refresh_hours):
+        print("Saved best-seller watchlist is stale, but this run is configured to use the saved list.")
+        print("Run the weekly refresh workflow to rebuild best_seller_watchlist.json.")
+
+    if watchlist_only:
+        print("Watchlist-only mode complete; skipping deal checks.")
+        return
+
+    if not CREDENTIAL_ID or not CREDENTIAL_SECRET:
+        raise RuntimeError("Missing CREATORS_CREDENTIAL_ID or CREATORS_CREDENTIAL_SECRET")
+
     asins_per_run = int(os.getenv("BEST_SELLER_ASINS_PER_RUN", config.get("asinsPerRun", 125)))
     min_drop_percent = int(config.get("minDropPercent", 10))
     deal_ttl_hours = int(config.get("dealTtlHours", 24))
-
-    watchlist = load_json(WATCHLIST_FILE, {})
-    if refresh_needed(watchlist, refresh_hours):
-        watchlist = build_watchlist(config)
 
     items = watchlist.get("items", [])
     if not items:
