@@ -273,9 +273,23 @@ function ensureBrowseSection() {
 
   markCurrentPopularCategoryNav(nav);
 
-  const anchor = main.querySelector('.hot-strip') || main.querySelector('.section-head') || main.querySelector('.filter-row');
-  if (anchor && anchor.parentNode) {
-    anchor.parentNode.insertBefore(nav, anchor);
+  const dealSection = main.querySelector('.hot-strip');
+  const intro = main.querySelector('.category-intro-section');
+  if (dealSection && dealSection.parentNode) {
+    let afterDeals = dealSection;
+    if (intro && intro !== dealSection.nextElementSibling) {
+      dealSection.insertAdjacentElement('afterend', intro);
+      afterDeals = intro;
+    } else if (intro) {
+      afterDeals = intro;
+    }
+    afterDeals.insertAdjacentElement('afterend', nav);
+    return;
+  }
+
+  const fallback = main.querySelector('.section-head') || main.querySelector('.filter-row');
+  if (fallback && fallback.parentNode) {
+    fallback.parentNode.insertBefore(nav, fallback);
   } else {
     main.appendChild(nav);
   }
