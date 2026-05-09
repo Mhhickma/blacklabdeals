@@ -1,0 +1,25 @@
+name: Trigger Vercel Deploy
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/triggers/vercel-deploy.txt'
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Vercel deploy hook
+        env:
+          VERCEL_DEPLOY_HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
+        run: |
+          if [ -z "$VERCEL_DEPLOY_HOOK_URL" ]; then
+            echo "VERCEL_DEPLOY_HOOK_URL is not set"
+            exit 1
+          fi
+          curl -fsS -X POST "$VERCEL_DEPLOY_HOOK_URL"
+          echo "Triggered Vercel deploy hook"
