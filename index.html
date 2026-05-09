@@ -920,6 +920,9 @@ footer a {
 /* BLD HOMEPAGE FASTER DEAL ACCESS START */
 .hero{padding:30px 0 18px;gap:28px}.hero-text h1{font-size:clamp(30px,3.5vw,44px);margin-bottom:8px}.hero-text p{line-height:1.55}.signup-box{padding:22px}.stats-bar{margin:0 0 18px}.divider{margin:0 0 18px}.browse-pages-section{margin:22px 0}.hot-section{margin-top:0}@media(max-width:900px){.hero{padding:22px 0 16px;gap:18px}.signup-box{display:none}.stats-bar{display:none}.browse-pages-section{margin:18px 0}.hot-title{font-size:24px}}@media(max-width:600px){.hero-text h1{font-size:30px}.hero-pill{margin-bottom:10px}.hot-header{margin-bottom:10px}}
 /* BLD HOMEPAGE FASTER DEAL ACCESS END */
+/* BLD HOMEPAGE MOBILE NAV START */
+.mobile-deal-nav{display:none}@media(max-width:760px){.mobile-deal-nav{position:sticky;top:68px;z-index:260;display:flex;gap:8px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;margin:0 -16px 12px;padding:8px 16px;background:rgba(249,248,245,.96);border-top:1px solid var(--border);border-bottom:1px solid var(--border);box-shadow:0 6px 16px rgba(26,58,92,.08)}.mobile-deal-nav::-webkit-scrollbar,.filters-scroll::-webkit-scrollbar{display:none}.mobile-deal-nav a,.mobile-deal-nav button{flex:0 0 auto;border:1px solid var(--border);border-radius:999px;background:var(--surface);color:var(--accent);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:900;line-height:1;padding:10px 12px;white-space:nowrap;text-decoration:none}.mobile-deal-nav button:first-child{background:var(--accent);border-color:var(--accent);color:#fff}.filters-scroll{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;margin-left:-16px;margin-right:-16px;padding:0 16px 8px}.filter-btn{white-space:nowrap}.toolbar{margin-bottom:12px}.search-box input{box-shadow:none}.hot-strip,.deals-grid{padding:12px;border-radius:12px}.hot-card-img{height:118px}.deal-card .card-img{width:104px;min-width:104px;height:104px}.hero-text p:nth-of-type(2){display:none}}
+/* BLD HOMEPAGE MOBILE NAV END */
 </style>
 
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-ES3MC2ZTTM"></script>
@@ -2488,6 +2491,31 @@ window.addEventListener('scroll', () => {
   btt.classList.toggle('visible', window.scrollY > 400);
 }, { passive: true });
 
+function ensureHomepageMobileNav() {
+  if (document.querySelector('.mobile-deal-nav')) return;
+  const main = document.querySelector('main.page-shell');
+  if (!main) return;
+  const nav = document.createElement('nav');
+  nav.className = 'mobile-deal-nav';
+  nav.setAttribute('aria-label', 'Quick deal navigation');
+  nav.innerHTML = '<button type="button" data-jump="hot">Hot Deals</button><button type="button" data-jump="all">All Deals</button><button type="button" data-cat="All">All</button><a href="/best-amazon-deals-under-50/">Under $50</a><a href="/top-100-amazon-deals-today/">Top 100</a><button type="button" data-jump="categories">Categories</button>';
+  main.insertBefore(nav, main.firstChild);
+  nav.addEventListener('click', event => {
+    const item = event.target.closest('button,a');
+    if (!item || item.tagName === 'A') return;
+    if (item.dataset.cat) {
+      const btn = [...document.querySelectorAll('.filter-btn')].find(b => b.dataset.cat === item.dataset.cat);
+      if (btn) btn.click();
+    }
+    const target = item.dataset.jump === 'categories'
+      ? document.querySelector('.browse-pages-section,.related-deal-pages')
+      : item.dataset.jump === 'all'
+        ? document.getElementById('deals-section')
+        : document.getElementById('hot-section');
+    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+}
+
 function moveHomepageBrowseBelowDeals() {
   const browse = document.querySelector('.browse-pages-section');
   const deals = document.getElementById('hot-section') || document.getElementById('deals-section');
@@ -2497,6 +2525,7 @@ function moveHomepageBrowseBelowDeals() {
 setInterval(loadDeals, 30 * 60 * 1000);
 setInterval(updateTimeLabels, 60 * 1000);
 
+ensureHomepageMobileNav();
 moveHomepageBrowseBelowDeals();
 loadDeals();
 </script>
