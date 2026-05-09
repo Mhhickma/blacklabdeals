@@ -1,0 +1,128 @@
+name: Patch popular category navigation
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/triggers/popular-category-nav.txt'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Add compact popular category navigation
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          links = [
+              ('Top 100 Deals Found on Amazon Today', '/top-100-amazon-deals-today/', 'Ranked deals and current price drops.'),
+              ('Best Amazon Tool Deals', '/best-amazon-tool-deals/', 'Power tools, hand tools, and workshop finds.'),
+              ('Best Amazon Home & Kitchen Deals', '/best-amazon-home-kitchen-deals/', 'Kitchen, storage, bedding, and home essentials.'),
+              ('Best Amazon Deals Under $50', '/best-amazon-deals-under-50/', 'Budget-friendly deals across popular categories.'),
+              ('Best Amazon Electronics Deals', '/best-amazon-electronics-deals/', 'Tech accessories, audio, smart home, and gadgets.'),
+              ('Best Amazon Health & Household Deals', '/best-amazon-health-household-deals/', 'Cleaning, personal care, and household basics.'),
+              ('Best Amazon Patio, Lawn & Garden Deals', '/best-amazon-patio-lawn-garden-deals/', 'Outdoor tools, yard care, patio, and garden finds.'),
+              ('Best Amazon Pet Supplies Deals', '/best-amazon-pet-supplies-deals/', 'Pet essentials, grooming, toys, beds, and cleanup.'),
+              ('Best Amazon Sports & Outdoors Deals', '/best-amazon-sports-outdoors-deals/', 'Fitness, camping, outdoor, and recreation deals.'),
+              ('Best Amazon Automotive Deals', '/best-amazon-automotive-deals/', 'Car care, garage, tools, and vehicle accessories.'),
+              ('Best Amazon Toys & Games Deals', '/best-amazon-toys-games-deals/', 'Toys, games, puzzles, gifts, and learning finds.'),
+              ('Best Amazon Office Products Deals', '/best-amazon-office-products-deals/', 'Desk supplies, printer items, school, and workspace gear.'),
+              ('Best Amazon Baby Product Deals', '/best-amazon-baby-products-deals/', 'Nursery, feeding, bath, travel, and family supplies.'),
+              ('Best Amazon Musical Instrument Deals', '/best-amazon-musical-instruments-deals/', 'Music accessories, stands, strings, and audio gear.'),
+          ]
+
+          def nav_block():
+              items = '\n'.join(
+                  f'    <a class="popular-category-link" href="{href}"><span>{title}</span><small>{desc}</small></a>'
+                  for title, href, desc in links
+              )
+              return f'''<!-- BLD POPULAR CATEGORY NAV START -->
+          <section class="popular-category-nav" aria-labelledby="popular-category-nav-title">
+            <div class="popular-category-nav-head">
+              <h2 id="popular-category-nav-title">Popular Amazon Deal Categories</h2>
+              <p>Jump to current deal pages by category, price range, and trending finds.</p>
+            </div>
+            <div class="popular-category-grid">
+          {items}
+            </div>
+          </section>
+          <!-- BLD POPULAR CATEGORY NAV END -->'''
+
+          block = nav_block()
+          start = '<!-- BLD POPULAR CATEGORY NAV START -->'
+          end = '<!-- BLD POPULAR CATEGORY NAV END -->'
+
+          html_files = [Path('index.html')] + sorted(Path('.').glob('best-amazon-*/index.html')) + [Path('top-100-amazon-deals-today/index.html')]
+          for path in html_files:
+              if not path.exists():
+                  continue
+              text = path.read_text(encoding='utf-8')
+              text = re.sub(rf'{re.escape(start)}.*?{re.escape(end)}', block, text, flags=re.DOTALL)
+              text = re.sub(r'<section class="browse-pages-section">.*?</section>', block, text, flags=re.DOTALL)
+              if start not in text:
+                  marker = '<!-- BLD TRUST START -->'
+                  if marker in text:
+                      text = text.replace(marker, block + '\n' + marker, 1)
+                  else:
+                      text = text.replace('</main>', block + '\n</main>', 1)
+              path.write_text(text, encoding='utf-8')
+              print(f'Updated popular category nav in {path}')
+
+          js = Path('site-common.js')
+          if js.exists():
+              text = js.read_text(encoding='utf-8')
+              block_js = block.replace('`', '\\`').replace('${', '\\${').replace('\n', '')
+              old = re.search(r"function ensureBrowseSection\(\) \{.*?\n\}\n\nasync function fetchDealsFeed", text, flags=re.DOTALL)
+              if old:
+                  new_func = f"""function ensureBrowseSection() {{
+            if (document.querySelector('.popular-category-nav')) return;
+            const target = document.querySelector('.hot-strip') || document.querySelector('.stats-bar') || document.querySelector('main');
+            if (!target) return;
+            const html = `{block_js}`;
+            if (target.classList && target.classList.contains('hot-strip')) target.insertAdjacentHTML('afterend', html);
+            else target.insertAdjacentHTML('afterend', html);
+          }}
+
+          async function fetchDealsFeed"""
+                  text = text[:old.start()] + new_func + text[old.end():]
+                  js.write_text(text, encoding='utf-8')
+                  print('Updated site-common.js popular category nav generator')
+
+          css = Path('site-common.css')
+          css_text = css.read_text(encoding='utf-8')
+          nav_css = ".popular-category-nav{margin:30px auto;padding:24px 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border)}.popular-category-nav-head{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;margin-bottom:16px}.popular-category-nav h2{font-family:'Playfair Display',serif;font-size:28px;line-height:1.15;margin:0;color:var(--text-primary)}.popular-category-nav p{margin:0;color:var(--text-muted);font-size:14px}.popular-category-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 14px}.popular-category-link{display:block;border:1px solid var(--border);border-radius:10px;background:var(--surface);padding:12px 14px;text-decoration:none;color:inherit;transition:border-color .15s,box-shadow .15s,transform .15s}.popular-category-link:hover{border-color:#cfe0f3;box-shadow:0 6px 16px rgba(26,58,92,.07);transform:translateY(-1px)}.popular-category-link span{display:block;font-size:14px;font-weight:900;line-height:1.25;color:var(--text-primary)}.popular-category-link small{display:block;margin-top:4px;font-size:12px;line-height:1.45;color:var(--text-secondary)}@media(max-width:760px){.popular-category-nav-head{display:block}.popular-category-nav p{margin-top:6px}.popular-category-grid{grid-template-columns:1fr}}"
+          if '.popular-category-nav' not in css_text:
+              css.write_text(css_text + nav_css, encoding='utf-8')
+              print('Added popular category nav CSS')
+          PY
+
+      - name: Commit, push, and deploy navigation update
+        env:
+          VERCEL_DEPLOY_HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
+        run: |
+          git config user.name "DealDrop Bot"
+          git config user.email "bot@dealdrop.com"
+          git add -f site-common.js site-common.css index.html */index.html
+          git status
+          if git diff --staged --quiet; then
+            echo "No popular category nav changes to commit"
+          else
+            git commit -m "Improve popular category navigation"
+            git push origin main
+          fi
+          if [ -n "$VERCEL_DEPLOY_HOOK_URL" ]; then
+            curl -fsS -X POST "$VERCEL_DEPLOY_HOOK_URL"
+            echo "Triggered Vercel deploy hook"
+          else
+            echo "VERCEL_DEPLOY_HOOK_URL is not set; skipping Vercel deploy hook"
+          fi
