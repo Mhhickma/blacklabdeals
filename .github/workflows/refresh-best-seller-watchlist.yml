@@ -1,0 +1,74 @@
+name: Refresh Best Seller Watchlist
+
+on:
+  schedule:
+    - cron: '20 6 * * 0'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: blacklabdeals-main-writer
+  cancel-in-progress: false
+
+jobs:
+  refresh-best-seller-watchlist:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install requests keepa numpy python-amazon-paapi
+
+      - name: Sync to latest main
+        run: |
+          git fetch origin main
+          git reset --hard origin/main
+
+      - name: Refresh best seller ASIN watchlist
+        env:
+          KEEPA_API_KEY: ${{ secrets.KEEPA_API_KEY }}
+          BEST_SELLER_REFRESH_WATCHLIST: true
+          BEST_SELLER_WATCHLIST_ONLY: true
+        run: python fetch_best_seller_deals.py
+
+      - name: Commit refreshed watchlist
+        run: |
+          git config user.name "DealDrop Bot"
+          git config user.email "bot@dealdrop.com"
+
+          git add -f best_seller_watchlist.json || true
+
+          git status
+
+          if git diff --staged --quiet; then
+            echo "No watchlist changes to commit"
+            exit 0
+          fi
+
+          git commit -m "Refresh best seller ASIN watchlist $(date -u '+%Y-%m-%d %H:%M UTC')"
+
+          pushed=false
+          for attempt in 1 2 3; do
+            if git push origin main; then
+              pushed=true
+              break
+            fi
+            echo "Push failed because main moved; rebasing and retrying ($attempt/3)"
+            git fetch origin main
+            git rebase origin/main
+          done
+
+          if [ "$pushed" != "true" ]; then
+            echo "Could not push best seller watchlist refresh after retries"
+            exit 1
+          fi
