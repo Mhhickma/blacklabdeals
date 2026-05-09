@@ -1,0 +1,57 @@
+name: Patch Homepage Deploy Marker
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/triggers/homepage-deploy-marker.txt'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: blacklabdeals-main-writer
+  cancel-in-progress: false
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Sync latest main
+        run: git pull --rebase origin main
+
+      - name: Add non-visible homepage deploy marker
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from datetime import datetime, timezone
+          path = Path('index.html')
+          text = path.read_text(encoding='utf-8')
+          marker_start = '<!-- BLD HOMEPAGE CLEANUP DEPLOY:'
+          marker = f'<!-- BLD HOMEPAGE CLEANUP DEPLOY: {datetime.now(timezone.utc).isoformat()} -->'
+          import re
+          if marker_start in text:
+              text = re.sub(r'<!-- BLD HOMEPAGE CLEANUP DEPLOY: .*? -->', marker, text)
+          else:
+              text = text.replace('</body>', marker + '\n</body>', 1)
+          path.write_text(text, encoding='utf-8')
+          print('Updated homepage deploy marker')
+          PY
+
+      - name: Commit and push
+        run: |
+          git config user.name "DealDrop Bot"
+          git config user.email "bot@dealdrop.com"
+          git add -f index.html
+          git status
+          if git diff --staged --quiet; then
+            echo "No homepage marker change to commit"
+            exit 0
+          fi
+          git commit -m "Refresh homepage deploy after SEO cleanup"
+          git push origin main
