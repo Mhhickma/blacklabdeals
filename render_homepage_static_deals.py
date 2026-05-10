@@ -227,7 +227,7 @@ def render_homepage(deals: list[dict]) -> None:
             raise RuntimeError("Could not find empty homepage deals grid")
         page_html = page_html.replace(empty_grid, populated_grid, 1)
     label = f"Showing {min(DEALS_LIMIT, len(ordered))} of {len(ordered)} deals"
-    page_html = re.sub(r'(<span class="deal-count" id="count-label">)(.*?)(</span>)', rf"\1{esc(label)}\3", page_html, count=1, flags=re.DOTALL)
+    page_html = re.sub(r'(<span class="deal-count" id="count-label">)(.*?)(</span>)', rf"\g<1>{esc(label)}\g<3>", page_html, count=1, flags=re.DOTALL)
     path.write_text(page_html, encoding="utf-8")
     print(f"Rendered {min(DEALS_LIMIT, len(ordered))} static homepage deals into index.html")
 
@@ -260,8 +260,8 @@ def render_category_page(deals: list[dict], config: dict) -> None:
         populated_grid = f'{attrs}>\n      {block}\n    </div>'
         page_html = page_html[:grid_match.start()] + populated_grid + page_html[grid_match.end():]
 
-    page_html = re.sub(r'(<div class="deal-count" id="deal-count">)(.*?)(</div>)', rf"\1{min(DEALS_LIMIT, len(filtered))} of {len(filtered)} deals\3", page_html, count=1, flags=re.DOTALL)
-    page_html = re.sub(r'(<div class="status-line" id="status-line">)(.*?)(</div>)', rf"\1Showing live {esc(config['label'])} deals from the Black Lab Deals feed.\3", page_html, count=1, flags=re.DOTALL)
+    page_html = re.sub(r'(<div class="deal-count" id="deal-count">)(.*?)(</div>)', rf"\g<1>{min(DEALS_LIMIT, len(filtered))} of {len(filtered)} deals\g<3>", page_html, count=1, flags=re.DOTALL)
+    page_html = re.sub(r'(<div class="status-line" id="status-line">)(.*?)(</div>)', rf"\g<1>Showing live {esc(config['label'])} deals from the Black Lab Deals feed.\g<3>", page_html, count=1, flags=re.DOTALL)
     path.write_text(page_html, encoding="utf-8")
     print(f"Rendered {min(DEALS_LIMIT, len(filtered))} static {config['label']} deals into {path}")
 
