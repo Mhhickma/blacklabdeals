@@ -2266,16 +2266,17 @@ function renderHotDeals() {
 
   document.getElementById('hot-grid').innerHTML = hot.length
     ? hot.map(d => {
+      const offText = d.discount || (d.pct ? d.pct + '% off' : 'Hot Deal');
       return '<a class="hot-card" href="' + escUrl(d.link || '#') + '" target="_blank" rel="noopener sponsored">' +
-        '<div class="hot-card-img">' + img(d.image, d.emoji, 'hot') + '</div>' +
-        '<span class="hot-card-badge">' + esc(d.discount || (d.pct + '% off')) + '</span>' +
-        '<div class="card-body">' +
+        '<div class="hot-card-img">' + img(d.image, d.emoji, 'hot') + '<div class="hot-card-badge">Hot Deal</div></div>' +
+        '<div class="hot-card-body">' +
           '<div class="hot-card-title">' + esc(d.title) + '</div>' +
-          '<div class="price-block">' +
+          '<div class="hot-card-prices">' +
             '<span class="hot-price-now">' + esc(d.price || 'See price') + '</span>' +
             (d.was ? '<span class="hot-price-was">' + esc(d.was) + '</span>' : '') +
+            '<span class="hot-off">' + esc(offText).replace('-', '') + '</span>' +
           '</div>' +
-          '<button class="hot-btn">See Deal on Amazon →</button>' +
+          '<span class="hot-btn">See Deal on Amazon →</span>' +
         '</div>' +
       '</a>';
     }).join('')
