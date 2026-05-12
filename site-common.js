@@ -295,44 +295,6 @@ function ensureBrowseSection() {
   }
 }
 
-function ensureMobileDealNav() {
-  if (document.querySelector('.bld-mobile-deal-nav')) return;
-  const main = document.querySelector('main.page-shell') || document.querySelector('main');
-  if (!main) return;
-
-  const nav = document.createElement('nav');
-  nav.className = 'bld-mobile-deal-nav';
-  nav.setAttribute('aria-label', 'Quick deal navigation');
-  nav.innerHTML = '<button type="button" data-scroll-target="deals">Deals</button><button type="button" data-filter-target="hot">Hot</button><a href="/best-amazon-deals-under-50/">Under $50</a><button type="button" data-scroll-target="categories">Categories</button><a href="/top-100-amazon-deals-today/">Top 100</a>';
-
-  const anchor = main.querySelector('.breadcrumbs');
-  if (anchor && anchor.parentNode) {
-    anchor.insertAdjacentElement('afterend', nav);
-  } else {
-    main.insertBefore(nav, main.firstChild);
-  }
-
-  nav.addEventListener('click', event => {
-    const item = event.target.closest('button,a');
-    if (!item || item.tagName === 'A') return;
-    const filter = item.dataset.filterTarget;
-    const scrollTarget = item.dataset.scrollTarget;
-    if (filter) {
-      const filterButton = document.querySelector(`.filter-btn[data-filter="${filter}"], .filter-btn[data-cat="${filter}"]`);
-      if (filterButton) {
-        filterButton.click();
-        const dealSection = document.querySelector('.hot-strip,#hot-section,#deals-section');
-        if (dealSection) dealSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        return;
-      }
-    }
-    const target = scrollTarget === 'categories'
-      ? document.querySelector('.popular-category-nav,.browse-pages-section,.related-deal-pages')
-      : document.querySelector('.hot-strip,#hot-section,#deals-section');
-    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  });
-}
-
 async function fetchDealsFeed() {
   const cacheBust = DEAL_FEED_URL.includes('?') ? `&v=${Date.now()}` : `?v=${Date.now()}`;
   const r = await fetch(DEAL_FEED_URL + cacheBust, { cache: 'no-store' });
