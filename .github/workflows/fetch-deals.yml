@@ -65,9 +65,7 @@ jobs:
                   path.write_text(text, encoding='utf-8')
                   print(f'Updated compliance copy in {path}')
           PY
-      - name: Commit, push, and deploy updated deal files
-        env:
-          VERCEL_DEPLOY_HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
+      - name: Commit and push updated deal files
         run: |
           git config user.name "DealDrop Bot"
           git config user.email "bot@dealdrop.com"
@@ -87,11 +85,4 @@ jobs:
 
           git commit -m "Update deals $(date -u '+%Y-%m-%d %H:%M UTC')"
           git push origin main
-
-          if [ -z "$VERCEL_DEPLOY_HOOK_URL" ]; then
-            echo "VERCEL_DEPLOY_HOOK_URL is not set; skipping Vercel deploy hook"
-            exit 0
-          fi
-
-          curl -fsS -X POST "$VERCEL_DEPLOY_HOOK_URL"
-          echo "Triggered Vercel deploy hook"
+          echo "Pushed updated deal data. Vercel auto-deploys are disabled in vercel.json, so this does not trigger a site rebuild."
