@@ -79,6 +79,180 @@ def patch_site_common_css():
     path.write_text(text, encoding="utf-8")
 
 
+def patch_site_nav_css():
+    path = Path("site-nav.css")
+    text = path.read_text(encoding="utf-8")
+    block = """/* BLD UNIVERSAL MOBILE DEAL CARDS START */
+@media (max-width: 760px) {
+  .hot-grid,
+  .deals-grid,
+  .best-seller-grid,
+  .search-results-grid {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+
+  .hot-card,
+  .deal-card,
+  .best-seller-card,
+  .search-card {
+    display: grid !important;
+    grid-template-columns: 112px minmax(0, 1fr) !important;
+    min-height: 132px !important;
+    border-radius: 10px !important;
+    overflow: hidden !important;
+  }
+
+  .hot-card-img,
+  .card-img,
+  .deal-card .card-img,
+  .best-seller-img,
+  .search-img {
+    width: 112px !important;
+    min-width: 112px !important;
+    height: 100% !important;
+    min-height: 132px !important;
+    border-bottom: 0 !important;
+  }
+
+  .hot-card-img img,
+  .card-img img,
+  .deal-card .card-img img,
+  .best-seller-img img,
+  .search-img img {
+    width: 100% !important;
+    height: 100% !important;
+    max-width: none !important;
+    max-height: none !important;
+    object-fit: contain !important;
+    padding: 8px !important;
+  }
+
+  .hot-card-body,
+  .hot-card .card-body,
+  .card-body,
+  .deal-card .card-body,
+  .best-seller-body,
+  .search-body {
+    min-width: 0 !important;
+    padding: 10px 10px 10px 12px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 5px !important;
+  }
+
+  .hot-card-title,
+  .card-title,
+  .deal-card .card-title,
+  .best-seller-title,
+  .search-title {
+    display: -webkit-box !important;
+    -webkit-box-orient: vertical !important;
+    -webkit-line-clamp: 2 !important;
+    overflow: hidden !important;
+    font-size: 13px !important;
+    font-weight: 800 !important;
+    line-height: 1.3 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .hot-card-prices,
+  .price-block,
+  .card-footer,
+  .deal-card .card-footer,
+  .best-seller-price-row,
+  .search-price-row {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    gap: 6px !important;
+    flex-wrap: wrap !important;
+    border-top: 0 !important;
+    padding-top: 0 !important;
+    margin-top: 0 !important;
+  }
+
+  .hot-price-now,
+  .price-now,
+  .best-seller-price,
+  .search-price {
+    font-size: 18px !important;
+    line-height: 1.1 !important;
+    color: var(--red, #c94040) !important;
+  }
+
+  .hot-price-was,
+  .price-was,
+  .best-seller-was,
+  .search-was {
+    font-size: 11px !important;
+  }
+
+  .hot-btn,
+  .btn-deal,
+  .deal-card .btn-deal,
+  .best-seller-btn,
+  .search-btn {
+    min-height: 40px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 100% !important;
+    border-radius: 8px !important;
+    font-size: 12px !important;
+    line-height: 1.1 !important;
+    margin-top: auto !important;
+    padding: 0 8px !important;
+    text-align: center !important;
+  }
+
+  .hot-off,
+  .discount-badge {
+    font-size: 11px !important;
+    padding: 3px 7px !important;
+    background: #ebfff5 !important;
+    border: 1px solid #cdebdc !important;
+    color: var(--green, #12744a) !important;
+    border-radius: 999px !important;
+  }
+
+  .category-pill,
+  .stars,
+  .card-category,
+  .card-desc,
+  .deal-card .card-category,
+  .deal-card .card-desc,
+  .best-seller-category,
+  .best-seller-badges,
+  .search-meta {
+    display: none !important;
+  }
+}
+
+@media (max-width: 380px) {
+  .hot-card,
+  .deal-card,
+  .best-seller-card,
+  .search-card {
+    grid-template-columns: 100px minmax(0, 1fr) !important;
+  }
+
+  .hot-card-img,
+  .card-img,
+  .deal-card .card-img,
+  .best-seller-img,
+  .search-img {
+    width: 100px !important;
+    min-width: 100px !important;
+  }
+}
+/* BLD UNIVERSAL MOBILE DEAL CARDS END */"""
+    text = upsert_before(text, "\n", block, "BLD UNIVERSAL MOBILE DEAL CARDS")
+    path.write_text(text, encoding="utf-8")
+
+
 def patch_homepage():
     path = Path("index.html")
     text = path.read_text(encoding="utf-8")
@@ -87,6 +261,58 @@ def patch_homepage():
 .hero{padding:30px 0 18px;gap:28px}.hero-text h1{font-size:clamp(30px,3.5vw,44px);margin-bottom:8px}.hero-text p{line-height:1.55}.signup-box{padding:22px}.stats-bar{margin:0 0 18px}.divider{margin:0 0 18px}.browse-pages-section{margin:22px 0}.hot-section{margin-top:0}@media(max-width:900px){.hero{padding:22px 0 16px;gap:18px}.signup-box{display:none}.stats-bar{display:none}.browse-pages-section{margin:18px 0}.hot-title{font-size:24px}}@media(max-width:600px){.hero-text h1{font-size:30px}.hero-pill{margin-bottom:10px}.hot-header{margin-bottom:10px}}
 /* BLD HOMEPAGE FASTER DEAL ACCESS END */"""
     text = upsert_before(text, "</style>", css_block, "BLD HOMEPAGE FASTER DEAL ACCESS")
+
+    old_render = """function renderHotDeals() {
+  const hot = allDeals.filter(d => Number(d.pct) >= 40 || d.hot);
+  document.getElementById('hot-count-pill').textContent = hot.length + ' deal' + (hot.length !== 1 ? 's' : '');
+
+  document.getElementById('hot-grid').innerHTML = hot.length
+    ? hot.map(d => {
+      return '<a class=\"hot-card\" href=\"' + escUrl(d.link || '#') + '\" target=\"_blank\" rel=\"noopener sponsored\">' +
+        '<div class=\"hot-card-img\">' + img(d.image, d.emoji, 'hot') + '</div>' +
+        '<span class=\"hot-card-badge\">' + esc(d.discount || (d.pct + '% off')) + '</span>' +
+        '<div class=\"card-body\">' +
+          '<div class=\"hot-card-title\">' + esc(d.title) + '</div>' +
+          '<div class=\"price-block\">' +
+            '<span class=\"hot-price-now\">' + esc(d.price || 'See price') + '</span>' +
+            (d.was ? '<span class=\"hot-price-was\">' + esc(d.was) + '</span>' : '') +
+          '</div>' +
+          '<button class=\"hot-btn\">See Deal on Amazon →</button>' +
+        '</div>' +
+      '</a>';
+    }).join('')
+    : '<div class=\"loading-bar\" style=\"grid-column:1/-1;\">No hot deals yet — check back soon.</div>';
+}
+
+"""
+    new_render = """function renderHotDeals() {
+  const hot = allDeals.filter(d => Number(d.pct) >= 40 || d.hot);
+  document.getElementById('hot-count-pill').textContent = hot.length + ' deal' + (hot.length !== 1 ? 's' : '');
+
+  document.getElementById('hot-grid').innerHTML = hot.length
+    ? hot.map(d => {
+      const offText = d.discount || (d.pct ? d.pct + '% off' : 'Hot Deal');
+      return '<a class=\"hot-card\" href=\"' + escUrl(d.link || '#') + '\" target=\"_blank\" rel=\"noopener sponsored\">' +
+        '<div class=\"hot-card-img\">' + img(d.image, d.emoji, 'hot') + '<div class=\"hot-card-badge\">Hot Deal</div></div>' +
+        '<div class=\"hot-card-body\">' +
+          '<div class=\"hot-card-title\">' + esc(d.title) + '</div>' +
+          '<div class=\"hot-card-prices\">' +
+            '<span class=\"hot-price-now\">' + esc(d.price || 'See price') + '</span>' +
+            (d.was ? '<span class=\"hot-price-was\">' + esc(d.was) + '</span>' : '') +
+            '<span class=\"hot-off\">' + esc(offText).replace('-', '') + '</span>' +
+          '</div>' +
+          '<span class=\"hot-btn\">See Deal on Amazon →</span>' +
+        '</div>' +
+      '</a>';
+    }).join('')
+    : '<div class=\"loading-bar\" style=\"grid-column:1/-1;\">No hot deals yet — check back soon.</div>';
+}
+
+"""
+    if old_render in text:
+        text = text.replace(old_render, new_render)
+    elif "function renderHotDeals()" in text and "hot-card-body" not in text:
+        text = replace_between(text, "function renderHotDeals() {", "function getFilteredDeals() {", new_render)
 
     helper = """function moveHomepageBrowseBelowDeals() {
   const browse = document.querySelector('.browse-pages-section');
@@ -110,8 +336,9 @@ def patch_homepage():
 def main():
     patch_site_common_js()
     patch_site_common_css()
+    patch_site_nav_css()
     patch_homepage()
-    print("Moved supporting navigation/content below deal sections and compacted above-the-fold spacing.")
+    print("Normalized mobile deal cards across homepage, category, best-seller, and search pages.")
 
 
 if __name__ == "__main__":
