@@ -1,3 +1,20 @@
+# Black Lab Deals crawler access
+# OAI-SearchBot powers ChatGPT search visibility.
+User-agent: OAI-SearchBot
+Allow: /
+
+# OAI-AdsBot checks submitted ChatGPT Ads landing pages for safety and relevance.
+User-agent: OAI-AdsBot
+Allow: /
+
+# ChatGPT-User supports user-requested page visits from ChatGPT.
+User-agent: ChatGPT-User
+Allow: /
+
+# GPTBot is OpenAI's training crawler. Allowed for broader AI discoverability.
+User-agent: GPTBot
+Allow: /
+
 User-agent: *
 Allow: /
 
