@@ -27,7 +27,7 @@ jobs:
         run: |
           git config user.name "DealDrop Bot"
           git config user.email "bot@dealdrop.com"
-          git add site-common.js site-common.css index.html
+          git add site-common.js site-common.css site-nav.css index.html
           git status
           if git diff --staged --quiet; then
             echo "No faster deal access changes to commit"
