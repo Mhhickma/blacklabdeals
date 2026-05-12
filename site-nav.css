@@ -488,3 +488,156 @@
   }
 }
 /* BLD MOBILE DEAL FEED UX END */
+
+/* BLD MOBILE DEAL-FIRST REFINEMENTS START */
+@media (max-width: 760px) {
+  .deal-statement-bar {
+    display: none !important;
+  }
+
+  main.page-shell {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0 !important;
+  }
+
+  main.page-shell > .hero { order: 1 !important; }
+  main.page-shell > .loading-bar,
+  main.page-shell > .error-msg { order: 2 !important; }
+  main.page-shell > .hot-section,
+  main.page-shell > #hot-section { order: 3 !important; }
+  main.page-shell > .toolbar,
+  main.page-shell > #toolbar { order: 4 !important; }
+  main.page-shell > .filters-wrap,
+  main.page-shell > #filters-wrap { order: 5 !important; }
+  main.page-shell > #deals-section { order: 6 !important; }
+  main.page-shell > .browse-pages-section,
+  main.page-shell > .popular-category-nav { order: 20 !important; }
+  main.page-shell > .divider,
+  main.page-shell > .stats-bar { display: none !important; }
+
+  .hero {
+    padding: 12px 0 10px !important;
+  }
+
+  .hero-text h1,
+  .hero h1 {
+    font-size: 25px !important;
+    line-height: 1.05 !important;
+    margin-bottom: 0 !important;
+  }
+
+  .hero-pill {
+    margin-bottom: 8px !important;
+    padding: 4px 11px !important;
+    font-size: 11px !important;
+  }
+
+  .hero-text p,
+  .hero p,
+  .hero-text p:nth-of-type(2) {
+    display: none !important;
+  }
+
+  .hot-header {
+    margin-bottom: 8px !important;
+  }
+
+  .hot-title {
+    font-size: 21px !important;
+    line-height: 1.1 !important;
+  }
+
+  .hot-subtitle {
+    display: none !important;
+  }
+
+  .browse-pages-section,
+  .popular-category-nav {
+    padding-top: 14px !important;
+    margin-top: 18px !important;
+    border-top: 1px solid var(--border, #e8e6e1) !important;
+  }
+
+  .browse-pages-title,
+  .browse-pages-section h2,
+  .popular-category-nav h2 {
+    font-size: 21px !important;
+    line-height: 1.1 !important;
+  }
+
+  .browse-pages-subtitle,
+  .browse-pages-section > p,
+  .popular-category-nav p,
+  .browse-page-card p,
+  .popular-category-link small {
+    display: none !important;
+  }
+
+  .browse-pages-panel,
+  .browse-pages-section {
+    padding: 14px !important;
+    box-shadow: none !important;
+  }
+
+  .browse-pages-grid,
+  .browse-page-grid,
+  .popular-category-grid {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
+  }
+
+  .browse-page-card,
+  .popular-category-link {
+    min-height: 0 !important;
+    padding: 12px 14px !important;
+    border-radius: 10px !important;
+  }
+
+  .browse-page-label,
+  .browse-page-kicker,
+  .current-page-label {
+    display: none !important;
+  }
+
+  .mobile-deal-nav button[data-jump="hot"],
+  .mobile-deal-nav button[data-jump="all"],
+  .bld-mobile-deal-nav button[data-scroll-target="deals"],
+  .bld-mobile-deal-nav button[data-filter-target="hot"] {
+    font-size: 0 !important;
+  }
+
+  .mobile-deal-nav button[data-jump="hot"]::after,
+  .bld-mobile-deal-nav button[data-filter-target="hot"]::after {
+    content: "Hot";
+    font-size: 12px;
+  }
+
+  .mobile-deal-nav button[data-jump="all"]::after,
+  .bld-mobile-deal-nav button[data-scroll-target="deals"]::after {
+    content: "All";
+    font-size: 12px;
+  }
+
+  .mobile-deal-nav button[data-cat="All"],
+  .mobile-deal-nav a[href*="top-100-amazon-deals-today"] {
+    display: none !important;
+  }
+
+  .mobile-deal-nav button[data-jump="categories"],
+  .bld-mobile-deal-nav button[data-scroll-target="categories"] {
+    margin-left: auto !important;
+  }
+
+  .bld-header-search-row {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 320 !important;
+  }
+
+  #back-to-top.visible {
+    bottom: calc(78px + env(safe-area-inset-bottom)) !important;
+  }
+}
+/* BLD MOBILE DEAL-FIRST REFINEMENTS END */
