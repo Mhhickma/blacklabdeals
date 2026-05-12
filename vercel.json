@@ -1,5 +1,9 @@
 {
+  "$schema": "https://openapi.vercel.sh/vercel.json",
   "version": 2,
+  "git": {
+    "deploymentEnabled": false
+  },
   "builds": [
     {
       "src": "**/*",
@@ -7,6 +11,14 @@
     }
   ],
   "routes": [
+    {
+      "src": "/deals.json",
+      "dest": "https://raw.githubusercontent.com/Mhhickma/blacklabdeals/main/deals.json"
+    },
+    {
+      "src": "/best_seller_deals.json",
+      "dest": "https://raw.githubusercontent.com/Mhhickma/blacklabdeals/main/best_seller_deals.json"
+    },
     {
       "src": "/top-100-amazon-deals-today",
       "dest": "/top-100-amazon-deals-today/index.html"
