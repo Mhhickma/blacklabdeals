@@ -425,7 +425,8 @@
     line-height: 1.45 !important;
   }
 
-  .category-intro-section {
+  .category-intro-section,
+  .related-deal-pages {
     display: none !important;
   }
 
@@ -629,7 +630,6 @@
 
   .popular-category-nav,
   .browse-pages-section,
-  .related-deal-pages,
   .bld-site-footer,
   footer {
     margin-bottom: 88px !important;
