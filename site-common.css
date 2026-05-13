@@ -4,3 +4,6 @@
 /* BLD MOBILE ALERT SIGNUP FIX START */
 @media(max-width:900px){#alerts-box.signup-box{display:block!important;scroll-margin-top:116px;padding:18px}}@media(max-width:600px){#alerts-box.signup-box{padding:16px}}
 /* BLD MOBILE ALERT SIGNUP FIX END */
+/* BLD HIDE MOBILE DEAL FILTER BUTTONS START */
+@media(max-width:760px){.filter-row,.filters-wrap,.filters-scroll{display:none!important}}
+/* BLD HIDE MOBILE DEAL FILTER BUTTONS END */
