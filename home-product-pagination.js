@@ -1,8 +1,8 @@
 /* Black Lab Deals home/product pagination.
-   Shows 50 cards in every deal-card section, then adds Load 50 More.
+   Shows 25 cards in every deal-card section, then adds Load 25 More.
    Header/navigation is not touched. */
 (function () {
-  const PAGE_SIZE = 50;
+  const PAGE_SIZE = 25;
   const state = new WeakMap();
   let scheduled = false;
 
@@ -43,6 +43,20 @@
     });
   }
 
+  function cardDiscount(card) {
+    const attr = Number(card.dataset.dealDiscount || card.dataset.discount || 0) || 0;
+    if (attr) return attr;
+    const text = card.textContent || '';
+    const match = text.match(/(\d+(?:\.\d+)?)\s*%\s*off|-(\d+(?:\.\d+)?)%/i);
+    return match ? Number(match[1] || match[2] || 0) || 0 : 0;
+  }
+
+  function sortCards(container) {
+    cardsFor(container)
+      .sort((a, b) => cardDiscount(b) - cardDiscount(a))
+      .forEach(card => container.appendChild(card));
+  }
+
   function findContainers() {
     const containers = new Set();
     document.querySelectorAll(CONTAINER_SELECTOR).forEach(container => {
@@ -61,7 +75,7 @@
     if (!wrap || !wrap.classList || !wrap.classList.contains('bld-home-load-more-wrap')) {
       wrap = document.createElement('div');
       wrap.className = 'bld-home-load-more-wrap load-more-wrap';
-      wrap.innerHTML = '<button class="bld-home-load-more-btn load-more-btn" type="button">Load 50 More Deals</button>';
+      wrap.innerHTML = '<button class="bld-home-load-more-btn load-more-btn" type="button">Load 25 More Deals</button>';
       container.insertAdjacentElement('afterend', wrap);
       wrap.querySelector('button').addEventListener('click', function () {
         const cards = cardsFor(container);
@@ -80,6 +94,7 @@
       if (next && next.classList && next.classList.contains('bld-home-load-more-wrap')) next.remove();
       return;
     }
+    sortCards(container);
     const cards = cardsFor(container);
     if (cards.length <= PAGE_SIZE) return;
 
