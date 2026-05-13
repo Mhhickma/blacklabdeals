@@ -17,6 +17,7 @@
   const title = deal => String(deal.title || deal.name || deal.product_title || 'Amazon Deal');
   const link = deal => String(deal.link || deal.amazon_url || deal.url || deal.affiliate_url || '#');
   const image = deal => String(deal.image || deal.image_url || deal.thumbnail || '');
+  const updated = deal => Date.parse(deal.updated_at || deal.updatedAt || deal.posted_at || deal.checked_at || deal.seen_at || 0) || 0;
   const money = value => value ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value) : '';
   const esc = value => String(value || '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
 
@@ -45,8 +46,12 @@
     return words.some(word => haystack.includes(norm(word)));
   }
 
-  function sortByDiscount(deals) {
-    return [...deals].sort((a, b) => pct(b) - pct(a) || price(a) - price(b) || title(a).localeCompare(title(b)));
+  function sortDeals(deals, sort = 'discount') {
+    const list = [...deals];
+    if (sort === 'price-low') return list.sort((a, b) => price(a) - price(b));
+    if (sort === 'price-high') return list.sort((a, b) => price(b) - price(a));
+    if (sort === 'newest') return list.sort((a, b) => updated(b) - updated(a));
+    return list.sort((a, b) => pct(b) - pct(a) || price(a) - price(b) || title(a).localeCompare(title(b)));
   }
 
   function pageDeals(deals) {
@@ -152,13 +157,107 @@
     }
   }
 
+  function installCategoryControlStyles() {
+    if ($('#bld-mobile-category-controls-style')) return;
+    const style = document.createElement('style');
+    style.id = 'bld-mobile-category-controls-style';
+    style.textContent = `
+      @media (max-width: 760px) {
+        .bld-mobile-category-controls {
+          display: grid;
+          gap: 12px;
+          margin: 0 0 12px;
+          padding: 12px 0;
+        }
+        .bld-mobile-category-controls input,
+        .bld-mobile-category-controls select {
+          width: 100%;
+          min-height: 52px;
+          border: 1px solid var(--border, #e8e6e1);
+          border-radius: 999px;
+          background: var(--surface, #fff);
+          color: var(--text-primary, #1a1a18);
+          font: 700 16px/1.2 'DM Sans', sans-serif;
+          padding: 0 18px;
+          box-shadow: 0 1px 3px rgba(0,0,0,.04);
+        }
+        .bld-mobile-category-controls input::placeholder {
+          color: var(--text-muted, #9e9e97);
+          font-weight: 600;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  function ensureCategoryControls(allDeals, draw) {
+    installCategoryControlStyles();
+    let controls = $('#bld-mobile-category-controls');
+    if (!controls) {
+      controls = document.createElement('div');
+      controls.id = 'bld-mobile-category-controls';
+      controls.className = 'bld-mobile-category-controls';
+      controls.innerHTML = `
+        <input id="bld-mobile-category-search" type="search" placeholder="Search deals..." aria-label="Search deals">
+        <select id="bld-mobile-category-filter" aria-label="Filter by category"><option value="all">All categories</option></select>
+        <select id="bld-mobile-category-sort" aria-label="Sort deals">
+          <option value="discount">Biggest discount</option>
+          <option value="price-low">Price: low to high</option>
+          <option value="price-high">Price: high to low</option>
+          <option value="newest">Newest</option>
+        </select>
+      `;
+      const target = $('.hot-strip') || $('#hot-grid');
+      if (target && target.parentNode) target.parentNode.insertBefore(controls, target);
+    }
+
+    const categorySelect = $('#bld-mobile-category-filter');
+    if (categorySelect && !categorySelect.dataset.bldFilled) {
+      const categories = [...new Set(allDeals.map(cat).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+      categories.forEach(category => {
+        const option = document.createElement('option');
+        option.value = category;
+        option.textContent = category;
+        categorySelect.appendChild(option);
+      });
+      categorySelect.dataset.bldFilled = 'true';
+    }
+
+    $$('#bld-mobile-category-search,#bld-mobile-category-filter,#bld-mobile-category-sort').forEach(control => {
+      if (control.dataset.bldBound) return;
+      control.dataset.bldBound = 'true';
+      control.addEventListener(control.tagName === 'INPUT' ? 'input' : 'change', draw);
+    });
+
+    return controls;
+  }
+
+  function filteredCategoryDeals(allDeals, defaultDeals) {
+    const search = $('#bld-mobile-category-search');
+    const category = $('#bld-mobile-category-filter');
+    const sort = $('#bld-mobile-category-sort');
+    const query = search ? search.value.trim().toLowerCase() : '';
+    const selectedCategory = category ? category.value : 'all';
+    const selectedSort = sort ? sort.value : 'discount';
+
+    let deals = selectedCategory === 'all'
+      ? defaultDeals
+      : allDeals.filter(deal => cat(deal) === selectedCategory);
+
+    if (query) {
+      deals = deals.filter(deal => `${title(deal)} ${deal.brand || ''} ${cat(deal)}`.toLowerCase().includes(query));
+    }
+
+    return sortDeals(deals, selectedSort);
+  }
+
   async function renderDealPages() {
     const response = await fetch(`${DEALS_URL}?mobile=${Date.now()}`, { cache: 'no-store' });
     if (!response.ok) return;
     const data = await response.json();
     const all = Array.isArray(data) ? data : Array.isArray(data.deals) ? data.deals : [];
-    const pageList = sortByDiscount(pageDeals(all));
-    const hotList = sortByDiscount(pageList.filter(deal => deal.hot || pct(deal) >= 40));
+    const pageList = sortDeals(pageDeals(all), 'discount');
+    const hotList = sortDeals(pageList.filter(deal => deal.hot || pct(deal) >= 40), 'discount');
     const isHome = cleanPath(location.pathname) === '/';
     const isTop = (document.body.dataset.mode || '') === 'top100' || location.pathname.includes('top-100-amazon-deals-today');
 
@@ -167,11 +266,19 @@
       renderPaged($('#deals-grid'), pageList, (deal, i) => dealCard(deal, i, false), `home-all-${pageList.length}`);
       updateCounts(pageList.length, (state.get($('#deals-grid')) || {}).count || PAGE_SIZE);
     } else {
-      const list = pageList.slice(0, isTop ? 100 : pageList.length);
       const grid = $('#hot-grid') || $('#deals-grid') || $('#dealsGrid');
-      renderPaged(grid, list, (deal, i) => dealCard(deal, i, isTop), `page-${location.pathname}-${list.length}`);
-      updateCounts(list.length, (state.get(grid) || {}).count || PAGE_SIZE);
-      cleanTop100MobileSections();
+      const drawCategoryPage = () => {
+        if (grid) state.delete(grid);
+        const filtered = isTop
+          ? pageList.slice(0, 100)
+          : filteredCategoryDeals(all, pageList);
+        renderPaged(grid, filtered, (deal, i) => dealCard(deal, i, isTop), `page-${location.pathname}-${filtered.length}-${$('#bld-mobile-category-search') ? $('#bld-mobile-category-search').value : ''}-${$('#bld-mobile-category-filter') ? $('#bld-mobile-category-filter').value : ''}-${$('#bld-mobile-category-sort') ? $('#bld-mobile-category-sort').value : ''}`);
+        updateCounts(filtered.length, (state.get(grid) || {}).count || PAGE_SIZE);
+        cleanTop100MobileSections();
+      };
+
+      if (!isTop) ensureCategoryControls(all, drawCategoryPage);
+      drawCategoryPage();
     }
   }
 
@@ -179,7 +286,7 @@
     const response = await fetch(`${BEST_SELLER_URL}?mobile=${Date.now()}`, { cache: 'no-store' });
     if (!response.ok) return;
     const data = await response.json();
-    const all = sortByDiscount(Array.isArray(data.deals) ? data.deals : []);
+    const all = sortDeals(Array.isArray(data.deals) ? data.deals : [], 'discount');
     const grid = $('#dealsGrid');
     const search = $('#searchBox');
     const category = $('#categoryFilter');
@@ -194,10 +301,7 @@
         const matchesCat = c === 'all' || cat(deal) === c;
         return matchesSearch && matchesCat;
       });
-      if (sort && sort.value === 'price-low') deals = deals.sort((a, b) => price(a) - price(b));
-      else if (sort && sort.value === 'rank') deals = deals.sort((a, b) => (a.bestSellerRank || 999999) - (b.bestSellerRank || 999999));
-      else deals = sortByDiscount(deals);
-      return deals;
+      return sortDeals(deals, sort ? sort.value : 'discount');
     }
 
     function draw(reset) {
