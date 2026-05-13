@@ -141,7 +141,7 @@
 
   function cleanTop100MobileSections() {
     if ((document.body.dataset.mode || '') !== 'top100') return;
-    $$('.section-head, .filter-row, .status-line, .popular-category-nav, .related-deal-pages').forEach(el => {
+    $$('.hero, .section-head, .filter-row, .status-line, .popular-category-nav, .related-deal-pages').forEach(el => {
       el.hidden = true;
       el.style.display = 'none';
     });
