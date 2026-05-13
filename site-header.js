@@ -59,7 +59,7 @@
     <aside class="bld-mobile-drawer" id="bld-mobile-drawer" aria-label="Mobile navigation" aria-hidden="true">
       <div class="bld-mobile-drawer-header">
         <a href="/" class="bld-mobile-drawer-brand" aria-label="Black Lab Deals home">
-          <img src="/logo.png" alt="Black Lab Deals logo">
+          <img src="/logo.png" alt="Black Lab Deals logo" fetchpriority="high">
           <div>
             <div class="bld-mobile-drawer-title">Black Lab <span>Deals</span></div>
             <div class="bld-mobile-drawer-subtitle">Fresh Amazon deals</div>
@@ -118,6 +118,16 @@
     @media (max-width:520px){.bld-mobile-actions .bld-alert-btn{display:none;}.bld-mobile-drawer{width:92vw;}.bld-mobile-drawer-title{font-size:21px;}}
   `;
 
+  function preloadLogo() {
+    if (document.querySelector('link[rel="preload"][href="/logo.png"]')) return;
+    const link = document.createElement('link');
+    link.rel = 'preload';
+    link.as = 'image';
+    link.href = '/logo.png';
+    link.setAttribute('fetchpriority', 'high');
+    document.head.appendChild(link);
+  }
+
   function injectMobileDrawerStyles() {
     if (document.getElementById('bld-mobile-drawer-styles')) return;
     const style = document.createElement('style');
@@ -139,7 +149,7 @@
       <header class="bld-header-shell">
         <div class="bld-header-main">
           <a href="/" class="bld-brand" aria-label="Black Lab Deals home">
-            <img class="bld-brand-logo" src="/logo.png" alt="Black Lab Deals logo">
+            <img class="bld-brand-logo" src="/logo.png" alt="Black Lab Deals logo" fetchpriority="high">
             <div>
               <div class="bld-brand-title">Black Lab <span>Deals</span></div>
               <div class="bld-brand-rule"></div>
@@ -268,6 +278,7 @@
   function mountHeader() {
     const mount = document.getElementById('site-header');
     if (!mount) return;
+    preloadLogo();
     injectMobileDrawerStyles();
     mount.innerHTML = buildHeader();
     wireHomepageScrollLinks(mount);
