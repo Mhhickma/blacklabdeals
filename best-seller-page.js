@@ -2,7 +2,7 @@
 // Isolated from site-common.js to avoid global variable conflicts.
 (function () {
   const DATA_URL = 'https://raw.githubusercontent.com/Mhhickma/blacklabdeals/main/best_seller_deals.json';
-  const PAGE_SIZE = 50;
+  const PAGE_SIZE = 25;
   let bestSellerDeals = [];
   let visibleDealsCount = PAGE_SIZE;
 
@@ -77,7 +77,7 @@
       wrap = document.createElement('div');
       wrap.id = 'best-seller-load-more-wrap';
       wrap.className = 'load-more-wrap hidden';
-      wrap.innerHTML = '<button id="best-seller-load-more-btn" class="load-more-btn" type="button">Load 50 More Deals</button>';
+      wrap.innerHTML = '<button id="best-seller-load-more-btn" class="load-more-btn" type="button">Load 25 More Deals</button>';
       grid.insertAdjacentElement('afterend', wrap);
       wrap.querySelector('button').addEventListener('click', function () {
         visibleDealsCount += PAGE_SIZE;
@@ -118,11 +118,10 @@
       return matchesSearch && matchesCat;
     });
 
-    const sort = sortFilter ? sortFilter.value : 'newest';
-    if (sort === 'discount') deals.sort((a, b) => (b.pct || 0) - (a.pct || 0));
+    const sort = sortFilter ? sortFilter.value : 'discount';
     if (sort === 'price-low') deals.sort((a, b) => (a.price_amount || 999999) - (b.price_amount || 999999));
-    if (sort === 'rank') deals.sort((a, b) => (a.bestSellerRank || 999999) - (b.bestSellerRank || 999999));
-    if (sort === 'newest') deals.sort((a, b) => String(b.updated_at || '').localeCompare(String(a.updated_at || '')));
+    else if (sort === 'rank') deals.sort((a, b) => (a.bestSellerRank || 999999) - (b.bestSellerRank || 999999));
+    else deals.sort((a, b) => (b.pct || 0) - (a.pct || 0));
 
     return deals;
   }
@@ -130,10 +129,7 @@
   function renderDeals(shouldReset = false) {
     const grid = getEl('dealsGrid');
     const statusEl = getEl('status');
-    const searchBox = getEl('searchBox');
-    const categoryFilter = getEl('categoryFilter');
-    const sortFilter = getEl('sortFilter');
-    if (!grid || !statusEl || !searchBox || !categoryFilter || !sortFilter) return;
+    if (!grid || !statusEl) return;
 
     if (shouldReset) visibleDealsCount = PAGE_SIZE;
 
@@ -156,6 +152,9 @@
       const data = await res.json();
       bestSellerDeals = Array.isArray(data.deals) ? data.deals : [];
       visibleDealsCount = PAGE_SIZE;
+
+      const sortFilter = getEl('sortFilter');
+      if (sortFilter) sortFilter.value = 'discount';
 
       const dealCount = getEl('dealCount');
       const watchCount = getEl('watchCount');
