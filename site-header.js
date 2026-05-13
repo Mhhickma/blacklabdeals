@@ -1,30 +1,40 @@
 /* Black Lab Deals uniform header navigation.
-   Shared header used by pages that include /site-header.js.
-   Navigation version: shared-search-2026-05-04 */
+   Shared header used by pages that include /site-header.js. */
 
 (function () {
   const NAV_LINKS = [
-    { title: 'Top 100 Deals', href: '/top-100-amazon-deals-today/', icon: '🔥', group: 'Featured' },
-    { title: 'Best Seller Deals', href: '/best-seller-deals.html', icon: '🏆', group: 'Featured' },
-    { title: 'New Deals Today', href: '/#deals-section', icon: '✨', group: 'Featured' },
-    { title: 'Deals Under $50', href: '/best-amazon-deals-under-50/', icon: '💵', group: 'Featured' },
-    { title: 'Hot Deals', href: '/#hot-deals', icon: '⚡', group: 'Featured' },
-    { title: 'Tool Deals', href: '/best-amazon-tool-deals/', icon: '🛠️', group: 'Popular Categories' },
-    { title: 'Home & Kitchen', href: '/best-amazon-home-kitchen-deals/', icon: '🏠', group: 'Popular Categories' },
-    { title: 'Electronics', href: '/best-amazon-electronics-deals/', icon: '💻', group: 'Popular Categories' },
-    { title: 'Automotive', href: '/best-amazon-automotive-deals/', icon: '🚗', group: 'Popular Categories' },
-    { title: 'Patio & Garden', href: '/best-amazon-patio-lawn-garden-deals/', icon: '🌿', group: 'Popular Categories' },
-    { title: 'Sports & Outdoors', href: '/best-amazon-sports-outdoors-deals/', icon: '🏈', group: 'More' },
-    { title: 'Pet Supplies', href: '/best-amazon-pet-supplies-deals/', icon: '🐾', group: 'More' },
-    { title: 'Toys & Games', href: '/best-amazon-toys-games-deals/', icon: '🧸', group: 'More' },
-    { title: 'Office Products', href: '/best-amazon-office-products-deals/', icon: '🏢', group: 'More' },
-    { title: 'Health & Household', href: '/best-amazon-health-household-deals/', icon: '🧼', group: 'More' }
+    { title: 'Hot Deals', href: '/#hot-deals', icon: '&#9889;', group: 'Featured' },
+    { title: 'Categories', href: '/categories/', icon: '&#8594;', group: 'Featured' },
+    { title: 'Best Seller Deals', href: '/best-seller-deals.html', icon: '&#9733;', group: 'Featured' },
+    { title: 'Top 100 Deals', href: '/top-100-amazon-deals-today/', icon: '#', group: 'Featured' },
+    { title: 'Deals Under $50', href: '/best-amazon-deals-under-50/', icon: '$', group: 'Featured' },
+    { title: 'Tool Deals', href: '/best-amazon-tool-deals/', icon: '&#128295;', group: 'Popular Categories' },
+    { title: 'Home & Kitchen', href: '/best-amazon-home-kitchen-deals/', icon: '&#8962;', group: 'Popular Categories' },
+    { title: 'Electronics', href: '/best-amazon-electronics-deals/', icon: '&#9632;', group: 'Popular Categories' },
+    { title: 'Automotive', href: '/best-amazon-automotive-deals/', icon: '&#9679;', group: 'Popular Categories' },
+    { title: 'Patio & Garden', href: '/best-amazon-patio-lawn-garden-deals/', icon: '&#9827;', group: 'Popular Categories' },
+    { title: 'Sports & Outdoors', href: '/best-amazon-sports-outdoors-deals/', icon: '&#9670;', group: 'More' },
+    { title: 'Pet Supplies', href: '/best-amazon-pet-supplies-deals/', icon: '&#9675;', group: 'More' },
+    { title: 'Toys & Games', href: '/best-amazon-toys-games-deals/', icon: '&#9734;', group: 'More' },
+    { title: 'Office Products', href: '/best-amazon-office-products-deals/', icon: '&#9633;', group: 'More' },
+    { title: 'Health & Household', href: '/best-amazon-health-household-deals/', icon: '+', group: 'More' }
   ];
+
+  function getHomeAwareHref(anchor) {
+    return window.location.pathname === '/' || window.location.pathname === '/index.html' ? anchor : '/' + anchor;
+  }
 
   function groupedLinks(group) {
     return NAV_LINKS
       .filter(link => link.group === group)
       .map(link => `<a class="bld-mega-link" href="${link.href}"><span class="bld-mega-icon">${link.icon}</span>${link.title}</a>`)
+      .join('');
+  }
+
+  function drawerLinks(group) {
+    return NAV_LINKS
+      .filter(link => link.group === group)
+      .map(link => `<a class="bld-mobile-drawer-link" href="${link.href}"><span>${link.icon}</span>${link.title}</a>`)
       .join('');
   }
 
@@ -36,22 +46,17 @@
       </div>
       <div class="bld-mega-pill">Updated Daily</div>
     </div>
-
     <div class="bld-mega-grid">
       <div class="bld-mega-column"><h3>Featured</h3>${groupedLinks('Featured')}</div>
       <div class="bld-mega-column"><h3>Popular Categories</h3>${groupedLinks('Popular Categories')}</div>
       <div class="bld-mega-column"><h3>More</h3>${groupedLinks('More')}</div>
     </div>
-
-    <a class="bld-mega-footer" href="/categories/">
-      <span>View All Categories</span>
-      <span>→</span>
-    </a>
+    <a class="bld-mega-footer" href="/categories/"><span>View All Categories</span><span>&rarr;</span></a>
   `;
 
   const MOBILE_DRAWER_HTML = `
     <div class="bld-mobile-drawer-overlay" data-bld-mobile-close hidden></div>
-    <aside class="bld-mobile-drawer" aria-label="Mobile navigation" aria-hidden="true">
+    <aside class="bld-mobile-drawer" id="bld-mobile-drawer" aria-label="Mobile navigation" aria-hidden="true">
       <div class="bld-mobile-drawer-header">
         <a href="/" class="bld-mobile-drawer-brand" aria-label="Black Lab Deals home">
           <img src="/logo.png" alt="Black Lab Deals logo">
@@ -60,27 +65,17 @@
             <div class="bld-mobile-drawer-subtitle">Fresh Amazon deals</div>
           </div>
         </a>
-        <button class="bld-mobile-drawer-close" type="button" aria-label="Close menu" data-bld-mobile-close>×</button>
+        <button class="bld-mobile-drawer-close" type="button" aria-label="Close menu" data-bld-mobile-close>&times;</button>
       </div>
       <div class="bld-mobile-drawer-content">
         <form class="bld-mobile-drawer-search" action="/search.html" method="get" role="search">
           <input type="search" name="q" placeholder="Search Here" aria-label="Search all deals">
           <button type="submit">Search</button>
         </form>
-        <a class="bld-mobile-drawer-alert" href="/#alerts-box"><span>●</span> Get Deal Alerts</a>
-        <div class="bld-mobile-drawer-section">
-          <h3>Featured Deal Pages</h3>
-          ${NAV_LINKS.filter(link => link.group === 'Featured').map(link => `<a class="bld-mobile-drawer-link" href="${link.href}"><span>${link.icon}</span>${link.title}</a>`).join('')}
-        </div>
-        <div class="bld-mobile-drawer-section">
-          <h3>Popular Categories</h3>
-          ${NAV_LINKS.filter(link => link.group === 'Popular Categories').map(link => `<a class="bld-mobile-drawer-link" href="${link.href}"><span>${link.icon}</span>${link.title}</a>`).join('')}
-        </div>
-        <div class="bld-mobile-drawer-section">
-          <h3>More Categories</h3>
-          ${NAV_LINKS.filter(link => link.group === 'More').map(link => `<a class="bld-mobile-drawer-link" href="${link.href}"><span>${link.icon}</span>${link.title}</a>`).join('')}
-          <a class="bld-mobile-drawer-link bld-mobile-drawer-all" href="/categories/"><span>→</span>View All Categories</a>
-        </div>
+        <a class="bld-mobile-drawer-alert" href="/#alerts-box"><span>&bull;</span> Get Deal Alerts</a>
+        <div class="bld-mobile-drawer-section"><h3>Featured Deal Pages</h3>${drawerLinks('Featured')}</div>
+        <div class="bld-mobile-drawer-section"><h3>Popular Categories</h3>${drawerLinks('Popular Categories')}</div>
+        <div class="bld-mobile-drawer-section"><h3>More Categories</h3>${drawerLinks('More')}<a class="bld-mobile-drawer-link bld-mobile-drawer-all" href="/categories/"><span>&rarr;</span>View All Categories</a></div>
       </div>
     </aside>
   `;
@@ -123,16 +118,20 @@
     @media (max-width:520px){.bld-mobile-actions .bld-alert-btn{display:none;}.bld-mobile-drawer{width:92vw;}.bld-mobile-drawer-title{font-size:21px;}}
   `;
 
-  function getHomeAwareHref(anchor) {
-    return window.location.pathname === '/' || window.location.pathname === '/index.html' ? anchor : '/' + anchor;
-  }
-
   function injectMobileDrawerStyles() {
     if (document.getElementById('bld-mobile-drawer-styles')) return;
     const style = document.createElement('style');
     style.id = 'bld-mobile-drawer-styles';
     style.textContent = MOBILE_DRAWER_CSS;
     document.head.appendChild(style);
+  }
+
+  function injectMobileDealFixes() {
+    if (document.querySelector('script[src^="/mobile-deal-fixes.js"]')) return;
+    const script = document.createElement('script');
+    script.src = '/mobile-deal-fixes.js?v=1';
+    script.defer = true;
+    document.body.appendChild(script);
   }
 
   function buildHeader() {
@@ -153,21 +152,19 @@
               <a class="bld-hot-link" href="${getHomeAwareHref('#hot-deals')}">Hot Deals</a>
               <span class="bld-nav-divider" aria-hidden="true"></span>
               <div class="bld-category-wrap">
-                <button class="bld-category-trigger" type="button" aria-expanded="false">Categories <span aria-hidden="true">▾</span></button>
+                <button class="bld-category-trigger" type="button" aria-expanded="false">Categories <span aria-hidden="true">&#9662;</span></button>
                 <div class="dropdown-menu bld-mega-menu" id="menu-categories">${MEGA_MENU_HTML}</div>
               </div>
               <span class="bld-nav-divider" aria-hidden="true"></span>
               <a class="bld-all-link" href="${getHomeAwareHref('#deals-section')}">All Deals</a>
             </nav>
-            <a class="bld-alert-btn" href="${getHomeAwareHref('#alerts-box')}"><span class="bld-alert-icon">●</span> Get Alerts</a>
+            <a class="bld-alert-btn" href="${getHomeAwareHref('#alerts-box')}"><span class="bld-alert-icon">&bull;</span> Get Alerts</a>
           </div>
 
           <div class="bld-mobile-actions">
-            <a class="bld-alert-btn" href="${getHomeAwareHref('#alerts-box')}"><span class="bld-alert-icon">●</span> Get Alerts</a>
+            <a class="bld-alert-btn" href="${getHomeAwareHref('#alerts-box')}"><span class="bld-alert-icon">&bull;</span> Get Alerts</a>
             <button class="bld-mobile-menu-btn" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="bld-mobile-drawer">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true">
-                <path d="M4 6h16"></path><path d="M4 12h16"></path><path d="M4 18h16"></path>
-              </svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16"></path><path d="M4 12h16"></path><path d="M4 18h16"></path></svg>
             </button>
           </div>
         </div>
@@ -261,25 +258,11 @@
       else openMegaMenu();
     });
 
-    menu.addEventListener('click', function (event) {
-      event.stopPropagation();
-    });
-
-    window.addEventListener('scroll', function () {
-      if (menu.classList.contains('show')) setMenuPosition();
-    }, { passive: true });
-
-    window.addEventListener('resize', function () {
-      if (menu.classList.contains('show')) setMenuPosition();
-    });
-
-    document.addEventListener('click', function (event) {
-      if (!root.contains(event.target) && !menu.contains(event.target)) closeMegaMenu();
-    });
-
-    document.addEventListener('keydown', function (event) {
-      if (event.key === 'Escape') closeMegaMenu();
-    });
+    menu.addEventListener('click', function (event) { event.stopPropagation(); });
+    window.addEventListener('scroll', function () { if (menu.classList.contains('show')) setMenuPosition(); }, { passive: true });
+    window.addEventListener('resize', function () { if (menu.classList.contains('show')) setMenuPosition(); });
+    document.addEventListener('click', function (event) { if (!root.contains(event.target) && !menu.contains(event.target)) closeMegaMenu(); });
+    document.addEventListener('keydown', function (event) { if (event.key === 'Escape') closeMegaMenu(); });
   }
 
   function mountHeader() {
@@ -290,6 +273,7 @@
     wireHomepageScrollLinks(mount);
     wireMobileMenu(mount);
     initMegaMenu(mount);
+    injectMobileDealFixes();
   }
 
   if (document.readyState === 'loading') {
