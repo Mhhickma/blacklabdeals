@@ -79,6 +79,24 @@
     return deal.discount || (pct(deal) ? `${pct(deal)}% off` : 'Deal');
   }
 
+  function normalizeBestSellerLabels(root = document.body) {
+    if (!root || !isMobile()) return;
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+      acceptNode(node) {
+        const parent = node.parentElement;
+        if (!parent || ['SCRIPT', 'STYLE', 'NOSCRIPT'].includes(parent.tagName)) return NodeFilter.FILTER_REJECT;
+        return node.nodeValue.includes('Best Seller') ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP;
+      }
+    });
+    const nodes = [];
+    while (walker.nextNode()) nodes.push(walker.currentNode);
+    nodes.forEach(node => {
+      node.nodeValue = node.nodeValue
+        .replace(/Best Seller Deals/g, 'Best Sellers')
+        .replace(/Best Seller/g, 'Best Sellers');
+    });
+  }
+
   function dealCard(deal, index, ranked) {
     const now = deal.price || money(price(deal)) || 'See deal';
     const was = deal.was || deal.old_price || deal.previous_price || '';
@@ -96,7 +114,7 @@
 
   function bestSellerCard(deal) {
     const img = image(deal) ? `<img src="${esc(image(deal))}" alt="${esc(title(deal))}" loading="lazy">` : '<div class="img-fallback">Deal image unavailable</div>';
-    const rank = deal.bestSellerRank ? `#${deal.bestSellerRank}` : 'Best Seller';
+    const rank = deal.bestSellerRank ? `#${deal.bestSellerRank}` : 'Best Sellers';
     return `<article class="best-seller-card" data-deal-discount="${pct(deal)}">
       <div class="best-seller-img">${img}</div>
       <div class="best-seller-body">
@@ -135,6 +153,7 @@
     wrap.hidden = remaining <= 0;
     wrap.classList.toggle('hidden', remaining <= 0);
     if (button) button.textContent = `Load ${Math.min(PAGE_SIZE, remaining)} More Deals${remaining ? ` (${remaining} remaining)` : ''}`;
+    normalizeBestSellerLabels(grid.parentElement || document.body);
   }
 
   function updateCounts(total, shown) {
@@ -320,7 +339,7 @@
     const nav = document.createElement('nav');
     nav.className = 'bld-mobile-deal-nav';
     nav.setAttribute('aria-label', 'Mobile deal navigation');
-    nav.innerHTML = '<button type="button" data-mobile-target="hot">Hot</button><a href="/categories/">Categories</a><a href="/best-seller-deals.html">Best Seller</a>';
+    nav.innerHTML = '<button type="button" data-mobile-target="hot">Hot</button><a href="/categories/">Categories</a><a href="/best-seller-deals.html">Best Sellers</a>';
     document.body.appendChild(nav);
     nav.addEventListener('click', event => {
       const button = event.target.closest('button[data-mobile-target="hot"]');
@@ -339,10 +358,12 @@
   function start() {
     if (!isMobile()) return;
     installMobileNav();
+    normalizeBestSellerLabels();
     cleanTop100MobileSections();
     if (location.pathname.includes('best-seller-deals')) renderBestSellers().then(hideCompetingButtons).catch(console.error);
     else renderDealPages().then(hideCompetingButtons).catch(console.error);
     setTimeout(() => {
+      normalizeBestSellerLabels();
       cleanTop100MobileSections();
       hideCompetingButtons();
     }, 1000);
