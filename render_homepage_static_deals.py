@@ -19,6 +19,8 @@ HOME_START_MARKER = "<!-- BLD STATIC DEALS START -->"
 HOME_END_MARKER = "<!-- BLD STATIC DEALS END -->"
 ITEMLIST_START_MARKER = "<!-- BLD ITEMLIST SCHEMA START -->"
 ITEMLIST_END_MARKER = "<!-- BLD ITEMLIST SCHEMA END -->"
+REFRESHED_START_MARKER = "<!-- BLD STATIC REFRESHED START -->"
+REFRESHED_END_MARKER = "<!-- BLD STATIC REFRESHED END -->"
 
 CATEGORY_KEYWORDS = {
     "electronics": ["electronics", "cell phones", "cell phone", "computers", "computer", "camera", "audio", "headphones", "tablet", "tv", "television"],
@@ -181,6 +183,49 @@ def upsert_itemlist_schema(page_html: str, deals: list[dict], page_url: str, pag
     return page_html.replace("</head>", f"{block}\n</head>", 1)
 
 
+def refreshed_date(data: object) -> tuple[str, str]:
+    updated_at = data.get("updatedAt") if isinstance(data, dict) else ""
+    date = str(updated_at or "")[:10]
+    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", date):
+        date = datetime.now(timezone.utc).date().isoformat()
+    year, month, day = (int(part) for part in date.split("-"))
+    month_name = [
+        "", "January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December",
+    ][month]
+    return date, f"{month_name} {day}, {year}"
+
+
+def upsert_refreshed_text(page_html: str, label: str) -> str:
+    if 'id="stat-updated"' in page_html:
+        page_html = re.sub(
+            r'(<div class="stat-num" id="stat-updated">)(.*?)(</div>)',
+            rf"\g<1>{esc(label)}\g<3>",
+            page_html,
+            count=1,
+            flags=re.DOTALL,
+        )
+
+    block = (
+        f"{REFRESHED_START_MARKER}\n"
+        f'<p class="bld-static-refreshed">Last refreshed {esc(label)}.</p>\n'
+        f"{REFRESHED_END_MARKER}"
+    )
+    replaced = replace_between_markers(page_html, REFRESHED_START_MARKER, REFRESHED_END_MARKER, block)
+    if replaced is not None:
+        return replaced
+
+    target = re.search(r"</section>\s*<!-- BLD CATEGORY INTRO END -->", page_html)
+    if target:
+        return page_html[:target.end()] + block + page_html[target.end():]
+
+    target = re.search(r"</section>", page_html)
+    if target:
+        return page_html[:target.end()] + block + page_html[target.end():]
+
+    return page_html
+
+
 def score(deal: dict) -> float:
     updated = deal.get("updated_at") or deal.get("updatedAt") or deal.get("seen_at") or deal.get("seenAt") or ""
     updated_score = sum(ord(ch) for ch in str(updated)[-12:]) / 1000
@@ -280,7 +325,7 @@ def replace_between_markers(page_html: str, start_marker: str, end_marker: str, 
     return None
 
 
-def render_homepage(deals: list[dict]) -> None:
+def render_homepage(deals: list[dict], refreshed_label: str) -> None:
     path = Path("index.html")
     page_html = path.read_text(encoding="utf-8")
     page_html = page_html.replace(
@@ -302,11 +347,12 @@ def render_homepage(deals: list[dict]) -> None:
     label = f"Showing {min(DEALS_LIMIT, len(ordered))} of {len(ordered)} deals"
     page_html = re.sub(r'(<span class="deal-count" id="count-label">)(.*?)(</span>)', rf"\g<1>{esc(label)}\g<3>", page_html, count=1, flags=re.DOTALL)
     page_html = upsert_itemlist_schema(page_html, ordered, "https://blacklabdeals.com/", "Best Deals Found on Amazon Today")
+    page_html = upsert_refreshed_text(page_html, refreshed_label)
     path.write_text(page_html, encoding="utf-8")
     print(f"Rendered {min(DEALS_LIMIT, len(ordered))} static homepage deals into index.html")
 
 
-def render_category_page(deals: list[dict], config: dict) -> None:
+def render_category_page(deals: list[dict], config: dict, refreshed_label: str) -> None:
     path = Path(config["path"])
     page_html = path.read_text(encoding="utf-8")
     filtered = sorted_deals([deal for deal in deals if deal_matches(deal, config["key"])])
@@ -339,6 +385,7 @@ def render_category_page(deals: list[dict], config: dict) -> None:
     page_url = "https://blacklabdeals.com/" + str(path.parent).replace("\\", "/").strip("/") + "/"
     page_name = f"Best Amazon {config['label'].title()} Deals" if config["key"] != "top100" else "Top 100 Deals Found on Amazon Today"
     page_html = upsert_itemlist_schema(page_html, filtered, page_url, page_name)
+    page_html = upsert_refreshed_text(page_html, refreshed_label)
     path.write_text(page_html, encoding="utf-8")
     print(f"Rendered {min(DEALS_LIMIT, len(filtered))} static {config['label']} deals into {path}")
 
@@ -348,10 +395,7 @@ def update_sitemap_lastmod(data: object) -> None:
     if not path.exists():
         return
 
-    updated_at = data.get("updatedAt") if isinstance(data, dict) else ""
-    date = str(updated_at or "")[:10]
-    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", date):
-        date = datetime.now(timezone.utc).date().isoformat()
+    date, _ = refreshed_date(data)
 
     sitemap = path.read_text(encoding="utf-8")
     sitemap = re.sub(r"<lastmod>\d{4}-\d{2}-\d{2}</lastmod>", f"<lastmod>{date}</lastmod>", sitemap)
@@ -368,9 +412,10 @@ def main() -> None:
     if not isinstance(deals, list):
         raise RuntimeError("deals.json does not contain a deals list")
 
-    render_homepage(deals)
+    _, refreshed_label = refreshed_date(data)
+    render_homepage(deals, refreshed_label)
     for config in CATEGORY_PAGES:
-        render_category_page(deals, config)
+        render_category_page(deals, config, refreshed_label)
 
     update_sitemap_lastmod(data)
 
