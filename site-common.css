@@ -7,3 +7,6 @@
 /* BLD HIDE MOBILE DEAL FILTER BUTTONS START */
 @media(max-width:760px){.filter-row,.filters-wrap,.filters-scroll{display:none!important}}
 /* BLD HIDE MOBILE DEAL FILTER BUTTONS END */
+/* BLD HIDE MOBILE POPULAR CATEGORY MENU START */
+@media(max-width:760px){.popular-category-nav{display:none!important}}
+/* BLD HIDE MOBILE POPULAR CATEGORY MENU END */
