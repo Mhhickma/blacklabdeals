@@ -10,12 +10,15 @@ from __future__ import annotations
 import html
 import json
 import re
+from datetime import datetime, timezone
 from pathlib import Path
 
 DEALS_FILE = Path("deals.json")
 DEALS_LIMIT = 50
 HOME_START_MARKER = "<!-- BLD STATIC DEALS START -->"
 HOME_END_MARKER = "<!-- BLD STATIC DEALS END -->"
+ITEMLIST_START_MARKER = "<!-- BLD ITEMLIST SCHEMA START -->"
+ITEMLIST_END_MARKER = "<!-- BLD ITEMLIST SCHEMA END -->"
 
 CATEGORY_KEYWORDS = {
     "electronics": ["electronics", "cell phones", "cell phone", "computers", "computer", "camera", "audio", "headphones", "tablet", "tv", "television"],
@@ -108,6 +111,76 @@ def title(deal: dict) -> str:
     return str(deal.get("title") or deal.get("name") or deal.get("product_title") or "Amazon Deal")
 
 
+def deal_url(deal: dict) -> str:
+    return str(deal.get("link") or deal.get("amazon_url") or deal.get("url") or "#")
+
+
+def deal_currency(deal: dict) -> str:
+    return str(deal.get("currency") or "USD")
+
+
+def schema_availability(deal: dict) -> str:
+    value = str(deal.get("availability") or "").upper()
+    if "OUT" in value:
+        return "https://schema.org/OutOfStock"
+    if "PREORDER" in value:
+        return "https://schema.org/PreOrder"
+    return "https://schema.org/InStock"
+
+
+def itemlist_schema(deals: list[dict], page_url: str, page_name: str) -> str:
+    items = []
+    for position, deal in enumerate(deals[:DEALS_LIMIT], start=1):
+        product = {
+            "@type": "Product",
+            "name": title(deal),
+            "url": deal_url(deal),
+        }
+        image = deal.get("image") or deal.get("image_url") or deal.get("imageUrl") or deal.get("thumbnail")
+        if image:
+            product["image"] = image
+
+        amount = price_amount(deal)
+        if amount:
+            product["offers"] = {
+                "@type": "Offer",
+                "price": f"{amount:.2f}",
+                "priceCurrency": deal_currency(deal),
+                "availability": schema_availability(deal),
+                "url": deal_url(deal),
+            }
+
+        items.append({
+            "@type": "ListItem",
+            "position": position,
+            "item": product,
+        })
+
+    schema = {
+        "@context": "https://schema.org",
+        "@type": "ItemList",
+        "name": page_name,
+        "url": page_url,
+        "numberOfItems": len(items),
+        "itemListElement": items,
+    }
+    return json.dumps(schema, ensure_ascii=False, separators=(",", ":"))
+
+
+def upsert_itemlist_schema(page_html: str, deals: list[dict], page_url: str, page_name: str) -> str:
+    block = (
+        f'{ITEMLIST_START_MARKER}\n'
+        f'<script type="application/ld+json" data-bld-itemlist="true">{itemlist_schema(deals, page_url, page_name)}</script>\n'
+        f'{ITEMLIST_END_MARKER}'
+    )
+    replaced = replace_between_markers(page_html, ITEMLIST_START_MARKER, ITEMLIST_END_MARKER, block)
+    if replaced is not None:
+        return replaced
+    if "</head>" not in page_html:
+        return page_html
+    return page_html.replace("</head>", f"{block}\n</head>", 1)
+
+
 def score(deal: dict) -> float:
     updated = deal.get("updated_at") or deal.get("updatedAt") or deal.get("seen_at") or deal.get("seenAt") or ""
     updated_score = sum(ord(ch) for ch in str(updated)[-12:]) / 1000
@@ -173,7 +246,7 @@ def homepage_deal_card(deal: dict) -> str:
 
 def category_deal_card(deal: dict, rank: int | None = None) -> str:
     card_title = esc(title(deal))
-    link = esc(deal.get("link") or deal.get("amazon_url") or deal.get("url") or "#")
+    link = esc(deal_url(deal))
     cat_label = esc(category(deal))
     brand = esc(str(deal.get("brand") or "")[:24])
     price = esc(deal.get("price") or money(price_amount(deal)) or "See deal")
@@ -188,7 +261,7 @@ def category_deal_card(deal: dict, rank: int | None = None) -> str:
         <div class="hot-card-img">{deal_image(deal)}{rank_badge}<div class="hot-card-badge">{badge}</div></div>
         <div class="hot-card-body">
           <div class="category-pill">{cat_label}</div>
-          <div class="stars">{'★★★★★' if is_hot(deal) else '★★★★☆'} {brand}</div>
+          <div class="stars">{brand}</div>
           <div class="hot-card-title">{card_title}</div>
           <div class="hot-card-prices"><span class="hot-price-now">{price}</span>{was_html}{off_html}</div>
           <span class="hot-btn">See Deal on Amazon &rarr;</span>
@@ -228,6 +301,7 @@ def render_homepage(deals: list[dict]) -> None:
         page_html = page_html.replace(empty_grid, populated_grid, 1)
     label = f"Showing {min(DEALS_LIMIT, len(ordered))} of {len(ordered)} deals"
     page_html = re.sub(r'(<span class="deal-count" id="count-label">)(.*?)(</span>)', rf"\g<1>{esc(label)}\g<3>", page_html, count=1, flags=re.DOTALL)
+    page_html = upsert_itemlist_schema(page_html, ordered, "https://blacklabdeals.com/", "Best Deals Found on Amazon Today")
     path.write_text(page_html, encoding="utf-8")
     print(f"Rendered {min(DEALS_LIMIT, len(ordered))} static homepage deals into index.html")
 
@@ -262,8 +336,27 @@ def render_category_page(deals: list[dict], config: dict) -> None:
 
     page_html = re.sub(r'(<div class="deal-count" id="deal-count">)(.*?)(</div>)', rf"\g<1>{min(DEALS_LIMIT, len(filtered))} of {len(filtered)} deals\g<3>", page_html, count=1, flags=re.DOTALL)
     page_html = re.sub(r'(<div class="status-line" id="status-line">)(.*?)(</div>)', rf"\g<1>Showing live {esc(config['label'])} deals from the Black Lab Deals feed.\g<3>", page_html, count=1, flags=re.DOTALL)
+    page_url = "https://blacklabdeals.com/" + str(path.parent).replace("\\", "/").strip("/") + "/"
+    page_name = f"Best Amazon {config['label'].title()} Deals" if config["key"] != "top100" else "Top 100 Deals Found on Amazon Today"
+    page_html = upsert_itemlist_schema(page_html, filtered, page_url, page_name)
     path.write_text(page_html, encoding="utf-8")
     print(f"Rendered {min(DEALS_LIMIT, len(filtered))} static {config['label']} deals into {path}")
+
+
+def update_sitemap_lastmod(data: object) -> None:
+    path = Path("sitemap.xml")
+    if not path.exists():
+        return
+
+    updated_at = data.get("updatedAt") if isinstance(data, dict) else ""
+    date = str(updated_at or "")[:10]
+    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", date):
+        date = datetime.now(timezone.utc).date().isoformat()
+
+    sitemap = path.read_text(encoding="utf-8")
+    sitemap = re.sub(r"<lastmod>\d{4}-\d{2}-\d{2}</lastmod>", f"<lastmod>{date}</lastmod>", sitemap)
+    path.write_text(sitemap, encoding="utf-8")
+    print(f"Updated sitemap lastmod dates to {date}")
 
 
 def main() -> None:
@@ -278,6 +371,8 @@ def main() -> None:
     render_homepage(deals)
     for config in CATEGORY_PAGES:
         render_category_page(deals, config)
+
+    update_sitemap_lastmod(data)
 
 
 if __name__ == "__main__":
