@@ -2,14 +2,10 @@
 (function () {
   const mobileQuery = window.matchMedia('(max-width: 760px)');
   const PAGE_SIZE = 25;
-  const DEALS_URL = '/deals.json';
-  const BEST_SELLER_URL = '/best_seller_deals.json';
   const state = new WeakMap();
-
   const $ = (selector, root = document) => root.querySelector(selector);
   const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
   const isMobile = () => mobileQuery.matches;
-  const cleanPath = path => String(path || '').replace(/[#?].*$/, '').replace(/\/+$/, '') || '/';
   const n = value => Number(value || 0) || 0;
   const pct = deal => n(deal.pct ?? deal.drop_percent ?? deal.discount_percent ?? deal.percent_off ?? deal.percentOff);
   const price = deal => n(deal.price_amount ?? deal.current_price ?? deal.price ?? deal.sale_price);
@@ -21,7 +17,7 @@
   const money = value => value ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value) : '';
   const esc = value => String(value || '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
 
-  const CATEGORY_KEYWORDS = {
+  const categoryKeywords = {
     electronics: ['electronics', 'cell phones', 'computers', 'camera', 'audio', 'headphones', 'tablet', 'tv'],
     automotive: ['automotive', 'car', 'truck', 'vehicle', 'garage'],
     patio: ['patio', 'lawn', 'garden', 'outdoor', 'yard'],
@@ -42,22 +38,17 @@
 
   function matchesCategory(deal, key) {
     const haystack = `${norm(cat(deal))} ${norm(title(deal))}`;
-    const words = CATEGORY_KEYWORDS[norm(key)] || [norm(key)];
-    return words.some(word => haystack.includes(norm(word)));
+    return (categoryKeywords[norm(key)] || [norm(key)]).some(word => haystack.includes(norm(word)));
   }
 
-  function sortDeals(deals, sort = 'discount') {
-    const list = [...deals];
-    if (sort === 'price-low') return list.sort((a, b) => price(a) - price(b));
-    if (sort === 'price-high') return list.sort((a, b) => price(b) - price(a));
-    if (sort === 'newest') return list.sort((a, b) => updated(b) - updated(a));
-    return list.sort((a, b) => pct(b) - pct(a) || price(a) - price(b) || title(a).localeCompare(title(b)));
+  function cleanPath() {
+    return String(location.pathname || '/').replace(/[#?].*$/, '').replace(/\/+$/, '') || '/';
   }
 
   function pageDeals(deals) {
     const mode = document.body.dataset.mode || 'all';
     const pageCategory = (document.body.dataset.category || '').trim();
-    const path = cleanPath(location.pathname);
+    const path = cleanPath();
     if (pageCategory) return deals.filter(deal => matchesCategory(deal, pageCategory));
     if (mode === 'tools') return deals.filter(deal => matchesCategory(deal, 'tools'));
     if (mode === 'home') return deals.filter(deal => matchesCategory(deal, 'home'));
@@ -75,6 +66,14 @@
     return deals;
   }
 
+  function sortDeals(deals, sort = 'discount') {
+    const list = [...deals];
+    if (sort === 'price-low') return list.sort((a, b) => price(a) - price(b));
+    if (sort === 'price-high') return list.sort((a, b) => price(b) - price(a));
+    if (sort === 'newest') return list.sort((a, b) => updated(b) - updated(a));
+    return list.sort((a, b) => pct(b) - pct(a) || price(a) - price(b) || title(a).localeCompare(title(b)));
+  }
+
   function discountText(deal) {
     return deal.discount || (pct(deal) ? `${pct(deal)}% off` : 'Deal');
   }
@@ -85,16 +84,38 @@
       acceptNode(node) {
         const parent = node.parentElement;
         if (!parent || ['SCRIPT', 'STYLE', 'NOSCRIPT'].includes(parent.tagName)) return NodeFilter.FILTER_REJECT;
-        return node.nodeValue.includes('Best Seller') ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP;
+        return /Best Seller/.test(node.nodeValue) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP;
       }
     });
     const nodes = [];
     while (walker.nextNode()) nodes.push(walker.currentNode);
     nodes.forEach(node => {
       node.nodeValue = node.nodeValue
+        .replace(/Best Sellers+/g, 'Best Sellers')
         .replace(/Best Seller Deals/g, 'Best Sellers')
-        .replace(/Best Seller/g, 'Best Sellers');
+        .replace(/Best Seller(?!s)/g, 'Best Sellers');
     });
+  }
+
+  function hideMobileExtras() {
+    $$('.popular-category-nav, .related-deal-pages').forEach(el => {
+      el.hidden = true;
+      el.style.display = 'none';
+    });
+  }
+
+  function cleanTop100MobileSections() {
+    const isTop = (document.body.dataset.mode || '') === 'top100' || location.pathname.includes('top-100-amazon-deals-today');
+    if (!isTop) return;
+    $$('.hero, .section-head, .filter-row, .status-line, .popular-category-nav, .related-deal-pages').forEach(el => {
+      el.hidden = true;
+      el.style.display = 'none';
+    });
+    const strip = $('.hot-strip');
+    if (strip) {
+      strip.style.marginTop = '0';
+      strip.style.paddingTop = '10px';
+    }
   }
 
   function dealCard(deal, index, ranked) {
@@ -107,7 +128,7 @@
         <div class="category-pill card-category">${esc(cat(deal))}</div>
         <div class="hot-card-title card-title">${esc(title(deal))}</div>
         <div class="hot-card-prices card-footer"><span class="hot-price-now price-now">${esc(now)}</span>${was ? `<span class="hot-price-was price-was">${esc(was)}</span>` : ''}<span class="hot-off discount-badge">${esc(discountText(deal)).replace('-', '')}</span></div>
-        <span class="hot-btn btn-deal">See Deal on Amazon →</span>
+        <span class="hot-btn btn-deal">See Deal on Amazon &rarr;</span>
       </div>
     </a>`;
   }
@@ -163,49 +184,11 @@
     });
   }
 
-  function cleanTop100MobileSections() {
-    if ((document.body.dataset.mode || '') !== 'top100') return;
-    $$('.hero, .section-head, .filter-row, .status-line, .popular-category-nav, .related-deal-pages').forEach(el => {
-      el.hidden = true;
-      el.style.display = 'none';
-    });
-    const strip = $('.hot-strip');
-    if (strip) {
-      strip.style.marginTop = '0';
-      strip.style.paddingTop = '10px';
-    }
-  }
-
   function installCategoryControlStyles() {
     if ($('#bld-mobile-category-controls-style')) return;
     const style = document.createElement('style');
     style.id = 'bld-mobile-category-controls-style';
-    style.textContent = `
-      @media (max-width: 760px) {
-        .bld-mobile-category-controls {
-          display: grid;
-          gap: 12px;
-          margin: 0 0 12px;
-          padding: 12px 0;
-        }
-        .bld-mobile-category-controls input,
-        .bld-mobile-category-controls select {
-          width: 100%;
-          min-height: 52px;
-          border: 1px solid var(--border, #e8e6e1);
-          border-radius: 999px;
-          background: var(--surface, #fff);
-          color: var(--text-primary, #1a1a18);
-          font: 700 16px/1.2 'DM Sans', sans-serif;
-          padding: 0 18px;
-          box-shadow: 0 1px 3px rgba(0,0,0,.04);
-        }
-        .bld-mobile-category-controls input::placeholder {
-          color: var(--text-muted, #9e9e97);
-          font-weight: 600;
-        }
-      }
-    `;
+    style.textContent = `@media (max-width: 760px){.bld-mobile-category-controls{display:grid;gap:12px;margin:0 0 12px;padding:12px 0}.bld-mobile-category-controls input,.bld-mobile-category-controls select{width:100%;min-height:52px;border:1px solid var(--border,#e8e6e1);border-radius:999px;background:var(--surface,#fff);color:var(--text-primary,#1a1a18);font:700 16px/1.2 'DM Sans',sans-serif;padding:0 18px;box-shadow:0 1px 3px rgba(0,0,0,.04)}.bld-mobile-category-controls input::placeholder{color:var(--text-muted,#9e9e97);font-weight:600}}`;
     document.head.appendChild(style);
   }
 
@@ -216,24 +199,13 @@
       controls = document.createElement('div');
       controls.id = 'bld-mobile-category-controls';
       controls.className = 'bld-mobile-category-controls';
-      controls.innerHTML = `
-        <input id="bld-mobile-category-search" type="search" placeholder="Search deals..." aria-label="Search deals">
-        <select id="bld-mobile-category-filter" aria-label="Filter by category"><option value="all">All categories</option></select>
-        <select id="bld-mobile-category-sort" aria-label="Sort deals">
-          <option value="discount">Biggest discount</option>
-          <option value="price-low">Price: low to high</option>
-          <option value="price-high">Price: high to low</option>
-          <option value="newest">Newest</option>
-        </select>
-      `;
+      controls.innerHTML = '<input id="bld-mobile-category-search" type="search" placeholder="Search deals..." aria-label="Search deals"><select id="bld-mobile-category-filter" aria-label="Filter by category"><option value="all">All categories</option></select><select id="bld-mobile-category-sort" aria-label="Sort deals"><option value="discount">Biggest discount</option><option value="price-low">Price: low to high</option><option value="price-high">Price: high to low</option><option value="newest">Newest</option></select>';
       const target = $('.hot-strip') || $('#hot-grid');
       if (target && target.parentNode) target.parentNode.insertBefore(controls, target);
     }
-
     const categorySelect = $('#bld-mobile-category-filter');
     if (categorySelect && !categorySelect.dataset.bldFilled) {
-      const categories = [...new Set(allDeals.map(cat).filter(Boolean))].sort((a, b) => a.localeCompare(b));
-      categories.forEach(category => {
+      [...new Set(allDeals.map(cat).filter(Boolean))].sort((a, b) => a.localeCompare(b)).forEach(category => {
         const option = document.createElement('option');
         option.value = category;
         option.textContent = category;
@@ -241,68 +213,55 @@
       });
       categorySelect.dataset.bldFilled = 'true';
     }
-
     $$('#bld-mobile-category-search,#bld-mobile-category-filter,#bld-mobile-category-sort').forEach(control => {
       if (control.dataset.bldBound) return;
       control.dataset.bldBound = 'true';
       control.addEventListener(control.tagName === 'INPUT' ? 'input' : 'change', draw);
     });
-
-    return controls;
   }
 
   function filteredCategoryDeals(allDeals, defaultDeals) {
-    const search = $('#bld-mobile-category-search');
-    const category = $('#bld-mobile-category-filter');
-    const sort = $('#bld-mobile-category-sort');
-    const query = search ? search.value.trim().toLowerCase() : '';
-    const selectedCategory = category ? category.value : 'all';
-    const selectedSort = sort ? sort.value : 'discount';
-
-    let deals = selectedCategory === 'all'
-      ? defaultDeals
-      : allDeals.filter(deal => cat(deal) === selectedCategory);
-
-    if (query) {
-      deals = deals.filter(deal => `${title(deal)} ${deal.brand || ''} ${cat(deal)}`.toLowerCase().includes(query));
-    }
-
+    const query = $('#bld-mobile-category-search') ? $('#bld-mobile-category-search').value.trim().toLowerCase() : '';
+    const selectedCategory = $('#bld-mobile-category-filter') ? $('#bld-mobile-category-filter').value : 'all';
+    const selectedSort = $('#bld-mobile-category-sort') ? $('#bld-mobile-category-sort').value : 'discount';
+    let deals = selectedCategory === 'all' ? defaultDeals : allDeals.filter(deal => cat(deal) === selectedCategory);
+    if (query) deals = deals.filter(deal => `${title(deal)} ${deal.brand || ''} ${cat(deal)}`.toLowerCase().includes(query));
     return sortDeals(deals, selectedSort);
   }
 
   async function renderDealPages() {
-    const response = await fetch(`${DEALS_URL}?mobile=${Date.now()}`, { cache: 'no-store' });
+    const response = await fetch(`/deals.json?mobile=${Date.now()}`, { cache: 'no-store' });
     if (!response.ok) return;
     const data = await response.json();
     const all = Array.isArray(data) ? data : Array.isArray(data.deals) ? data.deals : [];
     const pageList = sortDeals(pageDeals(all), 'discount');
     const hotList = sortDeals(pageList.filter(deal => deal.hot || pct(deal) >= 40), 'discount');
-    const isHome = cleanPath(location.pathname) === '/';
+    const isHome = cleanPath() === '/';
     const isTop = (document.body.dataset.mode || '') === 'top100' || location.pathname.includes('top-100-amazon-deals-today');
 
     if (isHome) {
       renderPaged($('#hot-grid'), hotList, (deal, i) => dealCard(deal, i, false), `home-hot-${hotList.length}`);
       renderPaged($('#deals-grid'), pageList, (deal, i) => dealCard(deal, i, false), `home-all-${pageList.length}`);
       updateCounts(pageList.length, (state.get($('#deals-grid')) || {}).count || PAGE_SIZE);
-    } else {
-      const grid = $('#hot-grid') || $('#deals-grid') || $('#dealsGrid');
-      const drawCategoryPage = () => {
-        if (grid) state.delete(grid);
-        const filtered = isTop
-          ? pageList.slice(0, 100)
-          : filteredCategoryDeals(all, pageList);
-        renderPaged(grid, filtered, (deal, i) => dealCard(deal, i, isTop), `page-${location.pathname}-${filtered.length}-${$('#bld-mobile-category-search') ? $('#bld-mobile-category-search').value : ''}-${$('#bld-mobile-category-filter') ? $('#bld-mobile-category-filter').value : ''}-${$('#bld-mobile-category-sort') ? $('#bld-mobile-category-sort').value : ''}`);
-        updateCounts(filtered.length, (state.get(grid) || {}).count || PAGE_SIZE);
-        cleanTop100MobileSections();
-      };
-
-      if (!isTop) ensureCategoryControls(all, drawCategoryPage);
-      drawCategoryPage();
+      return;
     }
+
+    const grid = $('#hot-grid') || $('#deals-grid') || $('#dealsGrid');
+    const drawCategoryPage = () => {
+      if (grid) state.delete(grid);
+      const filtered = isTop ? pageList.slice(0, 100) : filteredCategoryDeals(all, pageList);
+      const filterKey = `${$('#bld-mobile-category-search') ? $('#bld-mobile-category-search').value : ''}-${$('#bld-mobile-category-filter') ? $('#bld-mobile-category-filter').value : ''}-${$('#bld-mobile-category-sort') ? $('#bld-mobile-category-sort').value : ''}`;
+      renderPaged(grid, filtered, (deal, i) => dealCard(deal, i, isTop), `page-${location.pathname}-${filtered.length}-${filterKey}`);
+      updateCounts(filtered.length, (state.get(grid) || {}).count || PAGE_SIZE);
+      hideMobileExtras();
+      cleanTop100MobileSections();
+    };
+    if (!isTop) ensureCategoryControls(all, drawCategoryPage);
+    drawCategoryPage();
   }
 
   async function renderBestSellers() {
-    const response = await fetch(`${BEST_SELLER_URL}?mobile=${Date.now()}`, { cache: 'no-store' });
+    const response = await fetch(`/best_seller_deals.json?mobile=${Date.now()}`, { cache: 'no-store' });
     if (!response.ok) return;
     const data = await response.json();
     const all = sortDeals(Array.isArray(data.deals) ? data.deals : [], 'discount');
@@ -311,25 +270,18 @@
     const category = $('#categoryFilter');
     const sort = $('#sortFilter');
     if (sort) sort.value = 'discount';
-
     function filtered() {
       const q = search ? search.value.trim().toLowerCase() : '';
       const c = category ? category.value : 'all';
-      let deals = all.filter(deal => {
-        const matchesSearch = !q || `${title(deal)} ${deal.brand || ''} ${cat(deal)}`.toLowerCase().includes(q);
-        const matchesCat = c === 'all' || cat(deal) === c;
-        return matchesSearch && matchesCat;
-      });
+      let deals = all.filter(deal => (!q || `${title(deal)} ${deal.brand || ''} ${cat(deal)}`.toLowerCase().includes(q)) && (c === 'all' || cat(deal) === c));
       return sortDeals(deals, sort ? sort.value : 'discount');
     }
-
     function draw(reset) {
       if (reset && grid) state.delete(grid);
       const list = filtered();
       renderPaged(grid, list, bestSellerCard, `best-${search ? search.value : ''}-${category ? category.value : ''}-${sort ? sort.value : ''}-${list.length}`);
       updateCounts(list.length, (state.get(grid) || {}).count || PAGE_SIZE);
     }
-
     [search, category, sort].forEach(el => el && el.addEventListener(el.tagName === 'INPUT' ? 'input' : 'change', () => draw(true)));
     draw(true);
   }
@@ -359,11 +311,13 @@
     if (!isMobile()) return;
     installMobileNav();
     normalizeBestSellerLabels();
+    hideMobileExtras();
     cleanTop100MobileSections();
     if (location.pathname.includes('best-seller-deals')) renderBestSellers().then(hideCompetingButtons).catch(console.error);
     else renderDealPages().then(hideCompetingButtons).catch(console.error);
     setTimeout(() => {
       normalizeBestSellerLabels();
+      hideMobileExtras();
       cleanTop100MobileSections();
       hideCompetingButtons();
     }, 1000);
