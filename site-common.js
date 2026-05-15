@@ -35,7 +35,7 @@ function coupon(d) { return Boolean(d.hasCoupon || d.has_coupon || d.couponDispl
 function updated(d) { return Date.parse(d.updated_at || d.updatedAt || d.posted_at || d.first_seen_at || d.checked_at || d.seen_at || d.seenAt || 0) || 0; }
 function money(v) { return v ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(v) : ''; }
 function ago(ts) {
-  if (!ts) return '—';
+  if (!ts) return '-';
   const m = Math.floor(Math.max(0, Date.now() - ts) / 60000);
   if (m < 60) return `${m}m ago`;
   const h = Math.floor(m / 60);
@@ -107,6 +107,21 @@ function shown() {
   return sorted(d);
 }
 
+function ensureDealCount() {
+  let count = $('deal-count');
+  if (count) return count;
+  const head = document.querySelector('.section-head');
+  if (!head) return null;
+  [...head.childNodes].forEach(node => {
+    if (node.nodeType === Node.TEXT_NODE && /\bof\s+\d+\s+deals\b/i.test(node.textContent || '')) node.remove();
+  });
+  count = document.createElement('div');
+  count.className = 'deal-count';
+  count.id = 'deal-count';
+  head.appendChild(count);
+  return count;
+}
+
 function stats(d) {
   const label = PAGE_CATEGORY_LABEL || 'deals';
   if ($('hero-pill')) $('hero-pill').textContent = PAGE_CATEGORY ? `${d.length} ${label} deals live right now` : `${d.length} deals live right now`;
@@ -115,24 +130,22 @@ function stats(d) {
   if ($('stat-total')) $('stat-total').textContent = d.length;
   if ($('stat-hot')) $('stat-hot').textContent = d.filter(hot).length;
   const ap = avg(d.map(price).filter(Boolean));
-  if ($('stat-price')) $('stat-price').textContent = ap ? money(ap) : '—';
-  if ($('stat-avg-price')) $('stat-avg-price').textContent = ap ? money(ap) : '—';
+  if ($('stat-price')) $('stat-price').textContent = ap ? money(ap) : '-';
+  if ($('stat-avg-price')) $('stat-avg-price').textContent = ap ? money(ap) : '-';
   const ad = avg(d.map(pct).filter(Boolean));
-  if ($('stat-discount')) $('stat-discount').textContent = ad ? `${Math.round(ad)}% off` : '—';
-  if ($('stat-avg-discount')) $('stat-avg-discount').textContent = ad ? `${Math.round(ad)}% off` : '—';
+  if ($('stat-discount')) $('stat-discount').textContent = ad ? `${Math.round(ad)}% off` : '-';
+  if ($('stat-avg-discount')) $('stat-avg-discount').textContent = ad ? `${Math.round(ad)}% off` : '-';
   const n = Math.max(...d.map(updated), 0);
-  if ($('stat-updated')) $('stat-updated').textContent = n ? ago(n) : '—';
+  if ($('stat-updated')) $('stat-updated').textContent = n ? ago(n) : '-';
 }
 
 function cardImage(d, t) {
   const i = img(d);
   return i ? `<img src="${esc(i)}" alt="${esc(t)}" loading="lazy" onerror="this.outerHTML='&lt;div class=\\'img-fallback\\'&gt;Deal image unavailable&lt;/div&gt;'">` : `<div class="img-fallback">Deal image unavailable</div>`;
 }
-
 function findDealsGrid() {
   return $('hot-grid') || $('deals-grid') || $('dealsGrid') || document.querySelector('.hot-grid,.deals-grid,[id*="hot"][id*="grid"],[class*="hot"][class*="grid"],[id*="deal"][id*="grid"],[class*="deal"][class*="grid"]');
 }
-
 function bindLoadMoreButton(button) {
   if (!button || button.dataset.bldLoadMoreBound) return;
   button.dataset.bldLoadMoreBound = 'true';
@@ -141,7 +154,6 @@ function bindLoadMoreButton(button) {
     render();
   });
 }
-
 function ensureLoadMoreButton() {
   let wrap = $('load-more-wrap');
   let button = $('load-more-btn');
@@ -160,7 +172,6 @@ function ensureLoadMoreButton() {
   bindLoadMoreButton(button);
   return { wrap, button };
 }
-
 function more(c) {
   const { wrap, button } = ensureLoadMoreButton();
   if (!wrap || !button) return;
@@ -176,7 +187,6 @@ function more(c) {
     wrap.hidden = true;
   }
 }
-
 function removeCompetingLoadMoreButtons(grid) {
   if (!grid) return;
   let next = grid.nextElementSibling;
@@ -192,7 +202,8 @@ function render() {
   const s = $('status-line');
   const f = shown();
   stats(f);
-  if ($('deal-count')) $('deal-count').textContent = `${Math.min(visibleDealsCount, f.length)} of ${f.length} deals`;
+  const count = ensureDealCount();
+  if (count) count.textContent = `Showing ${Math.min(visibleDealsCount, f.length)} of ${f.length} deals`;
   if (s) s.textContent = PAGE_CATEGORY ? `Showing live ${PAGE_CATEGORY_LABEL || 'category'} deals from the Black Lab Deals feed.` : 'Showing live Black Lab Deals with the same sitewide header and footer.';
   if (!g) return;
   g.dataset.bldDynamicPager = 'true';
@@ -207,92 +218,9 @@ function render() {
   const list = f.slice(0, visibleDealsCount);
   g.innerHTML = list.map((d, i) => {
     const t = title(d), p = money(price(d)), w = was(d), off = pct(d), badge = hot(d) ? 'Hot Deal' : coupon(d) ? 'Coupon' : 'Deal';
-    return `<a class="hot-card" href="${esc(link(d))}" target="_blank" rel="nofollow sponsored noopener" data-asin="${esc(d.asin || '')}" data-deal-title="${esc(t)}" data-deal-category="${esc(cat(d))}" data-deal-price="${esc(price(d))}" data-deal-discount="${esc(off)}"><div class="hot-card-img">${cardImage(d, t)}${MODE === 'top100' ? `<div class="rank-badge">#${i + 1}</div>` : ''}<div class="hot-card-badge">${badge}</div></div><div class="hot-card-body">${(MODE === 'top100' || PAGE_CATEGORY) ? `<div class="category-pill">${esc(cat(d))}</div>` : ''}<div class="stars">${hot(d) ? '★★★★★' : '★★★★☆'} ${esc((d.brand || '').slice(0, 24))}</div><div class="hot-card-title">${esc(t)}</div><div class="hot-card-prices"><span class="hot-price-now">${p || 'See deal'}</span>${w ? `<span class="hot-price-was">${esc(w)}</span>` : ''}${off ? `<span class="hot-off">${off}% off</span>` : ''}</div><span class="hot-btn">See Deal on Amazon →</span></div></a>`;
+    return `<a class="hot-card" href="${esc(link(d))}" target="_blank" rel="nofollow sponsored noopener" data-asin="${esc(d.asin || '')}" data-deal-title="${esc(t)}" data-deal-category="${esc(cat(d))}" data-deal-price="${esc(price(d))}" data-deal-discount="${esc(off)}"><div class="hot-card-img">${cardImage(d, t)}${MODE === 'top100' ? `<div class="rank-badge">#${i + 1}</div>` : ''}<div class="hot-card-badge">${badge}</div></div><div class="hot-card-body">${(MODE === 'top100' || PAGE_CATEGORY) ? `<div class="category-pill">${esc(cat(d))}</div>` : ''}<div class="stars">${hot(d) ? '*****' : '****'} ${esc((d.brand || '').slice(0, 24))}</div><div class="hot-card-title">${esc(t)}</div><div class="hot-card-prices"><span class="hot-price-now">${p || 'See deal'}</span>${w ? `<span class="hot-price-was">${esc(w)}</span>` : ''}${off ? `<span class="hot-off">${off}% off</span>` : ''}</div><span class="hot-btn">See Deal on Amazon</span></div></a>`;
   }).join('');
   more(f.length);
-}
-
-const POPULAR_CATEGORY_LINKS = [
-  { href: '/top-100-amazon-deals-today/', title: 'Top 100 Deals Found on Amazon Today', desc: 'Ranked deals and current price drops.' },
-  { href: '/best-amazon-tool-deals/', title: 'Best Amazon Tool Deals', desc: 'Power tools, hand tools, and workshop finds.' },
-  { href: '/best-amazon-home-kitchen-deals/', title: 'Best Amazon Home & Kitchen Deals', desc: 'Kitchen, storage, bedding, and home essentials.' },
-  { href: '/best-amazon-deals-under-50/', title: 'Best Amazon Deals Under $50', desc: 'Budget-friendly deals across popular categories.' },
-  { href: '/best-amazon-electronics-deals/', title: 'Best Amazon Electronics Deals', desc: 'Tech accessories, audio, smart home, and gadgets.' },
-  { href: '/best-amazon-health-household-deals/', title: 'Best Amazon Health & Household Deals', desc: 'Cleaning, personal care, and household basics.' },
-  { href: '/best-amazon-patio-lawn-garden-deals/', title: 'Best Amazon Patio, Lawn & Garden Deals', desc: 'Outdoor tools, yard care, patio, and garden finds.' },
-  { href: '/best-amazon-pet-supplies-deals/', title: 'Best Amazon Pet Supplies Deals', desc: 'Pet essentials, grooming, toys, beds, and cleanup.' },
-  { href: '/best-amazon-sports-outdoors-deals/', title: 'Best Amazon Sports & Outdoors Deals', desc: 'Fitness, camping, outdoor, and recreation deals.' },
-  { href: '/best-amazon-automotive-deals/', title: 'Best Amazon Automotive Deals', desc: 'Car care, garage, tools, and vehicle accessories.' },
-  { href: '/best-amazon-toys-games-deals/', title: 'Best Amazon Toys & Games Deals', desc: 'Toys, games, puzzles, gifts, and learning finds.' },
-  { href: '/best-amazon-office-products-deals/', title: 'Best Amazon Office Products Deals', desc: 'Desk supplies, printer items, school, and workspace gear.' },
-  { href: '/best-amazon-baby-products-deals/', title: 'Best Amazon Baby Product Deals', desc: 'Nursery, feeding, bath, travel, and family supplies.' },
-  { href: '/best-amazon-musical-instruments-deals/', title: 'Best Amazon Musical Instrument Deals', desc: 'Music accessories, stands, strings, and audio gear.' }
-];
-
-function cleanPath(path) {
-  return (`/${String(path || '').split('?')[0].split('#')[0].replace(/^\/+|\/+$/g, '')}/`).replace('//', '/');
-}
-
-function renderPopularCategoryNav() {
-  const currentPath = cleanPath(window.location.pathname || '/');
-  const links = POPULAR_CATEGORY_LINKS.map(item => {
-    const itemPath = cleanPath(item.href);
-    const isCurrent = currentPath === itemPath;
-    return `<a class="popular-category-link${isCurrent ? ' is-current' : ''}" href="${esc(item.href)}"${isCurrent ? ' aria-current="page"' : ''}><span>${esc(item.title)}${isCurrent ? '<em class="current-page-label">Current page</em>' : ''}</span><small>${esc(item.desc)}</small></a>`;
-  }).join('');
-  return `<!-- BLD POPULAR CATEGORY NAV START --><section class="popular-category-nav" aria-labelledby="popular-category-nav-title"><div class="popular-category-nav-head"><h2 id="popular-category-nav-title">Popular Amazon Deal Categories</h2><p>Jump to current deal pages by category, price range, and trending finds.</p></div><div class="popular-category-grid">${links}</div></section><!-- BLD POPULAR CATEGORY NAV END -->`;
-}
-
-function markCurrentPopularCategoryNav(nav) {
-  if (!nav) return;
-  const currentPath = cleanPath(window.location.pathname || '/');
-  nav.querySelectorAll('.popular-category-link').forEach(link => {
-    const isCurrent = cleanPath(link.getAttribute('href')) === currentPath;
-    link.classList.toggle('is-current', isCurrent);
-    if (isCurrent) {
-      link.setAttribute('aria-current', 'page');
-      const title = link.querySelector('span');
-      if (title && !title.querySelector('.current-page-label')) title.insertAdjacentHTML('beforeend', '<em class="current-page-label">Current page</em>');
-    } else {
-      link.removeAttribute('aria-current');
-      link.querySelectorAll('.current-page-label').forEach(label => label.remove());
-    }
-  });
-}
-
-function ensureBrowseSection() {
-  const main = document.querySelector('main.page-shell') || document.querySelector('main');
-  if (!main) return;
-
-  let nav = document.querySelector('.popular-category-nav');
-  if (!nav) {
-    const holder = document.createElement('div');
-    holder.innerHTML = renderPopularCategoryNav();
-    nav = holder.firstElementChild;
-  }
-
-  markCurrentPopularCategoryNav(nav);
-
-  const dealSection = main.querySelector('.hot-strip');
-  const intro = main.querySelector('.category-intro-section');
-  if (dealSection && dealSection.parentNode) {
-    let afterDeals = dealSection;
-    if (intro && intro !== dealSection.nextElementSibling) {
-      dealSection.insertAdjacentElement('afterend', intro);
-      afterDeals = intro;
-    } else if (intro) {
-      afterDeals = intro;
-    }
-    afterDeals.insertAdjacentElement('afterend', nav);
-    return;
-  }
-
-  const fallback = main.querySelector('.section-head') || main.querySelector('.filter-row');
-  if (fallback && fallback.parentNode) {
-    fallback.parentNode.insertBefore(nav, fallback);
-  } else {
-    main.appendChild(nav);
-  }
 }
 
 async function fetchDealsFeed() {
@@ -304,9 +232,7 @@ async function fetchDealsFeed() {
   if (!source.length) throw new Error('Black Lab deals.json had no deals');
   return source;
 }
-
 async function loadDeals() {
-  ensureBrowseSection();
   const s = $('status-line');
   try {
     const source = await fetchDealsFeed();
@@ -318,10 +244,8 @@ async function loadDeals() {
     if (s) s.textContent = 'Could not load live deals right now.';
     if ($('hero-pill')) $('hero-pill').textContent = 'Deals unavailable right now';
     if ($('hero-pill-text')) $('hero-pill-text').textContent = 'Deals unavailable right now';
-    if (findDealsGrid()) findDealsGrid().innerHTML = '<div class="empty-state">This page is live, but the Black Lab deal feed could not be loaded right now.</div>';
   }
 }
-
 function initFilters() {
   document.querySelectorAll('.filter-btn').forEach(b => b.addEventListener('click', () => {
     document.querySelectorAll('.filter-btn').forEach(x => x.classList.remove('active'));
@@ -332,75 +256,6 @@ function initFilters() {
     render();
   }));
 }
-
-function initUniversalDealPagination() {
-  const state = new WeakMap();
-  const gridSelector = '.hot-grid,.deals-grid,.product-grid,.products-grid,.best-seller-grid,#hot-grid,#deals-grid,#dealsGrid,#products-grid,#hot-deals-grid,#hotDealsGrid,#hot-deals-list,#hotDealsList,#deals-list,#dealsList,[id*="hot"][id*="grid"],[class*="hot"][class*="grid"],[id*="hot"][id*="list"],[class*="hot"][class*="list"],[id*="deal"][id*="grid"],[class*="deal"][class*="grid"],[id*="deal"][id*="list"],[class*="deal"][class*="list"],[id*="product"][id*="grid"],[class*="product"][class*="grid"]';
-  const cardSelector = '.hot-card,.deal-card,.product-card,.best-seller-card,.amazon-card,a[href*="amazon.com"],a[href*="amzn.to"],a[href*="joylink.io"]';
-
-  function isCard(el) {
-    if (!el || !el.matches || !el.matches(cardSelector)) return false;
-    if (el.closest('header,nav,footer,.bld-header-shell,.bld-mobile-drawer,.bld-mega-menu,.browse-pages-section,.browse-pages-grid,.panel,.link-list,.seo-info-section,.seo-content')) return false;
-    if (el.matches('.share-btn,.copy-btn,[data-share],[data-copy]')) return false;
-    return true;
-  }
-
-  function getCards(grid) {
-    const direct = [...grid.children].filter(isCard);
-    if (direct.length) return direct;
-    return [...grid.querySelectorAll(cardSelector)].filter(card => {
-      if (!isCard(card)) return false;
-      const parentGrid = card.parentElement && card.parentElement.closest(gridSelector);
-      return !parentGrid || parentGrid === grid;
-    });
-  }
-
-  function applyGrid(grid) {
-    if (!grid || grid.dataset.bldUniversalPager === 'off') return;
-    if (grid.dataset.bldDynamicPager === 'true') {
-      removeCompetingLoadMoreButtons(grid);
-      return;
-    }
-    const cards = getCards(grid);
-    if (cards.length <= DEALS_PER_PAGE) return;
-    let current = state.get(grid) || DEALS_PER_PAGE;
-    current = Math.min(current, cards.length);
-    state.set(grid, current);
-    cards.forEach((card, index) => { card.style.display = index < current ? '' : 'none'; });
-    let wrap = grid.nextElementSibling && grid.nextElementSibling.classList && grid.nextElementSibling.classList.contains('bld-load-more-wrap') ? grid.nextElementSibling : null;
-    if (!wrap) {
-      wrap = document.createElement('div');
-      wrap.className = 'bld-load-more-wrap load-more-wrap';
-      wrap.innerHTML = '<button class="bld-load-more-btn load-more-btn" type="button">Load 50 More Deals</button>';
-      grid.insertAdjacentElement('afterend', wrap);
-      wrap.querySelector('button').addEventListener('click', () => {
-        const before = state.get(grid) || DEALS_PER_PAGE;
-        state.set(grid, Math.min(before + DEALS_PER_PAGE, getCards(grid).length));
-        applyGrid(grid);
-      });
-    }
-    const button = wrap.querySelector('button');
-    const remaining = cards.length - current;
-    if (remaining > 0) {
-      wrap.classList.remove('hidden');
-      wrap.hidden = false;
-      button.hidden = false;
-      button.disabled = false;
-      button.textContent = `Load ${Math.min(DEALS_PER_PAGE, remaining)} More Deals (${remaining} remaining)`;
-    } else {
-      wrap.classList.add('hidden');
-      wrap.hidden = true;
-    }
-  }
-
-  function applyAll() { document.querySelectorAll(gridSelector).forEach(applyGrid); }
-  applyAll();
-  window.addEventListener('load', applyAll);
-  [300, 1000, 2500, 5000, 8000].forEach(ms => setTimeout(applyAll, ms));
-  const observer = new MutationObserver(() => applyAll());
-  observer.observe(document.body, { childList: true, subtree: true });
-}
-
 function initDealClickTracking() {
   document.addEventListener('click', event => {
     const dealLink = event.target.closest('a.hot-card, a.deal-card, a.product-card, a.card, a[href*="amazon.com"], a[href*="joylink.io"]');
@@ -410,7 +265,6 @@ function initDealClickTracking() {
     bldTrack('deal_click', { deal_title: dealLink.dataset.dealTitle || dealLink.textContent.trim().slice(0, 120), outbound_url: href, page_mode: MODE, page_category: PAGE_CATEGORY || 'all' });
   }, true);
 }
-
 function initSearchTracking() {
   let searchTimer;
   document.addEventListener('input', event => {
@@ -425,7 +279,6 @@ function initSearchTracking() {
     }, 900);
   });
 }
-
 function initScrollDepthTracking() {
   const marks = [25, 50, 75, 90];
   const tracked = new Set();
@@ -444,25 +297,15 @@ function initScrollDepthTracking() {
   window.addEventListener('scroll', checkScroll, { passive: true });
   window.addEventListener('load', checkScroll);
 }
-
 function initTimeOnPageTracking() {
   [30, 60, 120, 300].forEach(seconds => setTimeout(() => bldTrack('time_on_page', { seconds_on_page: seconds, page_mode: MODE, page_category: PAGE_CATEGORY || 'all' }), seconds * 1000));
 }
-
-function loadHomePaginationScript() {
-  if (document.querySelector('script[src="/home-product-pagination.js"]')) return;
-  const script = document.createElement('script');
-  script.src = '/home-product-pagination.js?v=2';
-  script.defer = true;
-  document.body.appendChild(script);
-}
+function ensureMobileDealNav() {}
 
 initFilters();
 ensureMobileDealNav();
 loadDeals();
-initUniversalDealPagination();
 initDealClickTracking();
 initSearchTracking();
 initScrollDepthTracking();
 initTimeOnPageTracking();
-loadHomePaginationScript();
