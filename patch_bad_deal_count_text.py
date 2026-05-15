@@ -3,16 +3,22 @@ from pathlib import Path
 
 HTML_FILES = list(Path('.').glob('*.html')) + list(Path('.').glob('*/index.html'))
 SECTION_HEAD_RE = re.compile(r'(<section class="section-head">.*?</div>)(.*?)(</section>)', re.DOTALL)
-COUNT_RE = re.compile(r'(?:<div class="deal-count" id="deal-count">)?(?:Showing\s+)?([0-9,]+)\s+of\s+([0-9,]+)\s+deals(?:</div>)?', re.IGNORECASE)
+FULL_COUNT_RE = re.compile(r'(?:<div class="deal-count" id="deal-count">)?(?:Showing\s+)?([0-9,]+)\s+of\s+([0-9,]+)\s+deals(?:</div>)?', re.IGNORECASE)
+TOTAL_ONLY_RE = re.compile(r'[^<]*?\bof\s+([0-9,]+)\s+deals(?:</div>)?', re.IGNORECASE)
 changed = 0
 
 
 def normalize_counter(match: re.Match) -> str:
     prefix, body, suffix = match.groups()
-    count_match = COUNT_RE.search(body)
-    if not count_match:
-        return match.group(0)
-    shown, total = count_match.groups()
+    full_match = FULL_COUNT_RE.search(body)
+    if full_match:
+        shown, total = full_match.groups()
+    else:
+        total_match = TOTAL_ONLY_RE.search(body)
+        if not total_match:
+            return match.group(0)
+        total = total_match.group(1)
+        shown = str(min(50, int(total.replace(',', ''))))
     count_html = f'<div class="deal-count" id="deal-count">Showing {shown} of {total} deals</div>'
     return f'{prefix}{count_html}{suffix}'
 
