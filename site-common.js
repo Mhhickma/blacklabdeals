@@ -28,6 +28,8 @@ function optimizeDealImage(src) {
   return String(src || '').replace(/\._SL\d+_\./, '._SL160_.');
 }
 function img(d) { return optimizeDealImage(d.image || d.image_url || d.imageUrl || d.img || d.thumbnail || ''); }
+function hasDealImage(d) { return Boolean(img(d)); }
+function imageFirst(a) { return [...a].sort((x, y) => Number(!hasDealImage(x)) - Number(!hasDealImage(y))); }
 function link(d) { return d.amazon_url || d.url || d.link || d.affiliate_url || d.affiliateUrl || d.product_url || '#'; }
 function price(d) { return Number(d.price_amount ?? d.current_price ?? d.currentPrice ?? d.price ?? d.sale_price ?? 0) || 0; }
 function pct(d) { return Number(d.pct ?? d.drop_percent ?? d.discount_percent ?? d.discountPercent ?? d.percent_off ?? d.percentOff ?? 0) || 0; }
@@ -227,7 +229,7 @@ function render() {
     more(0);
     return;
   }
-  const list = f.slice(0, visibleDealsCount);
+  const list = imageFirst(f).slice(0, visibleDealsCount);
   g.innerHTML = list.map((d, i) => {
     const t = title(d), p = money(price(d)), w = was(d), off = pct(d), badge = hot(d) ? 'Hot Deal' : coupon(d) ? 'Coupon' : 'Deal';
     const primaryBadge = off ? `${off}% off` : badge;

@@ -115,6 +115,14 @@ def compact_image_url(value: object, size: int = 160) -> str:
     return re.sub(r"\._SL\d+_\.", f"._SL{size}_.", str(value or ""))
 
 
+def image_url(deal: dict) -> str:
+    return str(deal.get("image") or deal.get("image_url") or deal.get("imageUrl") or deal.get("img") or deal.get("thumbnail") or "")
+
+
+def has_image(deal: dict) -> bool:
+    return bool(image_url(deal))
+
+
 def pct(deal: dict) -> int:
     for key in ("pct", "drop_percent", "discount_percent", "discountPercent", "percent_off", "percentOff"):
         try:
@@ -166,8 +174,12 @@ def sorted_deals(deals: list[dict]) -> list[dict]:
     return sorted(deals, key=score, reverse=True)
 
 
+def image_first(deals: list[dict]) -> list[dict]:
+    return sorted(deals, key=lambda deal: (0 if has_image(deal) else 1))
+
+
 def deal_image(deal: dict, class_name: str = "") -> str:
-    image = deal.get("image") or deal.get("image_url") or deal.get("imageUrl") or deal.get("thumbnail")
+    image = image_url(deal)
     card_title = title(deal)
     class_attr = f' class="{class_name}"' if class_name else ""
     if image:
@@ -261,7 +273,7 @@ def render_homepage(deals: list[dict]) -> None:
         '<section class="deals-section" id="deals-section">',
         1,
     )
-    ordered = sorted_deals(deals)
+    ordered = image_first(sorted_deals(deals))
     block = render_block(ordered, HOME_START_MARKER, HOME_END_MARKER, homepage_deal_card)
     replaced = replace_between_markers(page_html, HOME_START_MARKER, HOME_END_MARKER, block)
     if replaced is not None:
@@ -308,9 +320,15 @@ def render_homepage(deals: list[dict]) -> None:
     '</div>' +
   '</article>';
 }
+function hasDealImage(d) {
+  return Boolean(d && (d.image || d.image_url || d.imageUrl || d.img || d.thumbnail));
+}
+function imageFirst(arr) {
+  return [...arr].sort((a, b) => Number(!hasDealImage(a)) - Number(!hasDealImage(b)));
+}
 function renderHotDeals() {
   const hot = allDeals.filter(d => Number(d.pct) >= 40 || d.hot);
-  const visibleHot = sortDeals(hot).slice(0, HOT_DEALS_PREVIEW_LIMIT);
+  const visibleHot = imageFirst(sortDeals(hot)).slice(0, HOT_DEALS_PREVIEW_LIMIT);
   document.getElementById('hot-count-pill').textContent = hot.length > HOT_DEALS_PREVIEW_LIMIT
     ? 'Top ' + visibleHot.length + ' of ' + hot.length + ' deals'
     : hot.length + ' deal' + (hot.length !== 1 ? 's' : '');
@@ -374,7 +392,7 @@ function resetVisibleDeals() {
 }
 function renderDeals() {
   const filtered = getFilteredDeals();
-  const visibleDeals = filtered.slice(0, visibleDealsCount);
+  const visibleDeals = imageFirst(filtered).slice(0, visibleDealsCount);
   document.getElementById('count-label').textContent = filtered.length
     ? 'Showing ' + Math.min(visibleDeals.length, filtered.length) + ' of ' + filtered.length + ' deal' + (filtered.length !== 1 ? 's' : '')
     : '0 deals';
@@ -459,7 +477,7 @@ def render_category_page(deals: list[dict], config: dict) -> None:
         rank, deal = item
         return category_deal_card(deal, rank=rank if config.get("rank") else None)
 
-    ranked = list(enumerate(filtered[:DEALS_LIMIT], start=1))
+    ranked = list(enumerate(image_first(filtered)[:DEALS_LIMIT], start=1))
     cards = "\n      ".join(card_for(item) for item in ranked)
     block = f"{start_marker}\n      {cards}\n      {end_marker}"
     replaced = replace_between_markers(page_html, start_marker, end_marker, block)
