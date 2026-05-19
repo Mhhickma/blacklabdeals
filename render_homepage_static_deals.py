@@ -152,8 +152,14 @@ def deal_matches(deal: dict, key: str) -> bool:
     if key == "under50":
         amount = price_amount(deal)
         return 0 < amount <= 50
-    haystack = f"{norm(category(deal))} {norm(title(deal))}"
-    return any(norm(word) in haystack for word in CATEGORY_KEYWORDS.get(key, [key]))
+    words = [norm(word) for word in CATEGORY_KEYWORDS.get(key, [key])]
+    deal_category = norm(category(deal))
+    if any(word in deal_category for word in words):
+        return True
+    if deal_category in {"", "amazon deals"}:
+        deal_title = norm(title(deal))
+        return any(word in deal_title for word in words)
+    return False
 
 
 def sorted_deals(deals: list[dict]) -> list[dict]:
@@ -207,7 +213,6 @@ def category_deal_card(deal: dict, rank: int | None = None) -> str:
     card_title = esc(title(deal))
     link = esc(deal.get("link") or deal.get("amazon_url") or deal.get("url") or "#")
     cat_label = esc(category(deal))
-    brand = esc(str(deal.get("brand") or "")[:24])
     price = esc(deal.get("price") or money(price_amount(deal)) or "See deal")
     was = deal.get("was") or deal.get("old_price") or deal.get("previous_price")
     discount = pct(deal)
@@ -220,7 +225,6 @@ def category_deal_card(deal: dict, rank: int | None = None) -> str:
         <div class="hot-card-img">{deal_image(deal)}{rank_badge}<div class="hot-card-badge">{badge}</div></div>
         <div class="hot-card-body">
           <div class="category-pill">{cat_label}</div>
-          <div class="stars">{'Top deal' if is_hot(deal) else 'Deal'} {brand}</div>
           <div class="hot-card-title">{card_title}</div>
           <div class="hot-card-prices"><span class="hot-price-now">{price}</span>{was_html}{off_html}</div>
           <span class="hot-btn">See Deal on Amazon</span>
