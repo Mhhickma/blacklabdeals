@@ -198,7 +198,7 @@ def homepage_deal_card(deal: dict) -> str:
             <span class="discount-badge">{discount}</span>
           </div>
           {coupon_html}
-          <button class="btn-deal">See Deal on Amazon &rarr;</button>
+          <button class="btn-deal">See Deal on Amazon</button>
         </div>
       </a>'''
 
@@ -223,7 +223,7 @@ def category_deal_card(deal: dict, rank: int | None = None) -> str:
           <div class="stars">{'Top deal' if is_hot(deal) else 'Deal'} {brand}</div>
           <div class="hot-card-title">{card_title}</div>
           <div class="hot-card-prices"><span class="hot-price-now">{price}</span>{was_html}{off_html}</div>
-          <span class="hot-btn">See Deal on Amazon &rarr;</span>
+          <span class="hot-btn">See Deal on Amazon</span>
         </div>
       </a>'''
 
@@ -241,20 +241,19 @@ def replace_between_markers(page_html: str, start_marker: str, end_marker: str, 
 
 def sanitize_display_text(page_html: str) -> str:
     replacements = {
-        "â€”": "-",
-        "â†—": "&#8599;",
-        "â†’": "&rarr;",
-        "â˜…â˜…â˜…â˜…â˜…": "Top deal",
-        "â˜…â˜…â˜…â˜…â˜†": "Deal",
-        "â€™": "'",
-        "â€œ": '"',
-        "â€": '"',
-        "â€“": "-",
+        b"\xc3\xa2\xe2\x82\xac\xe2\x80\x9d".decode("utf-8"): "-",
+        b"\xc3\xa2\xe2\x80\xa0\xe2\x80\x94".decode("utf-8"): "&#8599;",
+        b"\xc3\xa2\xe2\x80\xa0\xe2\x80\x99".decode("utf-8"): "",
+        b"\xc3\xa2\xcb\x9c\xe2\x80\xa6\xc3\xa2\xcb\x9c\xe2\x80\xa6\xc3\xa2\xcb\x9c\xe2\x80\xa6\xc3\xa2\xcb\x9c\xe2\x80\xa6\xc3\xa2\xcb\x9c\xe2\x80\xa6".decode("utf-8"): "Top deal",
+        b"\xc3\xa2\xcb\x9c\xe2\x80\xa6\xc3\xa2\xcb\x9c\xe2\x80\xa6\xc3\xa2\xcb\x9c\xe2\x80\xa6\xc3\xa2\xcb\x9c\xe2\x80\xa6\xc3\xa2\xcb\x9c\xe2\x80\xa0".decode("utf-8"): "Deal",
+        b"\xc3\xa2\xe2\x82\xac\xe2\x84\xa2".decode("utf-8"): "'",
+        b"\xc3\xa2\xe2\x82\xac\xc5\x93".decode("utf-8"): '"',
+        b"\xc3\xa2\xe2\x82\xac\xc2\x9d".decode("utf-8"): '"',
+        b"\xc3\xa2\xe2\x82\xac\xe2\x80\x9c".decode("utf-8"): "-",
     }
     for bad, good in replacements.items():
         page_html = page_html.replace(bad, good)
     return page_html
-
 
 def render_homepage(deals: list[dict]) -> None:
     path = Path("index.html")
@@ -370,3 +369,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+

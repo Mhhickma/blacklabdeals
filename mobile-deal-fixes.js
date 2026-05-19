@@ -128,7 +128,7 @@
         <div class="category-pill card-category">${esc(cat(deal))}</div>
         <div class="hot-card-title card-title">${esc(title(deal))}</div>
         <div class="hot-card-prices card-footer"><span class="hot-price-now price-now">${esc(now)}</span>${was ? `<span class="hot-price-was price-was">${esc(was)}</span>` : ''}<span class="hot-off discount-badge">${esc(discountText(deal)).replace('-', '')}</span></div>
-        <span class="hot-btn btn-deal">See Deal on Amazon &rarr;</span>
+        <span class="hot-btn btn-deal">See Deal on Amazon</span>
       </div>
     </a>`;
   }

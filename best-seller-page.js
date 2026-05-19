@@ -17,9 +17,9 @@
   }
 
   function fmtDate(value) {
-    if (!value) return 'â€”';
+    if (!value) return '-';
     const d = new Date(value);
-    if (Number.isNaN(d.getTime())) return 'â€”';
+    if (Number.isNaN(d.getTime())) return '-';
     return d.toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
   }
 
@@ -57,7 +57,7 @@
     const pct = deal.pct ? `${deal.pct}% off` : 'Price Drop';
     const image = deal.image
       ? `<img src="${cleanText(optimizeDealImage(deal.image))}" alt="${cleanText(deal.title)}" loading="lazy" decoding="async">`
-      : 'ðŸ¾';
+      : '<div class="img-fallback">Deal image unavailable</div>';
     const was = deal.was ? `<span class="best-seller-was">${cleanText(deal.was)}</span>` : '';
 
     return `<article class="best-seller-card">
@@ -168,8 +168,8 @@
       const heroPill = getEl('hero-pill');
 
       if (dealCount) dealCount.textContent = data.count ?? bestSellerDeals.length;
-      if (watchCount) watchCount.textContent = data.watchlistCount ?? 'â€”';
-      if (checkedCount) checkedCount.textContent = data.asinsCheckedThisRun ?? 'â€”';
+      if (watchCount) watchCount.textContent = data.watchlistCount ?? '-';
+      if (checkedCount) checkedCount.textContent = data.asinsCheckedThisRun ?? '-';
       if (hotCount) hotCount.textContent = data.hotDeals ?? bestSellerDeals.filter(d => d.hot).length;
       if (updatedAt) updatedAt.textContent = fmtDate(data.updatedAt);
       if (heroPill) heroPill.textContent = `${data.count ?? bestSellerDeals.length} best seller deals found`;

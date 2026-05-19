@@ -51,7 +51,7 @@
       <div class="bld-mega-column"><h3>Popular Categories</h3>${groupedLinks('Popular Categories')}</div>
       <div class="bld-mega-column"><h3>More</h3>${groupedLinks('More')}</div>
     </div>
-    <a class="bld-mega-footer" href="/categories/"><span>View All Categories</span><span>&rarr;</span></a>
+    <a class="bld-mega-footer" href="/categories/"><span>View All Categories</span></a>
   `;
 
   const MOBILE_DRAWER_HTML = `
@@ -75,7 +75,7 @@
         <a class="bld-mobile-drawer-alert" href="/#alerts-box"><span>&bull;</span> Get Deal Alerts</a>
         <div class="bld-mobile-drawer-section"><h3>Featured Deal Pages</h3>${drawerLinks('Featured')}</div>
         <div class="bld-mobile-drawer-section"><h3>Popular Categories</h3>${drawerLinks('Popular Categories')}</div>
-        <div class="bld-mobile-drawer-section"><h3>More Categories</h3>${drawerLinks('More')}<a class="bld-mobile-drawer-link bld-mobile-drawer-all" href="/categories/"><span>&rarr;</span>View All Categories</a></div>
+        <div class="bld-mobile-drawer-section"><h3>More Categories</h3>${drawerLinks('More')}<a class="bld-mobile-drawer-link bld-mobile-drawer-all" href="/categories/">View All Categories</a></div>
       </div>
     </aside>
   `;
