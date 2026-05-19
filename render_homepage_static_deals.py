@@ -16,6 +16,34 @@ DEALS_FILE = Path("deals.json")
 DEALS_LIMIT = 50
 HOME_START_MARKER = "<!-- BLD STATIC DEALS START -->"
 HOME_END_MARKER = "<!-- BLD STATIC DEALS END -->"
+HOMEPAGE_CLS_CSS = (
+    '#site-header{display:block;min-height:176px;background:var(--surface);}'
+    '@media(max-width:760px){#site-header{min-height:154px}.deal-statement-bar{display:none!important}'
+    'main.page-shell{display:flex!important;flex-direction:column!important;gap:0!important;padding:0 16px 70px!important}'
+    '.mobile-deal-nav{min-height:49px}.popular-category-nav,.stats-bar,.divider{display:none!important}'
+    'main.page-shell>.hero{order:1!important}main.page-shell>.mobile-deal-nav{order:2!important}'
+    'main.page-shell>.loading-bar,main.page-shell>.error-msg{order:3!important}'
+    'main.page-shell>.hot-section,main.page-shell>#hot-section{order:4!important}'
+    'main.page-shell>.toolbar,main.page-shell>#toolbar{order:5!important}'
+    'main.page-shell>.filters-wrap,main.page-shell>#filters-wrap{order:6!important}'
+    'main.page-shell>#deals-section{order:7!important}'
+    '#hot-section[style*="display:none"]{display:block!important;visibility:hidden;min-height:870px}'
+    '.hero{padding:12px 0 10px!important}.hero-text h1,.hero h1{font-size:25px!important;line-height:1.05!important;margin-bottom:0!important}'
+    '.hero-text p,.hero p,.hero-text p:nth-of-type(2){display:none!important}'
+    '.hot-card,.deal-card{transition:none!important}.hot-card:hover,.deal-card:hover{transform:none!important;box-shadow:var(--shadow)!important}}'
+    '@media(max-width:380px){#hot-section[style*="display:none"]{min-height:802px}}'
+    '@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;scroll-behavior:auto!important}}'
+)
+HOMEPAGE_MOBILE_NAV_HTML = (
+    '<nav class="mobile-deal-nav" aria-label="Quick deal navigation">'
+    '<button type="button" data-jump="hot">Hot Deals</button>'
+    '<button type="button" data-jump="all">All Deals</button>'
+    '<button type="button" data-cat="All">All</button>'
+    '<a href="/best-amazon-deals-under-50/">Under $50</a>'
+    '<a href="/top-100-amazon-deals-today/">Top 100</a>'
+    '<button type="button" data-jump="categories">Categories</button>'
+    '</nav>'
+)
 
 CATEGORY_KEYWORDS = {
     "electronics": ["electronics", "cell phones", "cell phone", "computers", "computer", "camera", "audio", "headphones", "tablet", "tv", "television"],
@@ -214,6 +242,11 @@ def replace_between_markers(page_html: str, start_marker: str, end_marker: str, 
 def render_homepage(deals: list[dict]) -> None:
     path = Path("index.html")
     page_html = path.read_text(encoding="utf-8")
+    page_html = page_html.replace('/site-header.js?v=5', '/site-header.js?v=6')
+    page_html = re.sub(r'#site-header\{display:block;min-height:176px.*?scroll-behavior:auto!important\}\}', '', page_html)
+    page_html = page_html.replace('</style>', HOMEPAGE_CLS_CSS + '</style>', 1)
+    page_html = re.sub(r'<nav class="mobile-deal-nav" aria-label="Quick deal navigation">.*?</nav>\s*', '', page_html, count=1, flags=re.DOTALL)
+    page_html = page_html.replace('<main class="page-shell">', '<main class="page-shell">  ' + HOMEPAGE_MOBILE_NAV_HTML, 1)
     page_html = page_html.replace(
         '<section class="deals-section" id="deals-section" style="display:none;">',
         '<section class="deals-section" id="deals-section">',
