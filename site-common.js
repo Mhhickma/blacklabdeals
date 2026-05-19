@@ -230,7 +230,9 @@ function render() {
   const list = f.slice(0, visibleDealsCount);
   g.innerHTML = list.map((d, i) => {
     const t = title(d), p = money(price(d)), w = was(d), off = pct(d), badge = hot(d) ? 'Hot Deal' : coupon(d) ? 'Coupon' : 'Deal';
-    return `<a class="hot-card" href="${esc(link(d))}" target="_blank" rel="nofollow sponsored noopener" data-asin="${esc(d.asin || '')}" data-deal-title="${esc(t)}" data-deal-category="${esc(cat(d))}" data-deal-price="${esc(price(d))}" data-deal-discount="${esc(off)}"><div class="hot-card-img">${cardImage(d, t)}${MODE === 'top100' ? `<div class="rank-badge">#${i + 1}</div>` : ''}<div class="hot-card-badge">${badge}</div></div><div class="hot-card-body">${(MODE === 'top100' || PAGE_CATEGORY) ? `<div class="category-pill">${esc(cat(d))}</div>` : ''}<div class="hot-card-title">${esc(t)}</div><div class="hot-card-prices"><span class="hot-price-now">${p || 'See deal'}</span>${w ? `<span class="hot-price-was">${esc(w)}</span>` : ''}${off ? `<span class="hot-off">${off}% off</span>` : ''}</div><span class="hot-btn">See Deal on Amazon</span></div></a>`;
+    const primaryBadge = off ? `${off}% off` : badge;
+    const secondaryBadge = MODE === 'top100' ? `#${i + 1}` : badge;
+    return `<article class="best-seller-card deal-card-unified" data-asin="${esc(d.asin || '')}" data-deal-title="${esc(t)}" data-deal-category="${esc(cat(d))}" data-deal-price="${esc(price(d))}" data-deal-discount="${esc(off)}"><div class="best-seller-img">${cardImage(d, t)}</div><div class="best-seller-body"><div class="best-seller-badges"><span class="best-seller-badge">${esc(primaryBadge)}</span><span class="best-seller-badge rank">${esc(secondaryBadge)}</span></div><div class="best-seller-title">${esc(t)}</div><div class="best-seller-category">${esc(cat(d))}</div><div class="best-seller-price-row"><span class="best-seller-price">${p || 'See deal'}</span>${w ? `<span class="best-seller-was">${esc(w)}</span>` : ''}</div><a class="best-seller-btn" href="${esc(link(d))}" target="_blank" rel="nofollow sponsored noopener">View on Amazon</a></div></article>`;
   }).join('');
   more(f.length);
 }

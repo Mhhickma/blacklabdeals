@@ -1,4 +1,136 @@
-/* Black Lab Deals uniform header navigation / mega menu only./* BLD UNIVERSAL MOBILE DEAL CARDS START */
+/* Black Lab Deals uniform header navigation / mega menu only. */
+/* BLD UNIFIED DEAL CARDS START */
+.hot-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 16px;
+}
+
+.hot-grid .best-seller-card,
+.deal-card-unified {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  color: var(--text-primary);
+}
+
+.hot-grid .best-seller-img,
+.deal-card-unified .best-seller-img {
+  height: 180px;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-bottom: 1px solid #eee;
+}
+
+.hot-grid .best-seller-img img,
+.deal-card-unified .best-seller-img img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  padding: 14px;
+}
+
+.hot-grid .best-seller-body,
+.deal-card-unified .best-seller-body {
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+
+.hot-grid .best-seller-badges,
+.deal-card-unified .best-seller-badges {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.hot-grid .best-seller-badge,
+.deal-card-unified .best-seller-badge {
+  font-size: 11px;
+  font-weight: 800;
+  border-radius: 999px;
+  padding: 3px 8px;
+  background: var(--red-light);
+  color: var(--red);
+}
+
+.hot-grid .best-seller-badge.rank,
+.deal-card-unified .best-seller-badge.rank {
+  background: var(--accent-light);
+  color: var(--accent);
+}
+
+.hot-grid .best-seller-title,
+.deal-card-unified .best-seller-title {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--text-primary);
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.hot-grid .best-seller-category,
+.deal-card-unified .best-seller-category {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.hot-grid .best-seller-price-row,
+.deal-card-unified .best-seller-price-row {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  margin-top: auto;
+}
+
+.hot-grid .best-seller-price,
+.deal-card-unified .best-seller-price {
+  font-size: 22px;
+  font-weight: 900;
+  color: var(--red);
+}
+
+.hot-grid .best-seller-was,
+.deal-card-unified .best-seller-was {
+  font-size: 13px;
+  color: var(--text-muted);
+  text-decoration: line-through;
+}
+
+.hot-grid .best-seller-btn,
+.deal-card-unified .best-seller-btn {
+  margin-top: 8px;
+  display: block;
+  text-align: center;
+  text-decoration: none;
+  background: var(--accent);
+  color: #fff;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-weight: 900;
+  font-size: 14px;
+}
+
+.hot-grid .best-seller-btn:hover,
+.deal-card-unified .best-seller-btn:hover {
+  background: var(--accent-mid);
+  color: #fff;
+}
+/* BLD UNIFIED DEAL CARDS END */
+
+/* BLD UNIVERSAL MOBILE DEAL CARDS START */
 @media (max-width: 760px) {
   .hot-grid,
   .deals-grid,

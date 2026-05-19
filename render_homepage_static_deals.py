@@ -216,20 +216,20 @@ def category_deal_card(deal: dict, rank: int | None = None) -> str:
     price = esc(deal.get("price") or money(price_amount(deal)) or "See deal")
     was = deal.get("was") or deal.get("old_price") or deal.get("previous_price")
     discount = pct(deal)
-    badge = "Hot Deal" if is_hot(deal) else "Coupon" if has_coupon(deal) else "Deal"
-    rank_badge = f'<div class="rank-badge">#{rank}</div>' if rank else ""
-    was_html = f'<span class="hot-price-was">{esc(was)}</span>' if was else ""
-    off_html = f'<span class="hot-off">{discount}% off</span>' if discount else ""
+    primary_badge = f"{discount}% off" if discount else "Deal"
+    secondary_badge = f"#{rank}" if rank else "Hot Deal" if is_hot(deal) else "Coupon" if has_coupon(deal) else cat_label
+    was_html = f'<span class="best-seller-was">{esc(was)}</span>' if was else ""
 
-    return f'''<a class="hot-card" href="{link}" target="_blank" rel="nofollow sponsored noopener" data-asin="{esc(deal.get('asin') or '')}" data-deal-title="{card_title}" data-deal-category="{cat_label}" data-deal-price="{esc(price_amount(deal) or '')}" data-deal-discount="{discount}">
-        <div class="hot-card-img">{deal_image(deal)}{rank_badge}<div class="hot-card-badge">{badge}</div></div>
-        <div class="hot-card-body">
-          <div class="category-pill">{cat_label}</div>
-          <div class="hot-card-title">{card_title}</div>
-          <div class="hot-card-prices"><span class="hot-price-now">{price}</span>{was_html}{off_html}</div>
-          <span class="hot-btn">See Deal on Amazon</span>
+    return f'''<article class="best-seller-card deal-card-unified" data-asin="{esc(deal.get('asin') or '')}" data-deal-title="{card_title}" data-deal-category="{cat_label}" data-deal-price="{esc(price_amount(deal) or '')}" data-deal-discount="{discount}">
+        <div class="best-seller-img">{deal_image(deal)}</div>
+        <div class="best-seller-body">
+          <div class="best-seller-badges"><span class="best-seller-badge">{esc(primary_badge)}</span><span class="best-seller-badge rank">{esc(secondary_badge)}</span></div>
+          <div class="best-seller-title">{card_title}</div>
+          <div class="best-seller-category">{cat_label}</div>
+          <div class="best-seller-price-row"><span class="best-seller-price">{price}</span>{was_html}</div>
+          <a class="best-seller-btn" href="{link}" target="_blank" rel="nofollow sponsored noopener">View on Amazon</a>
         </div>
-      </a>'''
+      </article>'''
 
 
 def render_block(deals: list[dict], start_marker: str, end_marker: str, card_renderer) -> str:
