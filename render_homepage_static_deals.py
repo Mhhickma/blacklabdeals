@@ -220,7 +220,7 @@ def category_deal_card(deal: dict, rank: int | None = None) -> str:
         <div class="hot-card-img">{deal_image(deal)}{rank_badge}<div class="hot-card-badge">{badge}</div></div>
         <div class="hot-card-body">
           <div class="category-pill">{cat_label}</div>
-          <div class="stars">{'★★★★★' if is_hot(deal) else '★★★★☆'} {brand}</div>
+          <div class="stars">{'Top deal' if is_hot(deal) else 'Deal'} {brand}</div>
           <div class="hot-card-title">{card_title}</div>
           <div class="hot-card-prices"><span class="hot-price-now">{price}</span>{was_html}{off_html}</div>
           <span class="hot-btn">See Deal on Amazon &rarr;</span>
