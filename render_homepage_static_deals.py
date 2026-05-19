@@ -179,34 +179,23 @@ def homepage_deal_card(deal: dict) -> str:
     card_title = esc(title(deal))
     link = esc(deal.get("link") or deal.get("amazon_url") or deal.get("url") or "#")
     cat_label = esc(category(deal))
-    description = esc(deal.get("desc") or deal.get("brand") or "")
     price = esc(deal.get("price") or money(price_amount(deal)) or "See price on Amazon")
     was = deal.get("was") or deal.get("old_price") or deal.get("previous_price")
-    discount = esc(deal.get("discount") or (f"-{pct(deal)}%" if pct(deal) else ""))
-    hot_badge = '<span class="card-badge-hot">Hot</span>' if is_hot(deal) else ""
-    was_html = f'<span class="price-was">{esc(was)}</span>' if was else ""
-    coupon_html = f'<span class="coupon-badge">{esc(deal.get("couponDisplay") or "Coupon available")}</span>' if has_coupon(deal) else ""
+    discount = pct(deal)
+    primary_badge = f"{discount}% off" if discount else "Deal"
+    secondary_badge = "Hot Deal" if is_hot(deal) else "Coupon" if has_coupon(deal) else cat_label
+    was_html = f'<span class="best-seller-was">{esc(was)}</span>' if was else ""
 
-    return f'''<a class="deal-card" href="{link}" target="_blank" rel="noopener sponsored">
-        <div class="card-img">{deal_image(deal)}</div>
-        <div class="card-body">
-          <div class="card-meta">
-            <span class="card-category">{cat_label}</span>
-            {hot_badge}
-          </div>
-          <div class="card-title">{card_title}</div>
-          <div class="card-desc">{description}</div>
-          <div class="card-footer">
-            <div class="price-block">
-              <span class="price-now">{price}</span>
-              {was_html}
-            </div>
-            <span class="discount-badge">{discount}</span>
-          </div>
-          {coupon_html}
-          <button class="btn-deal">See Deal on Amazon</button>
+    return f'''<article class="best-seller-card deal-card-unified" data-asin="{esc(deal.get('asin') or '')}" data-deal-title="{card_title}" data-deal-category="{cat_label}" data-deal-price="{esc(price_amount(deal) or '')}" data-deal-discount="{discount}">
+        <div class="best-seller-img">{deal_image(deal)}</div>
+        <div class="best-seller-body">
+          <div class="best-seller-badges"><span class="best-seller-badge">{esc(primary_badge)}</span><span class="best-seller-badge rank">{esc(secondary_badge)}</span></div>
+          <div class="best-seller-title">{card_title}</div>
+          <div class="best-seller-category">{cat_label}</div>
+          <div class="best-seller-price-row"><span class="best-seller-price">{price}</span>{was_html}</div>
+          <a class="best-seller-btn" href="{link}" target="_blank" rel="nofollow sponsored noopener">View on Amazon</a>
         </div>
-      </a>'''
+      </article>'''
 
 
 def category_deal_card(deal: dict, rank: int | None = None) -> str:
@@ -295,6 +284,141 @@ def render_homepage(deals: list[dict]) -> None:
     page_html = re.sub(
         r'function img\(src, emoji, size\) \{.*?\}function prioritizeCardImages',
         homepage_img_function + 'function prioritizeCardImages',
+        page_html,
+        count=1,
+        flags=re.DOTALL,
+    )
+    homepage_card_functions = """function dealCardHtml(d, index, mode) {
+  const dealTitle = d.title || 'Amazon deal';
+  const dealCat = d.cat || d.category || 'Amazon Deals';
+  const dealPrice = d.price || 'See deal';
+  const pct = Number(d.pct) || 0;
+  const primaryBadge = pct ? pct + '% off' : (d.discount || 'Deal');
+  const secondaryBadge = mode === 'hot'
+    ? 'Hot Deal'
+    : (d.hot || pct >= 40 ? 'Hot Deal' : (d.hasCoupon ? 'Coupon' : dealCat));
+  return '<article class="best-seller-card deal-card-unified" data-asin="' + esc(d.asin || '') + '" data-deal-title="' + esc(dealTitle) + '" data-deal-category="' + esc(dealCat) + '" data-deal-price="' + esc(d.price_amount || '') + '" data-deal-discount="' + esc(pct) + '">' +
+    '<div class="best-seller-img">' + img(d.image, d.emoji, mode === 'hot' ? 'hot' : 'card') + '</div>' +
+    '<div class="best-seller-body">' +
+      '<div class="best-seller-badges"><span class="best-seller-badge">' + esc(primaryBadge).replace('-', '') + '</span><span class="best-seller-badge rank">' + esc(secondaryBadge) + '</span></div>' +
+      '<div class="best-seller-title">' + esc(dealTitle) + '</div>' +
+      '<div class="best-seller-category">' + esc(dealCat) + '</div>' +
+      '<div class="best-seller-price-row"><span class="best-seller-price">' + esc(dealPrice) + '</span>' + (d.was ? '<span class="best-seller-was">' + esc(d.was) + '</span>' : '') + '</div>' +
+      '<a class="best-seller-btn" href="' + escUrl(d.link || '#') + '" target="_blank" rel="nofollow sponsored noopener">View on Amazon</a>' +
+    '</div>' +
+  '</article>';
+}
+function renderHotDeals() {
+  const hot = allDeals.filter(d => Number(d.pct) >= 40 || d.hot);
+  const visibleHot = sortDeals(hot).slice(0, HOT_DEALS_PREVIEW_LIMIT);
+  document.getElementById('hot-count-pill').textContent = hot.length > HOT_DEALS_PREVIEW_LIMIT
+    ? 'Top ' + visibleHot.length + ' of ' + hot.length + ' deals'
+    : hot.length + ' deal' + (hot.length !== 1 ? 's' : '');
+  document.getElementById('hot-grid').innerHTML = visibleHot.length
+    ? visibleHot.map((d, i) => dealCardHtml(d, i, 'hot')).join('')
+    : '<div class="loading-bar" style="grid-column:1/-1;">No hot deals yet - check back soon.</div>';
+  prioritizeCardImages(document.getElementById('hot-grid'));
+}
+function getFilteredDeals() {
+  let filtered = currentCategory === 'All'
+    ? allDeals
+    : allDeals.filter(d => d.cat === currentCategory);
+  if (searchQuery) {
+    filtered = filtered.filter(d =>
+      (d.title || '').toLowerCase().includes(searchQuery) ||
+      (d.brand || '').toLowerCase().includes(searchQuery) ||
+      (d.cat || '').toLowerCase().includes(searchQuery)
+    );
+  }
+  return sortDeals(filtered);
+}
+function ensureLoadMoreButton() {
+  let wrap = document.getElementById('main-load-more-wrap');
+  let button = document.getElementById('main-load-more-btn');
+  if (!wrap) {
+    wrap = document.createElement('div');
+    wrap.id = 'main-load-more-wrap';
+    wrap.className = 'load-more-wrap hidden';
+    wrap.hidden = true;
+    wrap.innerHTML = '<button id="main-load-more-btn" class="load-more-btn" type="button">Load 50 More Deals</button>';
+    const grid = document.getElementById('deals-grid');
+    if (grid) grid.insertAdjacentElement('afterend', wrap);
+    button = document.getElementById('main-load-more-btn');
+  }
+  if (button && !button.dataset.bound) {
+    button.dataset.bound = 'true';
+    button.addEventListener('click', () => {
+      visibleDealsCount += DEALS_PER_PAGE;
+      renderDeals();
+    });
+  }
+  return { wrap, button };
+}
+function updateLoadMoreButton(total) {
+  const { wrap, button } = ensureLoadMoreButton();
+  if (!wrap || !button) return;
+  const remaining = Math.max(0, total - visibleDealsCount);
+  if (remaining > 0) {
+    wrap.hidden = false;
+    wrap.classList.remove('hidden');
+    button.hidden = false;
+    button.disabled = false;
+    button.textContent = 'Load ' + Math.min(DEALS_PER_PAGE, remaining) + ' More Deals (' + remaining + ' remaining)';
+  } else {
+    wrap.hidden = true;
+    wrap.classList.add('hidden');
+  }
+}
+function resetVisibleDeals() {
+  visibleDealsCount = DEALS_PER_PAGE;
+}
+function renderDeals() {
+  const filtered = getFilteredDeals();
+  const visibleDeals = filtered.slice(0, visibleDealsCount);
+  document.getElementById('count-label').textContent = filtered.length
+    ? 'Showing ' + Math.min(visibleDeals.length, filtered.length) + ' of ' + filtered.length + ' deal' + (filtered.length !== 1 ? 's' : '')
+    : '0 deals';
+  document.getElementById('deals-grid').innerHTML = filtered.length
+    ? visibleDeals.map((d, i) => dealCardHtml(d, i, 'all')).join('')
+    : '<div class="loading-bar" style="grid-column:1/-1;text-align:center;padding:48px;">' +
+        (searchQuery ? 'No deals found for "' + esc(searchQuery) + '". Try a different search.' : 'No deals in this category right now - check back soon!') +
+      '</div>';
+  prioritizeCardImages(document.getElementById('deals-grid'));
+  updateLoadMoreButton(filtered.length);
+}"""
+    dynamic_card_pattern = (
+        r'function dealCardHtml\(d, index, mode\) \{.*?\}function handleSearch'
+        if 'function dealCardHtml(d, index, mode)' in page_html
+        else r'function renderHotDeals\(\) \{.*?\}function handleSearch'
+    )
+    page_html = re.sub(
+        dynamic_card_pattern,
+        homepage_card_functions + 'function handleSearch',
+        page_html,
+        count=1,
+        flags=re.DOTALL,
+    )
+    homepage_static_hot_function = """function renderInitialHotFromStatic() {
+  const hotSection = document.getElementById('hot-section');
+  const hotGrid = document.getElementById('hot-grid');
+  const hotCount = document.getElementById('hot-count-pill');
+  const loading = document.getElementById('loading-bar');
+  const staticCards = [...document.querySelectorAll('#deals-grid .deal-card-unified,#deals-grid .best-seller-card')].slice(0, HOT_DEALS_PREVIEW_LIMIT);
+  if (!hotSection || !hotGrid || !staticCards.length) return;
+  hotGrid.innerHTML = staticCards.map(card => {
+    const clone = card.cloneNode(true);
+    clone.classList.remove('deal-card');
+    clone.classList.add('best-seller-card', 'deal-card-unified');
+    return clone.outerHTML;
+  }).join('');
+  prioritizeCardImages(hotGrid);
+  hotSection.style.display = '';
+  if (loading) loading.style.display = 'none';
+  if (hotCount) hotCount.textContent = 'Top ' + staticCards.length + ' deals';
+}"""
+    page_html = re.sub(
+        r'function renderInitialHotFromStatic\(\) \{.*?\}function getSortOrder',
+        homepage_static_hot_function + 'function getSortOrder',
         page_html,
         count=1,
         flags=re.DOTALL,
