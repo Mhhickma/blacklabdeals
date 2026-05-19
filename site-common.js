@@ -38,7 +38,7 @@ function coupon(d) { return Boolean(d.hasCoupon || d.has_coupon || d.couponDispl
 function updated(d) { return Date.parse(d.updated_at || d.updatedAt || d.posted_at || d.first_seen_at || d.checked_at || d.seen_at || d.seenAt || 0) || 0; }
 function money(v) { return v ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(v) : ''; }
 function ago(ts) {
-  if (!ts) return 'â€”';
+  if (!ts) return '-';
   const m = Math.floor(Math.max(0, Date.now() - ts) / 60000);
   if (m < 60) return `${m}m ago`;
   const h = Math.floor(m / 60);
@@ -137,13 +137,13 @@ function stats(d) {
   if ($('stat-total')) $('stat-total').textContent = d.length;
   if ($('stat-hot')) $('stat-hot').textContent = d.filter(hot).length;
   const ap = avg(d.map(price).filter(Boolean));
-  if ($('stat-price')) $('stat-price').textContent = ap ? money(ap) : 'â€”';
-  if ($('stat-avg-price')) $('stat-avg-price').textContent = ap ? money(ap) : 'â€”';
+  if ($('stat-price')) $('stat-price').textContent = ap ? money(ap) : '-';
+  if ($('stat-avg-price')) $('stat-avg-price').textContent = ap ? money(ap) : '-';
   const ad = avg(d.map(pct).filter(Boolean));
-  if ($('stat-discount')) $('stat-discount').textContent = ad ? `${Math.round(ad)}% off` : 'â€”';
-  if ($('stat-avg-discount')) $('stat-avg-discount').textContent = ad ? `${Math.round(ad)}% off` : 'â€”';
+  if ($('stat-discount')) $('stat-discount').textContent = ad ? `${Math.round(ad)}% off` : '-';
+  if ($('stat-avg-discount')) $('stat-avg-discount').textContent = ad ? `${Math.round(ad)}% off` : '-';
   const n = Math.max(...d.map(updated), 0);
-  if ($('stat-updated')) $('stat-updated').textContent = n ? ago(n) : 'â€”';
+  if ($('stat-updated')) $('stat-updated').textContent = n ? ago(n) : '-';
 }
 
 function cardImage(d, t) {
@@ -230,7 +230,7 @@ function render() {
   const list = f.slice(0, visibleDealsCount);
   g.innerHTML = list.map((d, i) => {
     const t = title(d), p = money(price(d)), w = was(d), off = pct(d), badge = hot(d) ? 'Hot Deal' : coupon(d) ? 'Coupon' : 'Deal';
-    return `<a class="hot-card" href="${esc(link(d))}" target="_blank" rel="nofollow sponsored noopener" data-asin="${esc(d.asin || '')}" data-deal-title="${esc(t)}" data-deal-category="${esc(cat(d))}" data-deal-price="${esc(price(d))}" data-deal-discount="${esc(off)}"><div class="hot-card-img">${cardImage(d, t)}${MODE === 'top100' ? `<div class="rank-badge">#${i + 1}</div>` : ''}<div class="hot-card-badge">${badge}</div></div><div class="hot-card-body">${(MODE === 'top100' || PAGE_CATEGORY) ? `<div class="category-pill">${esc(cat(d))}</div>` : ''}<div class="stars">${hot(d) ? 'â˜…â˜…â˜…â˜…â˜…' : 'â˜…â˜…â˜…â˜…â˜†'} ${esc((d.brand || '').slice(0, 24))}</div><div class="hot-card-title">${esc(t)}</div><div class="hot-card-prices"><span class="hot-price-now">${p || 'See deal'}</span>${w ? `<span class="hot-price-was">${esc(w)}</span>` : ''}${off ? `<span class="hot-off">${off}% off</span>` : ''}</div><span class="hot-btn">See Deal on Amazon â†’</span></div></a>`;
+    return `<a class="hot-card" href="${esc(link(d))}" target="_blank" rel="nofollow sponsored noopener" data-asin="${esc(d.asin || '')}" data-deal-title="${esc(t)}" data-deal-category="${esc(cat(d))}" data-deal-price="${esc(price(d))}" data-deal-discount="${esc(off)}"><div class="hot-card-img">${cardImage(d, t)}${MODE === 'top100' ? `<div class="rank-badge">#${i + 1}</div>` : ''}<div class="hot-card-badge">${badge}</div></div><div class="hot-card-body">${(MODE === 'top100' || PAGE_CATEGORY) ? `<div class="category-pill">${esc(cat(d))}</div>` : ''}<div class="stars">${hot(d) ? 'Top deal' : 'Deal'} ${esc((d.brand || '').slice(0, 24))}</div><div class="hot-card-title">${esc(t)}</div><div class="hot-card-prices"><span class="hot-price-now">${p || 'See deal'}</span>${w ? `<span class="hot-price-was">${esc(w)}</span>` : ''}${off ? `<span class="hot-off">${off}% off</span>` : ''}</div><span class="hot-btn">See Deal on Amazon &rarr;</span></div></a>`;
   }).join('');
   more(f.length);
 }

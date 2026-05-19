@@ -165,7 +165,7 @@ def deal_image(deal: dict, class_name: str = "") -> str:
     card_title = title(deal)
     class_attr = f' class="{class_name}"' if class_name else ""
     if image:
-        return f'<img src="{esc(compact_image_url(image))}" alt="{esc(card_title)}" loading="lazy" decoding="async"{class_attr}>'
+        return f'<img src="{esc(compact_image_url(image))}" alt="{esc(card_title)}" loading="lazy" decoding="async"{class_attr} onerror="this.outerHTML=\'&lt;div class=&quot;img-fallback&quot;&gt;Deal image unavailable&lt;/div&gt;\'">'
     return '<span class="img-fallback">Deal image unavailable</span>'
 
 
@@ -239,6 +239,23 @@ def replace_between_markers(page_html: str, start_marker: str, end_marker: str, 
     return None
 
 
+def sanitize_display_text(page_html: str) -> str:
+    replacements = {
+        "â€”": "-",
+        "â†—": "&#8599;",
+        "â†’": "&rarr;",
+        "â˜…â˜…â˜…â˜…â˜…": "Top deal",
+        "â˜…â˜…â˜…â˜…â˜†": "Deal",
+        "â€™": "'",
+        "â€œ": '"',
+        "â€": '"',
+        "â€“": "-",
+    }
+    for bad, good in replacements.items():
+        page_html = page_html.replace(bad, good)
+    return page_html
+
+
 def render_homepage(deals: list[dict]) -> None:
     path = Path("index.html")
     page_html = path.read_text(encoding="utf-8")
@@ -263,6 +280,23 @@ def render_homepage(deals: list[dict]) -> None:
         if empty_grid not in page_html:
             raise RuntimeError("Could not find empty homepage deals grid")
         page_html = page_html.replace(empty_grid, populated_grid, 1)
+    homepage_img_function = """function img(src, emoji, size) {
+  const pad = size === 'hot' ? '8px' : '12px';
+  const fs = size === 'hot' ? '34px' : '44px';
+  const fallback = '<div class="img-fallback">Deal image unavailable</div>';
+  if (src) {
+    return '<img src="' + escUrl(optimizeDealImage(src)) + '" alt="" loading="lazy" decoding="async" style="width:100%;height:100%;object-fit:contain;padding:' + pad + ';" onerror="this.parentElement.innerHTML=\\'' + fallback.replace(/'/g, '&#039;') + '\\'">';
+  }
+  return emoji ? '<span style="font-size:' + fs + '">' + esc(emoji) + '</span>' : fallback;
+}"""
+    page_html = re.sub(
+        r'function img\(src, emoji, size\) \{.*?\}function prioritizeCardImages',
+        homepage_img_function + 'function prioritizeCardImages',
+        page_html,
+        count=1,
+        flags=re.DOTALL,
+    )
+    page_html = sanitize_display_text(page_html)
     label = f"Showing {min(DEALS_LIMIT, len(ordered))} of {len(ordered)} deals"
     page_html = re.sub(r'(<span class="deal-count" id="count-label">)(.*?)(</span>)', rf"\g<1>{esc(label)}\g<3>", page_html, count=1, flags=re.DOTALL)
     path.write_text(page_html, encoding="utf-8")
@@ -315,6 +349,7 @@ def render_category_page(deals: list[dict], config: dict) -> None:
     label = f"Showing {min(DEALS_LIMIT, len(filtered))} of {len(filtered)} deals"
     page_html = set_category_deal_count(page_html, label)
     page_html = re.sub(r'(<div class="status-line" id="status-line">)(.*?)(</div>)', rf"\g<1>Showing live {esc(config['label'])} deals from the Black Lab Deals feed.\g<3>", page_html, count=1, flags=re.DOTALL)
+    page_html = sanitize_display_text(page_html)
     path.write_text(page_html, encoding="utf-8")
     print(f"Rendered {min(DEALS_LIMIT, len(filtered))} static {config['label']} deals into {path}")
 
