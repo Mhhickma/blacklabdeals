@@ -184,6 +184,12 @@ def normalize_category(raw_cat):
     return "Everything Else"
 
 
+def compact_image_url(url, size=160):
+    if not url:
+        return None
+    return re.sub(r"\._SL\d+_\.", f"._SL{size}_.", str(url))
+
+
 # ---------------------------------------------
 # MEMORY
 # ---------------------------------------------
@@ -406,7 +412,7 @@ def build_and_merge(asins, amazon_items, memory):
         category = normalize_category(raw_category)
 
         try:
-            image = item.images.primary.large.url
+            image = compact_image_url(item.images.primary.large.url)
         except:
             image = None
 

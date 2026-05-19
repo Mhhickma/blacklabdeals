@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -6,11 +6,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Homepage Header Test | Black Lab Deals</title>
 <meta name="description" content="Temporary Black Lab Deals homepage header test page.">
-<link rel="manifest" href="/manifest.json">
-<link rel="apple-touch-icon" href="/logo.png">
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800;900&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/site-common.css">
-<link rel="stylesheet" href="/site-nav.css">
+<link rel="manifest" href="/manifest.json"><link rel="icon" href="/favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="/logo-192.png">
+<link rel="preload" as="style" href="/site-common.css?v=2" onload="this.onload=null;this.rel='stylesheet'"><noscript><link rel="stylesheet" href="/site-common.css?v=2"></noscript>
+<link rel="preload" as="style" href="/site-nav.css?v=2" onload="this.onload=null;this.rel='stylesheet'"><noscript><link rel="stylesheet" href="/site-nav.css?v=2"></noscript>
 
   <!-- Black Lab Deals social preview meta -->
   <meta property="og:title" content="Homepage Header Test | Black Lab Deals">
@@ -18,13 +17,13 @@
   <meta property="og:url" content="https://blacklabdeals.com/homepage-header-test//">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Black Lab Deals">
-  <meta property="og:image" content="https://blacklabdeals.com/logo.png">
+  <meta property="og:image" content="https://blacklabdeals.com/black-lab-deals-social-preview.jpg">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Homepage Header Test | Black Lab Deals">
   <meta name="twitter:description" content="Temporary Black Lab Deals homepage header test page.">
-  <meta name="twitter:image" content="https://blacklabdeals.com/logo.png">
+  <meta name="twitter:image" content="https://blacklabdeals.com/black-lab-deals-social-preview.jpg">
   <!-- End Black Lab Deals social preview meta -->
 </head>
 <body data-mode="all">
@@ -38,19 +37,19 @@
         <h1>Homepage header test.</h1>
         <p>This temporary page tests the new shared Black Lab Deals header with the live deal feed before changing the real homepage.</p>
       </div>
-      <div class="hero-image-wrap"><img src="/logo.png" alt="Black Lab Deals logo"></div>
+      <div class="hero-image-wrap"><img src="/logo-192.png" alt="Black Lab Deals logo"></div>
     </div>
   </section>
   <div class="stats-bar">
-    <div><div class="stat-num" id="stat-active">—</div><div class="stat-label">Active deals</div></div>
-    <div><div class="stat-num" id="stat-hot">—</div><div class="stat-label">Hot deals</div></div>
-    <div><div class="stat-num" id="stat-price">—</div><div class="stat-label">Avg. price</div></div>
-    <div><div class="stat-num" id="stat-discount">—</div><div class="stat-label">Avg. discount</div></div>
-    <div><div class="stat-num" id="stat-updated">—</div><div class="stat-label">Last updated</div></div>
+    <div><div class="stat-num" id="stat-active">â€”</div><div class="stat-label">Active deals</div></div>
+    <div><div class="stat-num" id="stat-hot">â€”</div><div class="stat-label">Hot deals</div></div>
+    <div><div class="stat-num" id="stat-price">â€”</div><div class="stat-label">Avg. price</div></div>
+    <div><div class="stat-num" id="stat-discount">â€”</div><div class="stat-label">Avg. discount</div></div>
+    <div><div class="stat-num" id="stat-updated">â€”</div><div class="stat-label">Last updated</div></div>
   </div>
   <div class="divider"></div>
   <section class="section-head" id="deals-section">
-    <div><h2>Live deal feed test <span class="muted">— using the shared header</span></h2></div>
+    <div><h2>Live deal feed test <span class="muted">â€” using the shared header</span></h2></div>
     <div class="deal-count" id="deal-count">0 deals</div>
   </section>
   <section class="hot-strip">
@@ -65,7 +64,7 @@
   window.scrollToHotDeals = function(){ const el = document.getElementById('hot-deals'); if(el) el.scrollIntoView({behavior:'smooth', block:'start'}); };
   window.scrollToAllDeals = function(){ const el = document.getElementById('deals-section'); if(el) el.scrollIntoView({behavior:'smooth', block:'start'}); };
 </script>
-<script src="/site-header.js"></script>
-<script src="/site-common.js"></script>
+<script src="/site-header.js?v=5" defer></script>
+<script src="/site-common.js?v=4" defer></script>
 </body>
 </html>

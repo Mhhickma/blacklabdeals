@@ -1,7 +1,7 @@
-// Best Seller Deals page logic
+﻿// Best Seller Deals page logic
 // Isolated from site-common.js to avoid global variable conflicts.
 (function () {
-  const DATA_URL = 'https://raw.githubusercontent.com/Mhhickma/blacklabdeals/main/best_seller_deals.json';
+  const DATA_URL = '/best_seller_deals.json';
   const PAGE_SIZE = 25;
   let bestSellerDeals = [];
   let visibleDealsCount = PAGE_SIZE;
@@ -17,9 +17,9 @@
   }
 
   function fmtDate(value) {
-    if (!value) return '—';
+    if (!value) return 'â€”';
     const d = new Date(value);
-    if (Number.isNaN(d.getTime())) return '—';
+    if (Number.isNaN(d.getTime())) return 'â€”';
     return d.toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
   }
 
@@ -31,6 +31,10 @@
       "'": '&#39;',
       '"': '&quot;'
     }[c]));
+  }
+
+  function optimizeDealImage(src) {
+    return String(src || '').replace(/\._SL\d+_\./, '._SL160_.');
   }
 
   function renderFilters() {
@@ -52,8 +56,8 @@
     const rank = deal.bestSellerRank ? `#${deal.bestSellerRank}` : 'Best Seller';
     const pct = deal.pct ? `${deal.pct}% off` : 'Price Drop';
     const image = deal.image
-      ? `<img src="${cleanText(deal.image)}" alt="${cleanText(deal.title)}" loading="lazy">`
-      : '🐾';
+      ? `<img src="${cleanText(optimizeDealImage(deal.image))}" alt="${cleanText(deal.title)}" loading="lazy" decoding="async">`
+      : 'ðŸ¾';
     const was = deal.was ? `<span class="best-seller-was">${cleanText(deal.was)}</span>` : '';
 
     return `<article class="best-seller-card">
@@ -147,7 +151,7 @@
   async function loadDeals() {
     const statusEl = getEl('status');
     try {
-      const res = await fetch(DATA_URL + '?ts=' + Date.now(), { cache: 'no-store' });
+      const res = await fetch(DATA_URL, { cache: 'default' });
       if (!res.ok) throw new Error('Missing best_seller_deals.json');
       const data = await res.json();
       bestSellerDeals = Array.isArray(data.deals) ? data.deals : [];
@@ -164,8 +168,8 @@
       const heroPill = getEl('hero-pill');
 
       if (dealCount) dealCount.textContent = data.count ?? bestSellerDeals.length;
-      if (watchCount) watchCount.textContent = data.watchlistCount ?? '—';
-      if (checkedCount) checkedCount.textContent = data.asinsCheckedThisRun ?? '—';
+      if (watchCount) watchCount.textContent = data.watchlistCount ?? 'â€”';
+      if (checkedCount) checkedCount.textContent = data.asinsCheckedThisRun ?? 'â€”';
       if (hotCount) hotCount.textContent = data.hotDeals ?? bestSellerDeals.filter(d => d.hot).length;
       if (updatedAt) updatedAt.textContent = fmtDate(data.updatedAt);
       if (heroPill) heroPill.textContent = `${data.count ?? bestSellerDeals.length} best seller deals found`;

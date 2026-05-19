@@ -83,6 +83,10 @@ def price_amount(deal: dict) -> float:
     return 0.0
 
 
+def compact_image_url(value: object, size: int = 160) -> str:
+    return re.sub(r"\._SL\d+_\.", f"._SL{size}_.", str(value or ""))
+
+
 def pct(deal: dict) -> int:
     for key in ("pct", "drop_percent", "discount_percent", "discountPercent", "percent_off", "percentOff"):
         try:
@@ -133,7 +137,7 @@ def deal_image(deal: dict, class_name: str = "") -> str:
     card_title = title(deal)
     class_attr = f' class="{class_name}"' if class_name else ""
     if image:
-        return f'<img src="{esc(image)}" alt="{esc(card_title)}" loading="lazy"{class_attr}>'
+        return f'<img src="{esc(compact_image_url(image))}" alt="{esc(card_title)}" loading="lazy" decoding="async"{class_attr}>'
     return '<span class="img-fallback">Deal image unavailable</span>'
 
 
@@ -232,6 +236,21 @@ def render_homepage(deals: list[dict]) -> None:
     print(f"Rendered {min(DEALS_LIMIT, len(ordered))} static homepage deals into index.html")
 
 
+def set_category_deal_count(page_html: str, label: str) -> str:
+    count_html = f'<div class="deal-count" id="deal-count">{esc(label)}</div>'
+    if re.search(r'<div class="deal-count" id="deal-count">.*?</div>', page_html, flags=re.DOTALL):
+        return re.sub(r'<div class="deal-count" id="deal-count">.*?</div>', count_html, page_html, count=1, flags=re.DOTALL)
+    if re.search(r'<section class="section-head">.*?</section>', page_html, flags=re.DOTALL):
+        return re.sub(
+            r'(<section class="section-head">.*?</div>)(?:[^<]*?\bof\s+\d+\s+deals)?(?:</div>)?(</section>)',
+            rf"\g<1>{count_html}\g<2>",
+            page_html,
+            count=1,
+            flags=re.DOTALL,
+        )
+    return page_html
+
+
 def render_category_page(deals: list[dict], config: dict) -> None:
     path = Path(config["path"])
     page_html = path.read_text(encoding="utf-8")
@@ -260,7 +279,8 @@ def render_category_page(deals: list[dict], config: dict) -> None:
         populated_grid = f'{attrs}>\n      {block}\n    </div>'
         page_html = page_html[:grid_match.start()] + populated_grid + page_html[grid_match.end():]
 
-    page_html = re.sub(r'(<div class="deal-count" id="deal-count">)(.*?)(</div>)', rf"\g<1>{min(DEALS_LIMIT, len(filtered))} of {len(filtered)} deals\g<3>", page_html, count=1, flags=re.DOTALL)
+    label = f"Showing {min(DEALS_LIMIT, len(filtered))} of {len(filtered)} deals"
+    page_html = set_category_deal_count(page_html, label)
     page_html = re.sub(r'(<div class="status-line" id="status-line">)(.*?)(</div>)', rf"\g<1>Showing live {esc(config['label'])} deals from the Black Lab Deals feed.\g<3>", page_html, count=1, flags=re.DOTALL)
     path.write_text(page_html, encoding="utf-8")
     print(f"Rendered {min(DEALS_LIMIT, len(filtered))} static {config['label']} deals into {path}")

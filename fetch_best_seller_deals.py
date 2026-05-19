@@ -8,6 +8,7 @@ Keepa-style price-drop rules to decide what appears on the Best Seller Deals pag
 
 import json
 import os
+import re
 import time
 from datetime import datetime, timezone, timedelta
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -69,6 +70,12 @@ def load_json(path, default):
 def save_json(path, data):
     with open(path, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2)
+
+
+def compact_image_url(url, size=160):
+    if not url:
+        return None
+    return re.sub(r"\._SL\d+_\.", f"._SL{size}_.", str(url))
 
 
 def parse_time(value):
@@ -267,7 +274,7 @@ def amazon_item_to_deal(asin, item, watch_meta, state_entry, keepa_product, min_
         raw_category = None
 
     try:
-        image = item.images.primary.large.url
+        image = compact_image_url(item.images.primary.large.url)
     except Exception:
         image = None
 
