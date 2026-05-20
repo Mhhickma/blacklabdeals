@@ -10,6 +10,7 @@ from __future__ import annotations
 import html
 import json
 import re
+from datetime import datetime, timezone
 from pathlib import Path
 
 DEALS_FILE = Path("deals.json")
@@ -180,6 +181,36 @@ def sorted_deals(deals: list[dict]) -> list[dict]:
     return sorted(deals, key=score, reverse=True)
 
 
+def static_stats(deals: list[dict], updated_at: str = "") -> dict[str, str]:
+    priced = [price_amount(deal) for deal in deals if price_amount(deal) > 0]
+    discounts = [pct(deal) for deal in deals if pct(deal) > 0]
+    return {
+        "total": str(len(deals)),
+        "hot": str(sum(1 for deal in deals if is_hot(deal))),
+        "avg_price": f"${(sum(priced) / len(priced)):.2f}" if priced else "-",
+        "avg_discount": f"{round(sum(discounts) / len(discounts))}% off" if discounts else "-",
+        "updated": static_updated_label(updated_at),
+    }
+
+
+def static_updated_label(updated_at: str) -> str:
+    if not updated_at:
+        return "Just now"
+    try:
+        updated = datetime.fromisoformat(str(updated_at).replace("Z", "+00:00"))
+        minutes = max(0, round((datetime.now(timezone.utc) - updated.astimezone(timezone.utc)).total_seconds() / 60))
+        if minutes < 1:
+            return "Just now"
+        if minutes < 60:
+            return f"{minutes}m ago"
+        hours = round(minutes / 60)
+        if hours < 24:
+            return f"{hours}h ago"
+        return f"{round(hours / 24)}d ago"
+    except (TypeError, ValueError):
+        return "Just now"
+
+
 def image_first(deals: list[dict]) -> list[dict]:
     return sorted(deals, key=lambda deal: (0 if has_image(deal) else 1))
 
@@ -271,16 +302,17 @@ def sanitize_display_text(page_html: str) -> str:
         page_html = page_html.replace(bad, good)
     return page_html
 
-def render_homepage(deals: list[dict]) -> None:
+def render_homepage(deals: list[dict], updated_at: str = "") -> None:
     path = Path("index.html")
     page_html = path.read_text(encoding="utf-8")
     page_html = page_html.replace('/site-header.js?v=5', '/site-header.js?v=6')
     page_html = re.sub(r'#site-header\{display:block;min-height:176px.*?scroll-behavior:auto!important\}\}', '', page_html)
     page_html = page_html.replace('</style>', HOMEPAGE_CLS_CSS + '</style>', 1)
-    page_html = page_html.replace(
-        'const HOT_DEALS_PREVIEW_LIMIT = 6;',
+    page_html = re.sub(
+        r'const HOT_DEALS_PREVIEW_LIMIT = 6;(?:const HOT_DEALS_LOAD_MORE_COUNT = 25;)*',
         'const HOT_DEALS_PREVIEW_LIMIT = 6;const HOT_DEALS_LOAD_MORE_COUNT = 25;',
-        1,
+        page_html,
+        count=1,
     )
     if 'let visibleHotDealsCount = HOT_DEALS_PREVIEW_LIMIT;' not in page_html:
         page_html = page_html.replace(
@@ -524,6 +556,12 @@ function renderDeals() {
         flags=re.DOTALL,
     )
     page_html = sanitize_display_text(page_html)
+    stats = static_stats(deals, updated_at)
+    page_html = re.sub(r'(<span class="stat-num" id="stat-total">)(.*?)(</span>)', rf"\g<1>{esc(stats['total'])}\g<3>", page_html, count=1, flags=re.DOTALL)
+    page_html = re.sub(r'(<span class="stat-num" id="stat-hot">)(.*?)(</span>)', rf"\g<1>{esc(stats['hot'])}\g<3>", page_html, count=1, flags=re.DOTALL)
+    page_html = re.sub(r'(<span class="stat-num" id="stat-avg-price">)(.*?)(</span>)', rf"\g<1>{esc(stats['avg_price'])}\g<3>", page_html, count=1, flags=re.DOTALL)
+    page_html = re.sub(r'(<span class="stat-num" id="stat-avg-discount">)(.*?)(</span>)', rf"\g<1>{esc(stats['avg_discount'])}\g<3>", page_html, count=1, flags=re.DOTALL)
+    page_html = re.sub(r'(<span class="stat-num" id="stat-updated">)(.*?)(</span>)', rf"\g<1>{esc(stats['updated'])}\g<3>", page_html, count=1, flags=re.DOTALL)
     label = f"Showing {min(DEALS_LIMIT, len(ordered))} of {len(ordered)} deals"
     page_html = re.sub(r'(<span class="deal-count" id="count-label">)(.*?)(</span>)', rf"\g<1>{esc(label)}\g<3>", page_html, count=1, flags=re.DOTALL)
     path.write_text(page_html, encoding="utf-8")
@@ -591,7 +629,8 @@ def main() -> None:
     if not isinstance(deals, list):
         raise RuntimeError("deals.json does not contain a deals list")
 
-    render_homepage(deals)
+    updated_at = str(data.get("updatedAt") or data.get("updated_at") or "") if isinstance(data, dict) else ""
+    render_homepage(deals, updated_at)
     for config in CATEGORY_PAGES:
         render_category_page(deals, config)
 
