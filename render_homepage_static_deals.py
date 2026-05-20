@@ -277,6 +277,17 @@ def render_homepage(deals: list[dict]) -> None:
     page_html = page_html.replace('/site-header.js?v=5', '/site-header.js?v=6')
     page_html = re.sub(r'#site-header\{display:block;min-height:176px.*?scroll-behavior:auto!important\}\}', '', page_html)
     page_html = page_html.replace('</style>', HOMEPAGE_CLS_CSS + '</style>', 1)
+    page_html = page_html.replace(
+        'const HOT_DEALS_PREVIEW_LIMIT = 6;',
+        'const HOT_DEALS_PREVIEW_LIMIT = 6;const HOT_DEALS_LOAD_MORE_COUNT = 25;',
+        1,
+    )
+    if 'let visibleHotDealsCount = HOT_DEALS_PREVIEW_LIMIT;' not in page_html:
+        page_html = page_html.replace(
+            'let visibleDealsCount = DEALS_PER_PAGE;',
+            'let visibleDealsCount = DEALS_PER_PAGE;let visibleHotDealsCount = HOT_DEALS_PREVIEW_LIMIT;',
+            1,
+        )
     page_html = re.sub(r'<nav class="mobile-deal-nav" aria-label="Quick deal navigation">.*?</nav>\s*', '', page_html, count=1, flags=re.DOTALL)
     page_html = page_html.replace('<main class="page-shell">', '<main class="page-shell">  ' + HOMEPAGE_MOBILE_NAV_HTML, 1)
     page_html = page_html.replace(
@@ -348,14 +359,55 @@ function displayableDeals(arr) {
 function renderHotDeals() {
   const hot = allDeals.filter(d => Number(d.pct) >= 40 || d.hot);
   const displayHot = displayableDeals(sortDeals(hot));
-  const visibleHot = imageFirst(displayHot).slice(0, HOT_DEALS_PREVIEW_LIMIT);
-  document.getElementById('hot-count-pill').textContent = hot.length > HOT_DEALS_PREVIEW_LIMIT
+  const visibleHot = imageFirst(displayHot).slice(0, visibleHotDealsCount);
+  document.getElementById('hot-count-pill').textContent = displayHot.length > HOT_DEALS_PREVIEW_LIMIT
     ? 'Top ' + visibleHot.length + ' of ' + displayHot.length + ' deals'
     : displayHot.length + ' deal' + (displayHot.length !== 1 ? 's' : '');
   document.getElementById('hot-grid').innerHTML = visibleHot.length
     ? visibleHot.map((d, i) => dealCardHtml(d, i, 'hot')).join('')
     : '<div class="loading-bar" style="grid-column:1/-1;">No hot deals yet - check back soon.</div>';
   prioritizeCardImages(document.getElementById('hot-grid'));
+  updateHotLoadMoreButton(displayHot.length);
+}
+function ensureHotLoadMoreButton() {
+  let wrap = document.getElementById('hot-load-more-wrap');
+  let button = document.getElementById('hot-load-more-btn');
+  if (!wrap) {
+    wrap = document.createElement('div');
+    wrap.id = 'hot-load-more-wrap';
+    wrap.className = 'load-more-wrap hidden';
+    wrap.hidden = true;
+    wrap.innerHTML = '<button id="hot-load-more-btn" class="load-more-btn" type="button">Load 25 More Hot Deals</button>';
+    const grid = document.getElementById('hot-grid');
+    if (grid) grid.insertAdjacentElement('afterend', wrap);
+    button = document.getElementById('hot-load-more-btn');
+  }
+  if (button && !button.dataset.bound) {
+    button.dataset.bound = 'true';
+    button.addEventListener('click', async () => {
+      if (!allDeals.length) {
+        await loadDeals();
+      }
+      visibleHotDealsCount += HOT_DEALS_LOAD_MORE_COUNT;
+      renderHotDeals();
+    });
+  }
+  return { wrap, button };
+}
+function updateHotLoadMoreButton(total) {
+  const { wrap, button } = ensureHotLoadMoreButton();
+  if (!wrap || !button) return;
+  const remaining = Math.max(0, total - visibleHotDealsCount);
+  if (remaining > 0) {
+    wrap.hidden = false;
+    wrap.classList.remove('hidden');
+    button.hidden = false;
+    button.disabled = false;
+    button.textContent = 'Load ' + Math.min(HOT_DEALS_LOAD_MORE_COUNT, remaining) + ' More Hot Deals (' + remaining + ' remaining)';
+  } else {
+    wrap.hidden = true;
+    wrap.classList.add('hidden');
+  }
 }
 function getFilteredDeals() {
   let filtered = currentCategory === 'All'
@@ -409,6 +461,7 @@ function updateLoadMoreButton(total) {
 }
 function resetVisibleDeals() {
   visibleDealsCount = DEALS_PER_PAGE;
+  visibleHotDealsCount = HOT_DEALS_PREVIEW_LIMIT;
 }
 function renderDeals() {
   const filtered = getFilteredDeals();
@@ -454,6 +507,14 @@ function renderDeals() {
   hotSection.style.display = '';
   if (loading) loading.style.display = 'none';
   if (hotCount) hotCount.textContent = 'Top ' + staticCards.length + ' deals';
+  const { wrap, button } = ensureHotLoadMoreButton();
+  if (wrap && button) {
+    wrap.hidden = false;
+    wrap.classList.remove('hidden');
+    button.hidden = false;
+    button.disabled = false;
+    button.textContent = 'Load 25 More Hot Deals';
+  }
 }"""
     page_html = re.sub(
         r'function renderInitialHotFromStatic\(\) \{.*?\}function getSortOrder',

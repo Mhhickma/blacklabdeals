@@ -499,7 +499,15 @@
           <a class="best-seller-btn" href="https://www.amazon.com/dp/B0BG2438D3?tag=sawdustsavings-20&amp;linkCode=ogi&amp;th=1&amp;psc=1" target="_blank" rel="nofollow sponsored noopener">View on Amazon</a>
         </div>
       </article>
-      <!-- BLD STATIC DEALS END -->    </div>  </section></main><!-- BLD RELATED LINKS START --><section class="related-deal-pages" aria-label="Related Amazon deal pages">  <span>More Amazon deal pages:</span> <a href="/top-100-amazon-deals-today/">Top 100 Deals</a> &middot; <a href="/best-amazon-tool-deals/">Tool Deals</a> &middot; <a href="/best-amazon-home-kitchen-deals/">Home &amp; Kitchen</a> &middot; <a href="/best-amazon-electronics-deals/">Electronics</a> &middot; <a href="/best-amazon-deals-under-50/">Deals Under $50</a> &middot; <a href="/best-seller-deals.html">Best Seller Deals</a></section><!-- BLD RELATED LINKS END --><footer>  <p class="footer-disclosure">    As an Amazon Associate, Black Lab Deals earns from qualifying purchases. This page may contain affiliate links.  </p>  <p>    Made with care by <strong>Black Lab Deals</strong>    &middot; <a href="/">Home</a>    &middot; <a href="/top-100-amazon-deals-today/">Top 100</a>    &middot; <a href="/best-amazon-tool-deals/">Tools</a>    &middot; <a href="/best-amazon-home-kitchen-deals/">Home &amp; Kitchen</a>    &middot; <a href="/best-amazon-deals-under-50/">Under $50</a>  </p>  <p style="margin-top:6px;font-size:12px;color:var(--text-muted);">    Updated every 30 minutes &middot; Deal data refreshed regularly  </p>  <p class="disclaimer">    Prices and availability are checked at time of posting and may change at any time. Final price is shown on Amazon at checkout. Some deals may include clippable coupons on the Amazon product page.  </p>  <p class="disclaimer">    Amazon and the Amazon logo are trademarks of Amazon.com, Inc. or its affiliates. Black Lab Deals is independent and is not endorsed by Amazon.  </p></footer><div class="share-toast" id="share-toast">Link copied!</div><script>const DEALS_URL = "/deals.json";const SHEET_ENDPOINT = "https://script.google.com/macros/s/AKfycbw_7DAtiZJQWFwhphywmmnKuAssYQlumY32lPlJSwaSEQ9lWYx5PXOEP8BDW8_QeSsQ/exec";const DEALS_PER_PAGE = 24;const HOT_DEALS_PREVIEW_LIMIT = 6;const IS_MOBILE_VIEW = window.matchMedia('(max-width: 760px)').matches;const INITIAL_FEED_DELAY = IS_MOBILE_VIEW ? 9000 : 8000;const CATEGORIES = [  { id:'All', label:'All Deals' },  { id:'Appliances', label:'Appliances' },  { id:'Arts, Crafts & Sewing', label:'Arts, Crafts & Sewing' },  { id:'Automotive', label:'Automotive' },  { id:'Baby Products', label:'Baby Products' },  { id:'Cell Phones & Accessories', label:'Cell Phones' },  { id:'Electronics', label:'Electronics' },  { id:'Everything Else', label:'Everything Else' },  { id:'Handmade Products', label:'Handmade' },  { id:'Health & Household', label:'Health & Household' },  { id:'Home & Kitchen', label:'Home & Kitchen' },  { id:'Industrial & Scientific', label:'Industrial & Scientific' },  { id:'Musical Instruments', label:'Musical Instruments' },  { id:'Office Products', label:'Office Products' },  { id:'Patio, Lawn & Garden', label:'Patio, Lawn & Garden' },  { id:'Pet Supplies', label:'Pet Supplies' },  { id:'Sports & Outdoors', label:'Sports & Outdoors' },  { id:'Tools & Home Improvement', label:'Tools & Home Improvement' },  { id:'Toys & Games', label:'Toys & Games' }];let allDeals = [];let lastUpdatedISO = null;let searchQuery = '';let currentCategory = 'All';let visibleDealsCount = DEALS_PER_PAGE;const filterRow = document.getElementById('filter-row');CATEGORIES.forEach(cat => {  const btn = document.createElement('button');  btn.className = 'filter-btn' + (cat.id === 'All' ? ' active' : '');  btn.textContent = cat.label;  btn.dataset.cat = cat.id;  btn.onclick = () => filterDeals(cat.id, btn);  filterRow.appendChild(btn);});function esc(s) {  return String(s || '')    .replace(/&/g, '&amp;')    .replace(/</g, '&lt;')    .replace(/>/g, '&gt;')    .replace(/"/g, '&quot;');}function escUrl(s) {  return String(s || '').replace(/"/g, '%22');}function optimizeDealImage(src) {  return String(src || '').replace(/\._SL\d+_\./, '._SL160_.');}function formatUpdatedTime(isoString) {  if (!isoString) return '';  const mins = Math.max(0, Math.round((Date.now() - new Date(isoString)) / 60000));  if (mins < 1) return 'Just now';  if (mins < 60) return mins + 'm ago';  const hours = Math.round(mins / 60);  if (hours < 24) return hours + 'h ago';  return Math.round(hours / 24) + 'd ago';}function updateTimeLabels() {  const label = formatUpdatedTime(lastUpdatedISO);  const el = document.getElementById('stat-updated');  if (el) el.textContent = label || '-';}function asinImageUrl(asin) {
+      <!-- BLD STATIC DEALS END -->    </div>  </section></main><!-- BLD RELATED LINKS START --><section class="related-deal-pages" aria-label="Related Amazon deal pages">  <span>More Amazon deal pages:</span> <a href="/top-100-amazon-deals-today/">Top 100 Deals</a> &middot; <a href="/best-amazon-tool-deals/">Tool Deals</a> &middot; <a href="/best-amazon-home-kitchen-deals/">Home &amp; Kitchen</a> &middot; <a href="/best-amazon-electronics-deals/">Electronics</a> &middot; <a href="/best-amazon-deals-under-50/">Deals Under $50</a> &middot; <a href="/best-seller-deals.html">Best Seller Deals</a></section><!-- BLD RELATED LINKS END --><footer>  <p class="footer-disclosure">    As an Amazon Associate, Black Lab Deals earns from qualifying purchases. This page may contain affiliate links.  </p>  <p>    Made with care by <strong>Black Lab Deals</strong>    &middot; <a href="/">Home</a>    &middot; <a href="/top-100-amazon-deals-today/">Top 100</a>    &middot; <a href="/best-amazon-tool-deals/">Tools</a>    &middot; <a href="/best-amazon-home-kitchen-deals/">Home &amp; Kitchen</a>    &middot; <a href="/best-amazon-deals-under-50/">Under $50</a>  </p>  <p style="margin-top:6px;font-size:12px;color:var(--text-muted);">    Updated every 30 minutes &middot; Deal data refreshed regularly  </p>  <p class="disclaimer">    Prices and availability are checked at time of posting and may change at any time. Final price is shown on Amazon at checkout. Some deals may include clippable coupons on the Amazon product page.  </p>  <p class="disclaimer">    Amazon and the Amazon logo are trademarks of Amazon.com, Inc. or its affiliates. Black Lab Deals is independent and is not endorsed by Amazon.  </p></footer><div class="share-toast" id="share-toast">Link copied!</div><script>const DEALS_URL = "/deals.json";const SHEET_ENDPOINT = "https://script.google.com/macros/s/AKfycbw_7DAtiZJQWFwhphywmmnKuAssYQlumY32lPlJSwaSEQ9lWYx5PXOEP8BDW8_QeSsQ/exec";const DEALS_PER_PAGE = 24;const HOT_DEALS_PREVIEW_LIMIT = 6;const HOT_DEALS_LOAD_MORE_COUNT = 25;const HOT_DEALS_LOAD_MORE_COUNT = 25;const IS_MOBILE_VIEW = window.matchMedia('(max-width: 760px)').matches;const INITIAL_FEED_DELAY = IS_MOBILE_VIEW ? 9000 : 8000;const CATEGORIES = [  { id:'All', label:'All Deals' },  { id:'Appliances', label:'Appliances' },  { id:'Arts, Crafts & Sewing', label:'Arts, Crafts & Sewing' },  { id:'Automotive', label:'Automotive' },  { id:'Baby Products', label:'Baby Products' },  { id:'Cell Phones & Accessories', label:'Cell Phones' },  { id:'Electronics', label:'Electronics' },  { id:'Everything Else', label:'Everything Else' },  { id:'Handmade Products', label:'Handmade' },  { id:'Health & Household', label:'Health & Household' },  { id:'Home & Kitchen', label:'Home & Kitchen' },  { id:'Industrial & Scientific', label:'Industrial & Scientific' },  { id:'Musical Instruments', label:'Musical Instruments' },  { id:'Office Products', label:'Office Products' },  { id:'Patio, Lawn & Garden', label:'Patio, Lawn & Garden' },  { id:'Pet Supplies', label:'Pet Supplies' },  { id:'Sports & Outdoors', label:'Sports & Outdoors' },  { id:'Tools & Home Improvement', label:'Tools & Home Improvement' },  { id:'Toys & Games', label:'Toys & Games' }];let allDeals = [];let lastUpdatedISO = null;let searchQuery = '';let currentCategory = 'All';let visibleDealsCount = DEALS_PER_PAGE;let visibleHotDealsCount = HOT_DEALS_PREVIEW_LIMIT;const filterRow = document.getElementById('filter-row');CATEGORIES.forEach(cat => {  const btn = document.createElement('button');  btn.className = 'filter-btn' + (cat.id === 'All' ? ' active' : '');  btn.textContent = cat.label;  btn.dataset.cat = cat.id;  btn.onclick = () => filterDeals(cat.id, btn);  filterRow.appendChild(btn);});function esc(s) {  return String(s || '')    .replace(/&/g, '&amp;')    .replace(/</g, '&lt;')    .replace(/>/g, '&gt;')    .replace(/"/g, '&quot;');}function escUrl(s) {  return String(s || '').replace(/"/g, '%22');}function optimizeDealImage(src) {  return String(src || '').replace(/\._SL\d+_\./, '._SL160_.');}function formatUpdatedTime(isoString) {  if (!isoString) return '';  const mins = Math.max(0, Math.round((Date.now() - new Date(isoString)) / 60000));  if (mins < 1) return 'Just now';  if (mins < 60) return mins + 'm ago';  const hours = Math.round(mins / 60);  if (hours < 24) return hours + 'h ago';  return Math.round(hours / 24) + 'd ago';}function updateTimeLabels() {  const label = formatUpdatedTime(lastUpdatedISO);  const el = document.getElementById('stat-updated');  if (el) el.textContent = label || '-';}function asinImageUrl(asin) {
+  const value = String(asin || '').trim().toUpperCase();
+  return /^[A-Z0-9]{10}$/.test(value) ? 'https://images-na.ssl-images-amazon.com/images/P/' + value + '.01._SL160_.jpg' : '';
+}
+function asinImageUrl(asin) {
+  const value = String(asin || '').trim().toUpperCase();
+  return /^[A-Z0-9]{10}$/.test(value) ? 'https://images-na.ssl-images-amazon.com/images/P/' + value + '.01._SL160_.jpg' : '';
+}
+function asinImageUrl(asin) {
   const value = String(asin || '').trim().toUpperCase();
   return /^[A-Z0-9]{10}$/.test(value) ? 'https://images-na.ssl-images-amazon.com/images/P/' + value + '.01._SL160_.jpg' : '';
 }
@@ -532,6 +540,14 @@ function img(src, emoji, size) {
   hotSection.style.display = '';
   if (loading) loading.style.display = 'none';
   if (hotCount) hotCount.textContent = 'Top ' + staticCards.length + ' deals';
+  const { wrap, button } = ensureHotLoadMoreButton();
+  if (wrap && button) {
+    wrap.hidden = false;
+    wrap.classList.remove('hidden');
+    button.hidden = false;
+    button.disabled = false;
+    button.textContent = 'Load 25 More Hot Deals';
+  }
 }function getSortOrder() {  const s = document.getElementById('sort-select');  return s ? s.value : 'default';}function sortDeals(arr) {  const order = getSortOrder();  const a = [...arr];  if (order === 'discount_desc') return a.sort((x, y) => (Number(y.pct) || 0) - (Number(x.pct) || 0));  if (order === 'price_asc') return a.sort((x, y) => (x.price_amount || 0) - (y.price_amount || 0));  if (order === 'price_desc') return a.sort((x, y) => (y.price_amount || 0) - (x.price_amount || 0));  if (order === 'newest') return a.sort((x, y) => (y.ts || 0) - (x.ts || 0));  return a;}async function loadDeals() {  try {    const res = await fetch(DEALS_URL, { cache: 'default' });    if (!res.ok) throw new Error('not found');    const data = await res.json();    allDeals = Array.isArray(data.deals) ? data.deals : [];    const totalDeals = data.totalDeals ?? allDeals.length;    const hotDeals = data.hotDeals ?? allDeals.filter(d => Number(d.pct) >= 40 || d.hot).length;    document.getElementById('stat-total').textContent = totalDeals;    document.getElementById('stat-hot').textContent = hotDeals;    document.getElementById('hero-pill-text').textContent = totalDeals + ' deals live right now';    const priced = allDeals.filter(d => d.price_amount > 0);    const avgPrice = priced.length      ? (priced.reduce((s, d) => s + d.price_amount, 0) / priced.length).toFixed(2)      : null;    const discounted = allDeals.filter(d => d.pct > 0);    const avgDiscount = discounted.length      ? Math.round(discounted.reduce((s, d) => s + d.pct, 0) / discounted.length)      : null;    document.getElementById('stat-avg-price').textContent = avgPrice ? '$' + avgPrice : '-';    document.getElementById('stat-avg-discount').textContent = avgDiscount ? avgDiscount + '% off' : '-';    lastUpdatedISO = data.updatedAt || null;    resetVisibleDeals();    updateTimeLabels();    document.getElementById('loading-bar').style.display = 'none';    document.getElementById('error-msg').style.display = 'none';    document.getElementById('hot-section').style.display = '';    document.getElementById('toolbar').style.display = '';    document.getElementById('filters-wrap').style.display = '';    document.getElementById('deals-section').style.display = '';    if (!IS_MOBILE_VIEW) {      renderHotDeals();      renderDeals();    }  } catch (e) {    console.error('Deal load error:', e);    document.getElementById('loading-bar').style.display = 'none';    document.getElementById('error-msg').style.display = 'block';  }}function dealCardHtml(d, index, mode) {
   const dealTitle = d.title || 'Amazon deal';
   const dealCat = d.cat || d.category || 'Amazon Deals';
@@ -565,14 +581,55 @@ function displayableDeals(arr) {
 function renderHotDeals() {
   const hot = allDeals.filter(d => Number(d.pct) >= 40 || d.hot);
   const displayHot = displayableDeals(sortDeals(hot));
-  const visibleHot = imageFirst(displayHot).slice(0, HOT_DEALS_PREVIEW_LIMIT);
-  document.getElementById('hot-count-pill').textContent = hot.length > HOT_DEALS_PREVIEW_LIMIT
+  const visibleHot = imageFirst(displayHot).slice(0, visibleHotDealsCount);
+  document.getElementById('hot-count-pill').textContent = displayHot.length > HOT_DEALS_PREVIEW_LIMIT
     ? 'Top ' + visibleHot.length + ' of ' + displayHot.length + ' deals'
     : displayHot.length + ' deal' + (displayHot.length !== 1 ? 's' : '');
   document.getElementById('hot-grid').innerHTML = visibleHot.length
     ? visibleHot.map((d, i) => dealCardHtml(d, i, 'hot')).join('')
     : '<div class="loading-bar" style="grid-column:1/-1;">No hot deals yet - check back soon.</div>';
   prioritizeCardImages(document.getElementById('hot-grid'));
+  updateHotLoadMoreButton(displayHot.length);
+}
+function ensureHotLoadMoreButton() {
+  let wrap = document.getElementById('hot-load-more-wrap');
+  let button = document.getElementById('hot-load-more-btn');
+  if (!wrap) {
+    wrap = document.createElement('div');
+    wrap.id = 'hot-load-more-wrap';
+    wrap.className = 'load-more-wrap hidden';
+    wrap.hidden = true;
+    wrap.innerHTML = '<button id="hot-load-more-btn" class="load-more-btn" type="button">Load 25 More Hot Deals</button>';
+    const grid = document.getElementById('hot-grid');
+    if (grid) grid.insertAdjacentElement('afterend', wrap);
+    button = document.getElementById('hot-load-more-btn');
+  }
+  if (button && !button.dataset.bound) {
+    button.dataset.bound = 'true';
+    button.addEventListener('click', async () => {
+      if (!allDeals.length) {
+        await loadDeals();
+      }
+      visibleHotDealsCount += HOT_DEALS_LOAD_MORE_COUNT;
+      renderHotDeals();
+    });
+  }
+  return { wrap, button };
+}
+function updateHotLoadMoreButton(total) {
+  const { wrap, button } = ensureHotLoadMoreButton();
+  if (!wrap || !button) return;
+  const remaining = Math.max(0, total - visibleHotDealsCount);
+  if (remaining > 0) {
+    wrap.hidden = false;
+    wrap.classList.remove('hidden');
+    button.hidden = false;
+    button.disabled = false;
+    button.textContent = 'Load ' + Math.min(HOT_DEALS_LOAD_MORE_COUNT, remaining) + ' More Hot Deals (' + remaining + ' remaining)';
+  } else {
+    wrap.hidden = true;
+    wrap.classList.add('hidden');
+  }
 }
 function getFilteredDeals() {
   let filtered = currentCategory === 'All'
@@ -626,6 +683,7 @@ function updateLoadMoreButton(total) {
 }
 function resetVisibleDeals() {
   visibleDealsCount = DEALS_PER_PAGE;
+  visibleHotDealsCount = HOT_DEALS_PREVIEW_LIMIT;
 }
 function renderDeals() {
   const filtered = getFilteredDeals();
