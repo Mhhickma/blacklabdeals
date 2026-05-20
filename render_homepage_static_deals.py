@@ -178,6 +178,11 @@ def image_first(deals: list[dict]) -> list[dict]:
     return sorted(deals, key=lambda deal: (0 if has_image(deal) else 1))
 
 
+def displayable_deals(deals: list[dict]) -> list[dict]:
+    image_deals = [deal for deal in deals if has_image(deal)]
+    return image_deals or deals
+
+
 def deal_image(deal: dict, class_name: str = "") -> str:
     image = image_url(deal)
     card_title = title(deal)
@@ -273,7 +278,7 @@ def render_homepage(deals: list[dict]) -> None:
         '<section class="deals-section" id="deals-section">',
         1,
     )
-    ordered = image_first(sorted_deals(deals))
+    ordered = image_first(displayable_deals(sorted_deals(deals)))
     block = render_block(ordered, HOME_START_MARKER, HOME_END_MARKER, homepage_deal_card)
     replaced = replace_between_markers(page_html, HOME_START_MARKER, HOME_END_MARKER, block)
     if replaced is not None:
@@ -326,12 +331,17 @@ function hasDealImage(d) {
 function imageFirst(arr) {
   return [...arr].sort((a, b) => Number(!hasDealImage(a)) - Number(!hasDealImage(b)));
 }
+function displayableDeals(arr) {
+  const imageDeals = arr.filter(hasDealImage);
+  return imageDeals.length ? imageDeals : arr;
+}
 function renderHotDeals() {
   const hot = allDeals.filter(d => Number(d.pct) >= 40 || d.hot);
-  const visibleHot = imageFirst(sortDeals(hot)).slice(0, HOT_DEALS_PREVIEW_LIMIT);
+  const displayHot = displayableDeals(sortDeals(hot));
+  const visibleHot = imageFirst(displayHot).slice(0, HOT_DEALS_PREVIEW_LIMIT);
   document.getElementById('hot-count-pill').textContent = hot.length > HOT_DEALS_PREVIEW_LIMIT
-    ? 'Top ' + visibleHot.length + ' of ' + hot.length + ' deals'
-    : hot.length + ' deal' + (hot.length !== 1 ? 's' : '');
+    ? 'Top ' + visibleHot.length + ' of ' + displayHot.length + ' deals'
+    : displayHot.length + ' deal' + (displayHot.length !== 1 ? 's' : '');
   document.getElementById('hot-grid').innerHTML = visibleHot.length
     ? visibleHot.map((d, i) => dealCardHtml(d, i, 'hot')).join('')
     : '<div class="loading-bar" style="grid-column:1/-1;">No hot deals yet - check back soon.</div>';
@@ -392,17 +402,18 @@ function resetVisibleDeals() {
 }
 function renderDeals() {
   const filtered = getFilteredDeals();
-  const visibleDeals = imageFirst(filtered).slice(0, visibleDealsCount);
-  document.getElementById('count-label').textContent = filtered.length
-    ? 'Showing ' + Math.min(visibleDeals.length, filtered.length) + ' of ' + filtered.length + ' deal' + (filtered.length !== 1 ? 's' : '')
+  const displayDeals = displayableDeals(filtered);
+  const visibleDeals = imageFirst(displayDeals).slice(0, visibleDealsCount);
+  document.getElementById('count-label').textContent = displayDeals.length
+    ? 'Showing ' + Math.min(visibleDeals.length, displayDeals.length) + ' of ' + displayDeals.length + ' deal' + (displayDeals.length !== 1 ? 's' : '')
     : '0 deals';
-  document.getElementById('deals-grid').innerHTML = filtered.length
+  document.getElementById('deals-grid').innerHTML = displayDeals.length
     ? visibleDeals.map((d, i) => dealCardHtml(d, i, 'all')).join('')
     : '<div class="loading-bar" style="grid-column:1/-1;text-align:center;padding:48px;">' +
         (searchQuery ? 'No deals found for "' + esc(searchQuery) + '". Try a different search.' : 'No deals in this category right now - check back soon!') +
       '</div>';
   prioritizeCardImages(document.getElementById('deals-grid'));
-  updateLoadMoreButton(filtered.length);
+  updateLoadMoreButton(displayDeals.length);
 }"""
     dynamic_card_pattern = (
         r'function dealCardHtml\(d, index, mode\) \{.*?\}function handleSearch'
@@ -469,6 +480,7 @@ def render_category_page(deals: list[dict], config: dict) -> None:
     filtered = sorted_deals([deal for deal in deals if deal_matches(deal, config["key"])])
     if config["key"] == "top100":
         filtered = filtered[:100]
+    display_filtered = displayable_deals(filtered)
 
     start_marker = f"<!-- BLD STATIC {config['marker']} DEALS START -->"
     end_marker = f"<!-- BLD STATIC {config['marker']} DEALS END -->"
@@ -477,7 +489,7 @@ def render_category_page(deals: list[dict], config: dict) -> None:
         rank, deal = item
         return category_deal_card(deal, rank=rank if config.get("rank") else None)
 
-    ranked = list(enumerate(image_first(filtered)[:DEALS_LIMIT], start=1))
+    ranked = list(enumerate(image_first(display_filtered)[:DEALS_LIMIT], start=1))
     cards = "\n      ".join(card_for(item) for item in ranked)
     block = f"{start_marker}\n      {cards}\n      {end_marker}"
     replaced = replace_between_markers(page_html, start_marker, end_marker, block)
@@ -491,12 +503,12 @@ def render_category_page(deals: list[dict], config: dict) -> None:
         populated_grid = f'{attrs}>\n      {block}\n    </div>'
         page_html = page_html[:grid_match.start()] + populated_grid + page_html[grid_match.end():]
 
-    label = f"Showing {min(DEALS_LIMIT, len(filtered))} of {len(filtered)} deals"
+    label = f"Showing {min(DEALS_LIMIT, len(display_filtered))} of {len(display_filtered)} deals"
     page_html = set_category_deal_count(page_html, label)
     page_html = re.sub(r'(<div class="status-line" id="status-line">)(.*?)(</div>)', rf"\g<1>Showing live {esc(config['label'])} deals from the Black Lab Deals feed.\g<3>", page_html, count=1, flags=re.DOTALL)
     page_html = sanitize_display_text(page_html)
     path.write_text(page_html, encoding="utf-8")
-    print(f"Rendered {min(DEALS_LIMIT, len(filtered))} static {config['label']} deals into {path}")
+    print(f"Rendered {min(DEALS_LIMIT, len(display_filtered))} static {config['label']} deals into {path}")
 
 
 def main() -> None:

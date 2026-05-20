@@ -131,6 +131,11 @@ function dealCountText(total) {
   return `Showing ${Math.min(visibleDealsCount, total)} of ${total} deals`;
 }
 
+function displayableDeals(deals) {
+  const imageDeals = deals.filter(hasDealImage);
+  return imageDeals.length ? imageDeals : deals;
+}
+
 function stats(d) {
   const label = PAGE_CATEGORY_LABEL || 'deals';
   if ($('hero-pill')) $('hero-pill').textContent = PAGE_CATEGORY ? `${d.length} ${label} deals live right now` : `${d.length} deals live right now`;
@@ -215,28 +220,29 @@ function render() {
   const g = findDealsGrid();
   const s = $('status-line');
   const f = shown();
+  const displayDeals = displayableDeals(f);
   stats(f);
   const count = ensureDealCount();
-  if (count) count.textContent = dealCountText(f.length);
+  if (count) count.textContent = dealCountText(displayDeals.length);
   if (s) s.textContent = PAGE_CATEGORY ? `Showing live ${PAGE_CATEGORY_LABEL || 'category'} deals from the Black Lab Deals feed.` : 'Showing live Black Lab Deals with the same sitewide header and footer.';
   if (!g) return;
   g.dataset.bldDynamicPager = 'true';
   g.dataset.bldUniversalPager = 'off';
   g.dataset.bldPagerOff = 'true';
   removeCompetingLoadMoreButtons(g);
-  if (!f.length) {
+  if (!displayDeals.length) {
     g.innerHTML = '<div class="empty-state">No matching deals found right now.</div>';
     more(0);
     return;
   }
-  const list = imageFirst(f).slice(0, visibleDealsCount);
+  const list = imageFirst(displayDeals).slice(0, visibleDealsCount);
   g.innerHTML = list.map((d, i) => {
     const t = title(d), p = money(price(d)), w = was(d), off = pct(d), badge = hot(d) ? 'Hot Deal' : coupon(d) ? 'Coupon' : 'Deal';
     const primaryBadge = off ? `${off}% off` : badge;
     const secondaryBadge = MODE === 'top100' ? `#${i + 1}` : badge;
     return `<article class="best-seller-card deal-card-unified" data-asin="${esc(d.asin || '')}" data-deal-title="${esc(t)}" data-deal-category="${esc(cat(d))}" data-deal-price="${esc(price(d))}" data-deal-discount="${esc(off)}"><div class="best-seller-img">${cardImage(d, t)}</div><div class="best-seller-body"><div class="best-seller-badges"><span class="best-seller-badge">${esc(primaryBadge)}</span><span class="best-seller-badge rank">${esc(secondaryBadge)}</span></div><div class="best-seller-title">${esc(t)}</div><div class="best-seller-category">${esc(cat(d))}</div><div class="best-seller-price-row"><span class="best-seller-price">${p || 'See deal'}</span>${w ? `<span class="best-seller-was">${esc(w)}</span>` : ''}</div><a class="best-seller-btn" href="${esc(link(d))}" target="_blank" rel="nofollow sponsored noopener">View on Amazon</a></div></article>`;
   }).join('');
-  more(f.length);
+  more(displayDeals.length);
 }
 
 const POPULAR_CATEGORY_LINKS = [

@@ -7,6 +7,7 @@ then validates pricing via Amazon Creators API.
 
 import json
 import os
+import re
 import time
 import requests
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -534,7 +535,12 @@ def main():
     memory = purge_expired(memory)
     print(f"    Memory: {len(memory)} deals after purge.")
 
-    cached_asins = set(memory.keys())
+    # Re-check cached ASINs that are missing images. A previous run can leave
+    # image-less deals in memory, and those should be repaired instead of kept.
+    cached_asins = {
+        asin for asin, deal in memory.items()
+        if deal.get("image") or deal.get("image_url") or deal.get("imageUrl") or deal.get("img") or deal.get("thumbnail")
+    }
 
     new_asins = get_keepa_deals(KEEPA_API_KEY, cached_asins)
 
