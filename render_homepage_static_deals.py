@@ -19,7 +19,7 @@ HOME_START_MARKER = "<!-- BLD STATIC DEALS START -->"
 HOME_END_MARKER = "<!-- BLD STATIC DEALS END -->"
 HOMEPAGE_CLS_CSS = (
     '#site-header{display:block;min-height:176px;background:var(--surface);}'
-    '#hot-section[style*="display:none"]{display:block!important;visibility:hidden;min-height:560px}'
+    '#hot-section[style*="display:none"]{display:block!important;visibility:hidden;min-height:900px}'
     '@media(max-width:760px){#site-header{min-height:154px}.deal-statement-bar{display:none!important}'
     'main.page-shell{display:flex!important;flex-direction:column!important;gap:0!important;padding:0 16px 70px!important}'
     '.mobile-deal-nav{min-height:49px}.popular-category-nav,.stats-bar,.divider{display:none!important}'
@@ -329,6 +329,7 @@ def render_homepage(deals: list[dict], updated_at: str = "") -> None:
         1,
     )
     ordered = image_first(displayable_deals(sorted_deals(deals)))
+    hot_ordered = image_first(displayable_deals(sorted_deals([deal for deal in deals if is_hot(deal)])))
     block = render_block(ordered, HOME_START_MARKER, HOME_END_MARKER, homepage_deal_card)
     replaced = replace_between_markers(page_html, HOME_START_MARKER, HOME_END_MARKER, block)
     if replaced is not None:
@@ -339,6 +340,43 @@ def render_homepage(deals: list[dict], updated_at: str = "") -> None:
         if empty_grid not in page_html:
             raise RuntimeError("Could not find empty homepage deals grid")
         page_html = page_html.replace(empty_grid, populated_grid, 1)
+    hot_cards = "\n      ".join(homepage_deal_card(deal) for deal in hot_ordered[:6])
+    hot_count = f"Top {min(6, len(hot_ordered))} of {len(hot_ordered)} deals" if len(hot_ordered) > 6 else f"{len(hot_ordered)} deal{'s' if len(hot_ordered) != 1 else ''}"
+    hot_button_html = ""
+    if len(hot_ordered) > 6:
+        remaining = len(hot_ordered) - 6
+        hot_button_html = (
+            f'<div id="hot-load-more-wrap" class="load-more-wrap">'
+            f'<button id="hot-load-more-btn" class="load-more-btn" type="button">'
+            f'Load {min(25, remaining)} More Hot Deals ({remaining} remaining)'
+            f'</button></div>'
+        )
+    page_html = re.sub(
+        r'<section class="hot-section" id="hot-section" style="display:none;">',
+        '<section class="hot-section" id="hot-section">',
+        page_html,
+        count=1,
+    )
+    page_html = re.sub(
+        r'(<span class="hot-pill" id="hot-count-pill">)(.*?)(</span>)',
+        rf"\g<1>{esc(hot_count)}\g<3>",
+        page_html,
+        count=1,
+        flags=re.DOTALL,
+    )
+    page_html = re.sub(
+        r'<div class="hot-grid" id="hot-grid">.*?</div>\s*(?:<div id="hot-load-more-wrap".*?</div>)?',
+        f'<div class="hot-grid" id="hot-grid">\n      {hot_cards}\n    </div>{hot_button_html}',
+        page_html,
+        count=1,
+        flags=re.DOTALL,
+    )
+    page_html = re.sub(
+        r'<div class="loading-bar" id="loading-bar"(?:\s+style="[^"]*")?>',
+        '<div class="loading-bar" id="loading-bar" style="display:none;">',
+        page_html,
+        count=1,
+    )
     homepage_img_function = """function asinImageUrl(asin) {
   const value = String(asin || '').trim().toUpperCase();
   return /^[A-Z0-9]{10}$/.test(value) ? 'https://images-na.ssl-images-amazon.com/images/P/' + value + '.01._SL160_.jpg' : '';
@@ -560,6 +598,11 @@ function renderDeals() {
     page_html = page_html.replace(
         'ensureHomepageMobileNav();moveHomepageBrowseBelowDeals();hydrateDeferredImages();',
         'ensureHomepageMobileNav();hydrateDeferredImages();',
+        1,
+    )
+    page_html = page_html.replace(
+        'ensureHomepageMobileNav();hydrateDeferredImages();renderInitialHotFromStatic();scheduleDealFeedLoad();',
+        'ensureHomepageMobileNav();hydrateDeferredImages();ensureHotLoadMoreButton();scheduleDealFeedLoad();',
         1,
     )
     stats = static_stats(deals, updated_at)
