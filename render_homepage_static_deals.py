@@ -18,7 +18,7 @@ DEALS_LIMIT = 50
 HOME_START_MARKER = "<!-- BLD STATIC DEALS START -->"
 HOME_END_MARKER = "<!-- BLD STATIC DEALS END -->"
 HOMEPAGE_CLS_CSS = (
-    '#site-header{display:block;min-height:176px;background:var(--surface);}'
+    '#site-header{display:block;min-height:214px;background:var(--surface);}'
     '#hot-section[style*="display:none"]{display:block!important;visibility:hidden;min-height:900px}'
     '@media(max-width:760px){#site-header{min-height:154px}.deal-statement-bar{display:none!important}'
     'main.page-shell{display:flex!important;flex-direction:column!important;gap:0!important;padding:0 16px 70px!important}'
@@ -309,7 +309,7 @@ def render_homepage(deals: list[dict], updated_at: str = "") -> None:
     path = Path("index.html")
     page_html = path.read_text(encoding="utf-8")
     page_html = page_html.replace('/site-header.js?v=5', '/site-header.js?v=6')
-    page_html = re.sub(r'#site-header\{display:block;min-height:176px.*?scroll-behavior:auto!important\}\}', '', page_html)
+    page_html = re.sub(r'#site-header\{display:block;min-height:\d+px.*?scroll-behavior:auto!important\}\}', '', page_html)
     page_html = page_html.replace('</style>', HOMEPAGE_CLS_CSS + '</style>', 1)
     page_html = re.sub(
         r'const HOT_DEALS_PREVIEW_LIMIT = 6;(?:const HOT_DEALS_LOAD_MORE_COUNT = 25;)*',
@@ -613,6 +613,7 @@ function renderDeals() {
     page_html = re.sub(r'(<span class="stat-num" id="stat-avg-price">)(.*?)(</span>)', rf"\g<1>{esc(stats['avg_price'])}\g<3>", page_html, count=1, flags=re.DOTALL)
     page_html = re.sub(r'(<span class="stat-num" id="stat-avg-discount">)(.*?)(</span>)', rf"\g<1>{esc(stats['avg_discount'])}\g<3>", page_html, count=1, flags=re.DOTALL)
     page_html = re.sub(r'(<span class="stat-num" id="stat-updated">)(.*?)(</span>)', rf"\g<1>{esc(stats['updated'])}\g<3>", page_html, count=1, flags=re.DOTALL)
+    page_html = re.sub(r'(<div class="hero-pill" id="hero-pill-text">)(.*?)(</div>)', rf"\g<1>{esc(stats['total'])} deals live right now\g<3>", page_html, count=1, flags=re.DOTALL)
     label = f"Showing {min(DEALS_LIMIT, len(ordered))} of {len(ordered)} deals"
     page_html = re.sub(r'(<span class="deal-count" id="count-label">)(.*?)(</span>)', rf"\g<1>{esc(label)}\g<3>", page_html, count=1, flags=re.DOTALL)
     path.write_text(page_html, encoding="utf-8")
