@@ -19,6 +19,7 @@ HOME_START_MARKER = "<!-- BLD STATIC DEALS START -->"
 HOME_END_MARKER = "<!-- BLD STATIC DEALS END -->"
 HOMEPAGE_CLS_CSS = (
     '#site-header{display:block;min-height:176px;background:var(--surface);}'
+    '#hot-section[style*="display:none"]{display:block!important;visibility:hidden;min-height:560px}'
     '@media(max-width:760px){#site-header{min-height:154px}.deal-statement-bar{display:none!important}'
     'main.page-shell{display:flex!important;flex-direction:column!important;gap:0!important;padding:0 16px 70px!important}'
     '.mobile-deal-nav{min-height:49px}.popular-category-nav,.stats-bar,.divider{display:none!important}'
@@ -225,7 +226,7 @@ def deal_image(deal: dict, class_name: str = "") -> str:
     card_title = title(deal)
     class_attr = f' class="{class_name}"' if class_name else ""
     if image:
-        return f'<img src="{esc(compact_image_url(image))}" alt="{esc(card_title)}" loading="lazy" decoding="async"{class_attr}>'
+        return f'<img src="{esc(compact_image_url(image))}" alt="{esc(card_title)}" width="160" height="160" loading="lazy" decoding="async"{class_attr}>'
     return '<span class="img-fallback">Deal image unavailable</span>'
 
 
@@ -347,7 +348,7 @@ function img(src, emoji, size) {
   const fs = size === 'hot' ? '34px' : '44px';
   const fallback = '<div class="img-fallback">Deal image unavailable</div>';
   if (src) {
-    return '<img src="' + escUrl(optimizeDealImage(src)) + '" alt="" loading="lazy" decoding="async" style="width:100%;height:100%;object-fit:contain;padding:' + pad + ';">';
+    return '<img src="' + escUrl(optimizeDealImage(src)) + '" alt="" width="160" height="160" loading="lazy" decoding="async" style="width:100%;height:100%;object-fit:contain;padding:' + pad + ';">';
   }
   return emoji ? '<span style="font-size:' + fs + '">' + esc(emoji) + '</span>' : fallback;
 }"""
@@ -556,6 +557,11 @@ function renderDeals() {
         flags=re.DOTALL,
     )
     page_html = sanitize_display_text(page_html)
+    page_html = page_html.replace(
+        'ensureHomepageMobileNav();moveHomepageBrowseBelowDeals();hydrateDeferredImages();',
+        'ensureHomepageMobileNav();hydrateDeferredImages();',
+        1,
+    )
     stats = static_stats(deals, updated_at)
     page_html = re.sub(r'(<span class="stat-num" id="stat-total">)(.*?)(</span>)', rf"\g<1>{esc(stats['total'])}\g<3>", page_html, count=1, flags=re.DOTALL)
     page_html = re.sub(r'(<span class="stat-num" id="stat-hot">)(.*?)(</span>)', rf"\g<1>{esc(stats['hot'])}\g<3>", page_html, count=1, flags=re.DOTALL)
