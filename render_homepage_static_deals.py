@@ -183,7 +183,7 @@ def deal_image(deal: dict, class_name: str = "") -> str:
     card_title = title(deal)
     class_attr = f' class="{class_name}"' if class_name else ""
     if image:
-        return f'<img src="{esc(compact_image_url(image))}" alt="{esc(card_title)}" loading="lazy" decoding="async"{class_attr} onerror="this.outerHTML=\'&lt;div class=&quot;img-fallback&quot;&gt;Deal image unavailable&lt;/div&gt;\'">'
+        return f'<img src="{esc(compact_image_url(image))}" alt="{esc(card_title)}" loading="lazy" decoding="async"{class_attr}>'
     return '<span class="img-fallback">Deal image unavailable</span>'
 
 
@@ -289,7 +289,7 @@ def render_homepage(deals: list[dict]) -> None:
   const fs = size === 'hot' ? '34px' : '44px';
   const fallback = '<div class="img-fallback">Deal image unavailable</div>';
   if (src) {
-    return '<img src="' + escUrl(optimizeDealImage(src)) + '" alt="" loading="lazy" decoding="async" style="width:100%;height:100%;object-fit:contain;padding:' + pad + ';" onerror="this.parentElement.innerHTML=\\'' + fallback.replace(/'/g, '&#039;') + '\\'">';
+    return '<img src="' + escUrl(optimizeDealImage(src)) + '" alt="" loading="lazy" decoding="async" style="width:100%;height:100%;object-fit:contain;padding:' + pad + ';">';
   }
   return emoji ? '<span style="font-size:' + fs + '">' + esc(emoji) + '</span>' : fallback;
 }"""

@@ -150,7 +150,7 @@ function stats(d) {
 
 function cardImage(d, t) {
   const i = img(d);
-  return i ? `<img src="${esc(i)}" alt="${esc(t)}" loading="lazy" decoding="async" onerror="this.outerHTML='&lt;div class=\\'img-fallback\\'&gt;Deal image unavailable&lt;/div&gt;'">` : `<div class="img-fallback">Deal image unavailable</div>`;
+  return i ? `<img src="${esc(i)}" alt="${esc(t)}" loading="lazy" decoding="async">` : `<div class="img-fallback">Deal image unavailable</div>`;
 }
 
 function findDealsGrid() {
