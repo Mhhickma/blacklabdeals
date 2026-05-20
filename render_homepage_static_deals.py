@@ -116,7 +116,13 @@ def compact_image_url(value: object, size: int = 160) -> str:
 
 
 def image_url(deal: dict) -> str:
-    return str(deal.get("image") or deal.get("image_url") or deal.get("imageUrl") or deal.get("img") or deal.get("thumbnail") or "")
+    image = deal.get("image") or deal.get("image_url") or deal.get("imageUrl") or deal.get("img") or deal.get("thumbnail")
+    if image:
+        return str(image)
+    asin = str(deal.get("asin") or "").strip().upper()
+    if re.fullmatch(r"[A-Z0-9]{10}", asin):
+        return f"https://images-na.ssl-images-amazon.com/images/P/{asin}.01._SL160_.jpg"
+    return ""
 
 
 def has_image(deal: dict) -> bool:
@@ -289,7 +295,11 @@ def render_homepage(deals: list[dict]) -> None:
         if empty_grid not in page_html:
             raise RuntimeError("Could not find empty homepage deals grid")
         page_html = page_html.replace(empty_grid, populated_grid, 1)
-    homepage_img_function = """function img(src, emoji, size) {
+    homepage_img_function = """function asinImageUrl(asin) {
+  const value = String(asin || '').trim().toUpperCase();
+  return /^[A-Z0-9]{10}$/.test(value) ? 'https://images-na.ssl-images-amazon.com/images/P/' + value + '.01._SL160_.jpg' : '';
+}
+function img(src, emoji, size) {
   const pad = size === 'hot' ? '8px' : '12px';
   const fs = size === 'hot' ? '34px' : '44px';
   const fallback = '<div class="img-fallback">Deal image unavailable</div>';
@@ -315,7 +325,7 @@ def render_homepage(deals: list[dict]) -> None:
     ? 'Hot Deal'
     : (d.hot || pct >= 40 ? 'Hot Deal' : (d.hasCoupon ? 'Coupon' : dealCat));
   return '<article class="best-seller-card deal-card-unified" data-asin="' + esc(d.asin || '') + '" data-deal-title="' + esc(dealTitle) + '" data-deal-category="' + esc(dealCat) + '" data-deal-price="' + esc(d.price_amount || '') + '" data-deal-discount="' + esc(pct) + '">' +
-    '<div class="best-seller-img">' + img(d.image, d.emoji, mode === 'hot' ? 'hot' : 'card') + '</div>' +
+    '<div class="best-seller-img">' + img(d.image || d.image_url || d.imageUrl || d.img || d.thumbnail || asinImageUrl(d.asin), d.emoji, mode === 'hot' ? 'hot' : 'card') + '</div>' +
     '<div class="best-seller-body">' +
       '<div class="best-seller-badges"><span class="best-seller-badge">' + esc(primaryBadge).replace('-', '') + '</span><span class="best-seller-badge rank">' + esc(secondaryBadge) + '</span></div>' +
       '<div class="best-seller-title">' + esc(dealTitle) + '</div>' +
@@ -326,7 +336,7 @@ def render_homepage(deals: list[dict]) -> None:
   '</article>';
 }
 function hasDealImage(d) {
-  return Boolean(d && (d.image || d.image_url || d.imageUrl || d.img || d.thumbnail));
+  return Boolean(d && (d.image || d.image_url || d.imageUrl || d.img || d.thumbnail || asinImageUrl(d.asin)));
 }
 function imageFirst(arr) {
   return [...arr].sort((a, b) => Number(!hasDealImage(a)) - Number(!hasDealImage(b)));

@@ -27,7 +27,11 @@ function title(d) { return d.title || d.name || d.product_title || d.productTitl
 function optimizeDealImage(src) {
   return String(src || '').replace(/\._SL\d+_\./, '._SL160_.');
 }
-function img(d) { return optimizeDealImage(d.image || d.image_url || d.imageUrl || d.img || d.thumbnail || ''); }
+function asinImageUrl(asin) {
+  const value = String(asin || '').trim().toUpperCase();
+  return /^[A-Z0-9]{10}$/.test(value) ? `https://images-na.ssl-images-amazon.com/images/P/${value}.01._SL160_.jpg` : '';
+}
+function img(d) { return optimizeDealImage(d.image || d.image_url || d.imageUrl || d.img || d.thumbnail || asinImageUrl(d.asin)); }
 function hasDealImage(d) { return Boolean(img(d)); }
 function imageFirst(a) { return [...a].sort((x, y) => Number(!hasDealImage(x)) - Number(!hasDealImage(y))); }
 function link(d) { return d.amazon_url || d.url || d.link || d.affiliate_url || d.affiliateUrl || d.product_url || '#'; }
