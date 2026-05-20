@@ -34,6 +34,8 @@ HOMEPAGE_CLS_CSS = (
     '.hero-text p,.hero p,.hero-text p:nth-of-type(2){display:none!important}'
     '.hot-card,.deal-card{transition:none!important}.hot-card:hover,.deal-card:hover{transform:none!important;box-shadow:var(--shadow)!important}}'
     '@media(max-width:380px){#hot-section[style*="display:none"]{min-height:802px}}'
+    '.popular-category-link,.browse-page-card,.bld-mega-link{transition:none!important}'
+    '.popular-category-link:hover,.browse-page-card:hover{transform:none!important}'
     '@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;scroll-behavior:auto!important}}'
 )
 HOMEPAGE_MOBILE_NAV_HTML = (
