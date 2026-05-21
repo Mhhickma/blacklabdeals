@@ -377,22 +377,21 @@ def render_homepage(deals: list[dict], updated_at: str = "") -> None:
             f'Load {min(25, remaining)} More Hot Deals ({remaining} remaining)'
             f'</button></div>'
         )
+    hot_section_html = f'''<section class="hot-section" id="hot-section">
+    <div class="hot-header">
+      <span class="hot-title">Hot Deals</span>
+      <span class="hot-subtitle">- 40% off or more</span>
+      <span class="hot-pill" id="hot-count-pill">{esc(hot_count)}</span>
+    </div>
+    <div class="hot-strip">
+      <div class="hot-grid" id="hot-grid">
+      {hot_cards}
+      </div>{hot_button_html}
+    </div>
+  </section>'''
     page_html = re.sub(
-        r'<section class="hot-section" id="hot-section" style="display:none;">',
-        '<section class="hot-section" id="hot-section">',
-        page_html,
-        count=1,
-    )
-    page_html = re.sub(
-        r'(<span class="hot-pill" id="hot-count-pill">)(.*?)(</span>)',
-        rf"\g<1>{esc(hot_count)}\g<3>",
-        page_html,
-        count=1,
-        flags=re.DOTALL,
-    )
-    page_html = re.sub(
-        r'<div class="hot-grid" id="hot-grid">.*?</div>\s*(?:<div id="hot-load-more-wrap".*?</div>)?',
-        f'<div class="hot-grid" id="hot-grid">\n      {hot_cards}\n    </div>{hot_button_html}',
+        r'<section class="hot-section" id="hot-section"(?:\s+style="[^"]*")?>.*?</section>',
+        hot_section_html,
         page_html,
         count=1,
         flags=re.DOTALL,
