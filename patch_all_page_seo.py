@@ -184,18 +184,6 @@ def seo_block(page):
     return "\n".join(lines)
 
 
-def related_block(page):
-    links = " &middot; ".join(f'<a href="{href}">{html.escape(label)}</a>' for label, href in page["related"])
-    return (
-        '<!-- BLD RELATED LINKS START -->\n'
-        '<section class="related-deal-pages" aria-label="Related Amazon deal pages">\n'
-        '  <span>More Amazon deal pages:</span> '
-        f'{links}\n'
-        '</section>\n'
-        '<!-- BLD RELATED LINKS END -->'
-    )
-
-
 def patch_page(path, page):
     file_path = Path(path)
     if not file_path.exists():
@@ -213,9 +201,8 @@ def patch_page(path, page):
         text = re.sub(r"\n<link rel=\"canonical\"[^>]*>", "", text, count=1)
         text = text.replace("</head>", seo_block(page) + "\n</head>", 1)
 
-    text = re.sub(r"<!-- BLD TRUST START -->.*?<!-- BLD TRUST END -->", related_block(page), text, flags=re.S)
-    if "<!-- BLD RELATED LINKS START -->" not in text:
-        text = text.replace("<footer", related_block(page) + "\n<footer", 1)
+    text = re.sub(r"<!-- BLD TRUST START -->.*?<!-- BLD TRUST END -->", "", text, flags=re.S)
+    text = re.sub(r"<!-- BLD RELATED LINKS START -->.*?<!-- BLD RELATED LINKS END -->", "", text, flags=re.S)
 
     if text != original:
         file_path.write_text(text, encoding="utf-8")
