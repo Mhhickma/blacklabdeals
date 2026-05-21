@@ -38,6 +38,27 @@ HOMEPAGE_CLS_CSS = (
     '.popular-category-link:hover,.browse-page-card:hover{transform:none!important}'
     '@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;scroll-behavior:auto!important}}'
 )
+HOMEPAGE_CARD_CSS = (
+    '/* BLD HOMEPAGE UNIFIED CARD CSS START */'
+    '.deals-grid{grid-template-columns:repeat(auto-fill,minmax(230px,1fr))!important}'
+    '.best-seller-card{background:var(--surface);border:1px solid var(--border);border-radius:18px;overflow:hidden;box-shadow:var(--shadow);display:flex;flex-direction:column;min-height:100%;text-decoration:none;color:inherit}'
+    '.best-seller-img{height:180px;background:#fff;display:flex;align-items:center;justify-content:center;border-bottom:1px solid #eee;overflow:hidden}'
+    '.best-seller-img img{max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;padding:14px}'
+    '.best-seller-body{padding:15px;display:flex;flex-direction:column;gap:8px;flex:1}'
+    '.best-seller-badges{display:flex;gap:6px;flex-wrap:wrap}'
+    '.best-seller-badge{font-size:11px;font-weight:800;border-radius:999px;padding:3px 8px;background:var(--red-light);color:var(--red);line-height:1.35}'
+    '.best-seller-badge.rank{background:var(--accent-light);color:var(--accent)}'
+    '.best-seller-title{font-size:14px;font-weight:800;color:var(--text-primary);line-height:1.35;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}'
+    '.best-seller-category{font-size:12px;color:var(--text-muted)}'
+    '.best-seller-price-row{display:flex;gap:8px;align-items:baseline;margin-top:auto;flex-wrap:wrap}'
+    '.best-seller-price{font-size:22px;font-weight:900;color:var(--red);line-height:1}'
+    '.best-seller-was{font-size:13px;color:var(--text-muted);text-decoration:line-through}'
+    '.best-seller-btn{margin-top:8px;display:block;text-align:center;text-decoration:none;background:var(--accent);color:#fff;border-radius:10px;padding:10px 12px;font-weight:900;font-size:14px}'
+    '.best-seller-btn:hover{background:var(--accent-mid);color:#fff}'
+    '@media(max-width:720px){.deals-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px}.best-seller-img{height:135px}.best-seller-body{padding:11px}.best-seller-price{font-size:18px}.best-seller-title{font-size:12px}}'
+    '@media(max-width:520px){.deals-grid{grid-template-columns:1fr!important}}'
+    '/* BLD HOMEPAGE UNIFIED CARD CSS END */'
+)
 HOMEPAGE_MOBILE_NAV_HTML = (
     '<nav class="mobile-deal-nav" aria-label="Quick deal navigation">'
     '<button type="button" data-jump="hot">Hot Deals</button>'
@@ -309,8 +330,9 @@ def render_homepage(deals: list[dict], updated_at: str = "") -> None:
     path = Path("index.html")
     page_html = path.read_text(encoding="utf-8")
     page_html = page_html.replace('/site-header.js?v=5', '/site-header.js?v=6')
+    page_html = re.sub(r'/\* BLD HOMEPAGE UNIFIED CARD CSS START \*/.*?/\* BLD HOMEPAGE UNIFIED CARD CSS END \*/', '', page_html, flags=re.DOTALL)
     page_html = re.sub(r'#site-header\{display:block;min-height:\d+px.*?scroll-behavior:auto!important\}\}', '', page_html)
-    page_html = page_html.replace('</style>', HOMEPAGE_CLS_CSS + '</style>', 1)
+    page_html = page_html.replace('</style>', HOMEPAGE_CARD_CSS + HOMEPAGE_CLS_CSS + '</style>', 1)
     page_html = re.sub(
         r'const HOT_DEALS_PREVIEW_LIMIT = 6;(?:const HOT_DEALS_LOAD_MORE_COUNT = 25;)*',
         'const HOT_DEALS_PREVIEW_LIMIT = 6;const HOT_DEALS_LOAD_MORE_COUNT = 25;',
