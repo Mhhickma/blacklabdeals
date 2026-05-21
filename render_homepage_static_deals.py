@@ -40,8 +40,9 @@ HOMEPAGE_CLS_CSS = (
 )
 HOMEPAGE_CARD_CSS = (
     '/* BLD HOMEPAGE UNIFIED CARD CSS START */'
-    '.deals-grid{grid-template-columns:repeat(auto-fill,minmax(230px,1fr))!important}'
-    '.best-seller-card{background:var(--surface);border:1px solid var(--border);border-radius:18px;overflow:hidden;box-shadow:var(--shadow);display:flex;flex-direction:column;min-height:100%;text-decoration:none;color:inherit}'
+    '.deals-grid{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:18px!important;align-items:stretch!important}'
+    '.deals-grid>.best-seller-card{width:auto!important;max-width:none!important}'
+    '.best-seller-card{background:var(--surface);border:1px solid var(--border);border-radius:18px;overflow:hidden;box-shadow:var(--shadow);display:flex!important;flex-direction:column!important;min-height:100%;text-decoration:none;color:inherit}'
     '.best-seller-img{height:180px;background:#fff;display:flex;align-items:center;justify-content:center;border-bottom:1px solid #eee;overflow:hidden}'
     '.best-seller-img img{max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;padding:14px}'
     '.best-seller-body{padding:15px;display:flex;flex-direction:column;gap:8px;flex:1}'
@@ -55,7 +56,8 @@ HOMEPAGE_CARD_CSS = (
     '.best-seller-was{font-size:13px;color:var(--text-muted);text-decoration:line-through}'
     '.best-seller-btn{margin-top:8px;display:block;text-align:center;text-decoration:none;background:var(--accent);color:#fff;border-radius:10px;padding:10px 12px;font-weight:900;font-size:14px}'
     '.best-seller-btn:hover{background:var(--accent-mid);color:#fff}'
-    '@media(max-width:720px){.deals-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px}.best-seller-img{height:135px}.best-seller-body{padding:11px}.best-seller-price{font-size:18px}.best-seller-title{font-size:12px}}'
+    '@media(max-width:1100px){.deals-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}}'
+    '@media(max-width:820px){.deals-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px}.best-seller-img{height:135px}.best-seller-body{padding:11px}.best-seller-price{font-size:18px}.best-seller-title{font-size:12px}}'
     '@media(max-width:520px){.deals-grid{grid-template-columns:1fr!important}}'
     '/* BLD HOMEPAGE UNIFIED CARD CSS END */'
 )
