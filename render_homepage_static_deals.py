@@ -335,6 +335,7 @@ def render_homepage(deals: list[dict], updated_at: str = "") -> None:
     page_html = re.sub(r'/\* BLD HOMEPAGE UNIFIED CARD CSS START \*/.*?/\* BLD HOMEPAGE UNIFIED CARD CSS END \*/', '', page_html, flags=re.DOTALL)
     page_html = re.sub(r'#site-header\{display:block;min-height:\d+px.*?scroll-behavior:auto!important\}\}', '', page_html)
     page_html = page_html.replace('</style>', HOMEPAGE_CARD_CSS + HOMEPAGE_CLS_CSS + '</style>', 1)
+    page_html = re.sub(r'const DEALS_PER_PAGE = \d+;', 'const DEALS_PER_PAGE = 50;', page_html, count=1)
     page_html = re.sub(
         r'const HOT_DEALS_PREVIEW_LIMIT = 6;(?:const HOT_DEALS_LOAD_MORE_COUNT = 25;)*',
         'const HOT_DEALS_PREVIEW_LIMIT = 6;const HOT_DEALS_LOAD_MORE_COUNT = 25;',
