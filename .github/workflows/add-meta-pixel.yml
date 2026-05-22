@@ -1,0 +1,102 @@
+name: Add Meta Pixel
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/triggers/add-meta-pixel.txt'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: blacklabdeals-main-writer
+  cancel-in-progress: false
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Add Meta Pixel to HTML pages
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+
+          pixel_script = '''<!-- Meta Pixel Code -->
+          <script>
+          !function(f,b,e,v,n,t,s)
+          {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+          n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+          if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+          n.queue=[];t=b.createElement(e);t.async=!0;
+          t.src=v;s=b.getElementsByTagName(e)[0];
+          s.parentNode.insertBefore(t,s)}(window, document,'script',
+          'https://connect.facebook.net/en_US/fbevents.js');
+          fbq('init', '524610261690867');
+          fbq('track', 'PageView');
+          </script>
+          <!-- End Meta Pixel Code -->'''
+
+          pixel_noscript = '''<!-- Meta Pixel Noscript -->
+          <noscript><img height="1" width="1" style="display:none"
+          src="https://www.facebook.com/tr?id=524610261690867&ev=PageView&noscript=1"
+          /></noscript>
+          <!-- End Meta Pixel Noscript -->'''
+
+          changed = []
+          for path in sorted(Path('.').rglob('*.html')):
+              if '.git' in path.parts or '.github' in path.parts:
+                  continue
+              text = path.read_text(encoding='utf-8')
+              original = text
+
+              text = re.sub(r'<!-- Meta Pixel Code -->[\s\S]*?<!-- End Meta Pixel Code -->\s*', '', text)
+              text = re.sub(r'<!-- Meta Pixel Noscript -->[\s\S]*?<!-- End Meta Pixel Noscript -->\s*', '', text)
+              text = re.sub(r'<noscript><img height="1" width="1" style="display:none"\s*src="https://www\.facebook\.com/tr\?id=524610261690867&ev=PageView&noscript=1"\s*/></noscript>\s*', '', text)
+
+              if '</head>' not in text:
+                  print(f'Skipping {path}: no </head>')
+                  continue
+              text = text.replace('</head>', pixel_script + '\n</head>', 1)
+
+              body_match = re.search(r'<body\b[^>]*>', text, flags=re.IGNORECASE)
+              if body_match:
+                  insert_at = body_match.end()
+                  text = text[:insert_at] + '\n' + pixel_noscript + text[insert_at:]
+              else:
+                  print(f'Skipping noscript for {path}: no <body>')
+
+              if text != original:
+                  path.write_text(text, encoding='utf-8')
+                  changed.append(str(path))
+
+          print('Updated Meta Pixel in:')
+          for item in changed:
+              print(' -', item)
+
+      - name: Commit, push, and deploy Meta Pixel
+        env:
+          VERCEL_DEPLOY_HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
+        run: |
+          git config user.name "DealDrop Bot"
+          git config user.email "bot@dealdrop.com"
+          git add -f '*.html' '*/index.html'
+          git status
+          if git diff --staged --quiet; then
+            echo "No Meta Pixel changes to commit"
+          else
+            git commit -m "Add Meta Pixel sitewide"
+            git push origin main
+          fi
+          if [ -n "$VERCEL_DEPLOY_HOOK_URL" ]; then
+            curl -fsS -X POST "$VERCEL_DEPLOY_HOOK_URL"
+            echo "Triggered Vercel deploy hook"
+          else
+            echo "VERCEL_DEPLOY_HOOK_URL is not set; skipping Vercel deploy hook"
+          fi
