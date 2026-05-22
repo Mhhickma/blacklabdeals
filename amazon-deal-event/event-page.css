@@ -1,0 +1,20 @@
+.event-hero .hero-inner{grid-template-columns:minmax(0,1fr)}
+.event-hero h1{max-width:980px}
+.event-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+.event-btn{display:inline-flex;align-items:center;justify-content:center;border-radius:999px;padding:12px 18px;background:var(--accent);color:#fff;font-size:14px;font-weight:900;box-shadow:var(--shadow)}
+.event-btn.secondary{background:var(--surface);color:var(--accent);border:1px solid var(--border)}
+.event-note{background:#fffdf9;border:1px solid var(--border);border-radius:12px;padding:14px 16px;color:var(--text-secondary);font-size:14px;line-height:1.7;margin:18px 0 22px}
+.event-category-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin:18px 0 28px}
+.event-category-card{display:block;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;box-shadow:var(--shadow);min-height:128px}
+.event-category-card strong{display:block;color:var(--text-primary);font-size:15px;line-height:1.25;margin-bottom:7px}
+.event-category-card span{display:block;color:var(--text-secondary);font-size:13px;line-height:1.5}
+.event-category-card:hover{border-color:#cfe0f3;box-shadow:0 8px 22px rgba(26,58,92,.08);transform:translateY(-1px)}
+.event-related{margin:28px 0;padding:22px;background:var(--surface);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow)}
+.event-related h2{font-family:Georgia,serif;font-size:26px;line-height:1.15;margin-bottom:12px}
+.event-related-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.event-related-grid a{display:block;border:1px solid var(--border);border-radius:10px;padding:12px 14px;background:var(--bg);color:var(--accent);font-weight:900}
+.event-legal{margin:24px 0;color:var(--text-secondary);font-size:12px;line-height:1.7}
+.event-legal p{margin-top:8px}
+body[data-bld-hidden-event="true"] .popular-category-nav{display:none!important}
+@media(max-width:900px){.event-category-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:520px){.event-category-grid,.event-related-grid{grid-template-columns:1fr}.event-actions{display:grid}.event-btn{width:100%}}

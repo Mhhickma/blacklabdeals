@@ -74,6 +74,7 @@ const CATEGORY_KEYWORDS = {
   industrial: ['industrial', 'scientific'],
   arts: ['arts', 'crafts', 'sewing', 'craft'],
   tools: ['tools', 'home improvement', 'tool'],
+  devices: ['amazon device', 'amazon devices', 'echo', 'kindle', 'fire tv', 'fire tablet', 'ring', 'blink', 'eero', 'alexa'],
   home: ['home', 'kitchen']
 };
 
@@ -298,6 +299,7 @@ function markCurrentPopularCategoryNav(nav) {
 }
 
 function ensureBrowseSection() {
+  if (document.body.dataset.bldHiddenEvent === 'true') return;
   const main = document.querySelector('main.page-shell') || document.querySelector('main');
   if (!main) return;
 
