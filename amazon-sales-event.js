@@ -1,6 +1,6 @@
 (() => {
   const EVENT_FEED_URL = '/amazon-sales-event-deals.json';
-  const AFFILIATE_TAG = 'simplewoodsho-20';
+  const AFFILIATE_TAG = 'blacklabdealsprime-20';
   const EVENT_PAGE_SLUGS = new Set([
     'amazon-deal-event',
     'amazon-tool-deals',
@@ -90,13 +90,14 @@
     if (!raw) return raw;
     try {
       const parsed = new URL(raw, window.location.origin);
-      if (parsed.hostname.includes('amazon.') && !parsed.searchParams.has('tag')) {
+      if (parsed.hostname.includes('amazon.')) {
         parsed.searchParams.set('tag', AFFILIATE_TAG);
       }
       return parsed.href;
     } catch (error) {
-      if (raw.includes('amazon.com') && !raw.includes('tag=')) {
-        return `${raw}${raw.includes('?') ? '&' : '?'}tag=${AFFILIATE_TAG}`;
+      if (raw.includes('amazon.com')) {
+        const clean = raw.replace(/([?&])tag=[^&]*&?/, '$1').replace(/[?&]$/, '');
+        return `${clean}${clean.includes('?') ? '&' : '?'}tag=${AFFILIATE_TAG}`;
       }
       return raw;
     }
