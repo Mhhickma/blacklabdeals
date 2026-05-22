@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Amazon Sales Event Card Mockups | Black Lab Deals</title>
+  <link rel="stylesheet" href="/styles.css?v=8">
+  <script src="/site-header.js?v=5" defer></script>
+  <style>
+    :root {
+      --bld-navy: #12385b;
+      --bld-red: #c9343a;
+      --bld-orange: #f97316;
+      --bld-cream: #fff8f2;
+      --bld-border: #f3d4ca;
+      --bld-muted: #6b7280;
+    }
+    body { background: #faf7f3; }
+    .mockup-wrap { max-width: 1220px; margin: 0 auto; padding: 32px 18px 70px; }
+    .mockup-hero { background: linear-gradient(135deg, #fff, #fff4ec); border: 1px solid var(--bld-border); border-radius: 24px; padding: 28px; box-shadow: 0 14px 38px rgba(20, 35, 55, .08); margin-bottom: 24px; }
+    .mockup-eyebrow { display: inline-flex; align-items: center; gap: 8px; background: #fff0e5; color: #9a3412; border: 1px solid #fed7aa; border-radius: 999px; padding: 7px 12px; font-weight: 800; font-size: 13px; letter-spacing: .02em; text-transform: uppercase; }
+    .mockup-hero h1 { font-size: clamp(30px, 5vw, 52px); line-height: .96; margin: 18px 0 10px; color: #111827; letter-spacing: -.04em; }
+    .mockup-hero p { max-width: 780px; color: #4b5563; font-size: 17px; margin: 0; line-height: 1.55; }
+    .mockup-section { margin-top: 26px; }
+    .mockup-section h2 { font-size: 24px; margin: 0 0 6px; color: #111827; }
+    .mockup-section p { color: #6b7280; margin: 0 0 18px; }
+    .mockup-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; align-items: stretch; }
+    .mock-card { position: relative; display: flex; flex-direction: column; color: inherit; text-decoration: none; background: #fff; border-radius: 22px; overflow: hidden; min-height: 430px; transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease; }
+    .mock-card:hover { transform: translateY(-5px); }
+    .mock-img { height: 190px; background: #fff; display: flex; align-items: center; justify-content: center; padding: 20px; border-bottom: 1px solid #f2f2f2; }
+    .mock-img img { max-width: 100%; max-height: 160px; object-fit: contain; transition: transform .18s ease; }
+    .mock-card:hover .mock-img img { transform: scale(1.04); }
+    .mock-body { display: flex; flex-direction: column; flex: 1; padding: 16px; }
+    .mock-badges { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 10px; }
+    .mock-badge { border-radius: 999px; padding: 6px 9px; font-size: 11px; line-height: 1; font-weight: 900; letter-spacing: .01em; }
+    .mock-title { font-size: 15px; font-weight: 900; line-height: 1.24; color: #111827; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; min-height: 56px; }
+    .mock-cat { font-size: 12px; color: var(--bld-muted); margin-top: 8px; }
+    .mock-price-row { margin-top: auto; padding-top: 14px; display: flex; align-items: baseline; gap: 9px; flex-wrap: wrap; }
+    .mock-price { color: var(--bld-red); font-size: 25px; font-weight: 950; letter-spacing: -.03em; }
+    .mock-was { color: #9ca3af; text-decoration: line-through; font-size: 13px; font-weight: 700; }
+    .mock-save { color: #15803d; font-size: 12px; font-weight: 900; margin-top: 3px; }
+    .mock-btn { margin-top: 14px; width: 100%; display: flex; align-items: center; justify-content: center; min-height: 42px; border-radius: 11px; background: var(--bld-navy); color: #fff; font-weight: 950; font-size: 14px; box-shadow: 0 8px 18px rgba(18, 56, 91, .2); }
+    .mock-card:hover .mock-btn { background: #0b2b49; }
+    .style-label { font-size: 13px; font-weight: 950; color: #111827; margin-bottom: 10px; }
+    .style-note { font-size: 12px; color: #6b7280; margin-top: 10px; line-height: 1.35; }
+
+    .style-1 { border: 1px solid #e5e7eb; box-shadow: 0 10px 24px rgba(17, 24, 39, .08); }
+    .style-1:hover { box-shadow: 0 18px 42px rgba(17, 24, 39, .14); border-color: #cfd8e3; }
+    .style-1 .mock-badge.main { background: #fee2e2; color: #b91c1c; }
+    .style-1 .mock-badge.sub { background: #eaf2ff; color: #12385b; }
+
+    .style-2 { border: 2px solid #fed7aa; box-shadow: 0 15px 32px rgba(249, 115, 22, .13); }
+    .style-2:before { content: "HOT PICK"; position: absolute; top: 13px; right: -35px; transform: rotate(35deg); background: linear-gradient(135deg, #ef4444, #f97316); color: #fff; font-size: 11px; font-weight: 950; letter-spacing: .08em; padding: 7px 42px; z-index: 2; }
+    .style-2:hover { box-shadow: 0 20px 48px rgba(249, 115, 22, .2); }
+    .style-2 .mock-img { background: linear-gradient(180deg, #fff7ed, #fff); }
+    .style-2 .mock-badge.main { background: #ef4444; color: #fff; }
+    .style-2 .mock-badge.sub { background: #ffedd5; color: #9a3412; }
+    .style-2 .mock-btn { background: linear-gradient(135deg, #12385b, #0f4c81); }
+
+    .style-3 { border: 1px solid #dbeafe; box-shadow: 0 12px 28px rgba(18, 56, 91, .12); }
+    .style-3:hover { box-shadow: 0 20px 48px rgba(18, 56, 91, .18); }
+    .style-3 .mock-img { background: radial-gradient(circle at top, #eff6ff, #fff 65%); }
+    .style-3 .mock-body { border-top: 4px solid #12385b; }
+    .style-3 .mock-badge.main { background: #dbeafe; color: #1d4ed8; }
+    .style-3 .mock-badge.sub { background: #f3f4f6; color: #374151; }
+    .style-3 .mock-price { color: #0f3a63; }
+
+    .style-4 { border: 1px solid #fecaca; background: linear-gradient(180deg, #fff, #fff7f7); box-shadow: 0 13px 32px rgba(185, 28, 28, .12); }
+    .style-4:hover { box-shadow: 0 22px 52px rgba(185, 28, 28, .2); border-color: #fca5a5; }
+    .style-4 .mock-img { background: #fff; }
+    .style-4 .mock-badge.main { background: linear-gradient(135deg, #dc2626, #f97316); color: #fff; }
+    .style-4 .mock-badge.sub { background: #fee2e2; color: #991b1b; }
+    .style-4 .mock-btn { background: #b91c1c; box-shadow: 0 8px 18px rgba(185, 28, 28, .22); }
+    .style-4:hover .mock-btn { background: #991b1b; }
+
+    @media (max-width: 980px) { .mockup-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    @media (max-width: 560px) { .mockup-grid { grid-template-columns: 1fr; } .mockup-hero { padding: 22px; } }
+  </style>
+</head>
+<body>
+  <div id="site-header"></div>
+  <main class="mockup-wrap">
+    <section class="mockup-hero">
+      <span class="mockup-eyebrow">Hidden mockup page</span>
+      <h1>Amazon Sales Event Card Mockups</h1>
+      <p>Four different card styles using live products from the Sales Event JSON. Pick the style you like best, then we can apply it to the real special sale pages.</p>
+    </section>
+
+    <section class="mockup-section">
+      <h2>Compare 4 card styles</h2>
+      <p>Each card links with the current affiliate URL and uses the live image, title, price, and deal data.</p>
+      <div id="mockup-grid" class="mockup-grid" aria-live="polite"></div>
+    </section>
+  </main>
+
+  <script>
+    const FEED_URL = '/amazon-sales-event-deals.json';
+    const grid = document.getElementById('mockup-grid');
+    const esc = value => String(value || '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[char]));
+    const money = value => Number(value || 0) ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(Number(value)) : '';
+    const price = deal => Number(deal.price_amount || deal.price || 0) || 0;
+    const pct = deal => Number(deal.pct || deal.discount_percent || 0) || 0;
+    const title = deal => deal.title || deal.name || 'Amazon Deal';
+    const cat = deal => deal.cat || deal.category || 'Amazon Deals';
+    const img = deal => deal.image || deal.image_url || deal.thumbnail || '';
+    const link = deal => deal.link || deal.url || deal.amazon_url || '#';
+    const was = deal => deal.was || deal.savings || '';
+
+    function savingsLine(deal) {
+      const off = pct(deal);
+      if (off) return `Save ${off}% today`;
+      if (was(deal) && price(deal)) return 'Limited-time deal price';
+      return 'Check current deal';
+    }
+
+    function card(deal, styleNum, label, note) {
+      const off = pct(deal);
+      const badge = off ? `${off}% OFF` : price(deal) ? 'DEAL' : 'CHECK PRICE';
+      return `
+        <div>
+          <div class="style-label">Style ${styleNum}: ${esc(label)}</div>
+          <a class="mock-card style-${styleNum}" href="${esc(link(deal))}" target="_blank" rel="nofollow sponsored noopener">
+            <div class="mock-img">${img(deal) ? `<img src="${esc(img(deal))}" alt="${esc(title(deal))}" loading="lazy" decoding="async">` : '<div>Image unavailable</div>'}</div>
+            <div class="mock-body">
+              <div class="mock-badges"><span class="mock-badge main">${esc(badge)}</span><span class="mock-badge sub">Amazon Sales Event</span></div>
+              <div class="mock-title">${esc(title(deal))}</div>
+              <div class="mock-cat">${esc(cat(deal))}</div>
+              <div class="mock-price-row"><span class="mock-price">${price(deal) ? money(price(deal)) : esc(deal.price || 'See deal')}</span>${was(deal) ? `<span class="mock-was">${esc(was(deal))}</span>` : ''}</div>
+              <div class="mock-save">${esc(savingsLine(deal))}</div>
+              <span class="mock-btn">View on Amazon</span>
+            </div>
+          </a>
+          <div class="style-note">${esc(note)}</div>
+        </div>`;
+    }
+
+    async function init() {
+      try {
+        const res = await fetch(`${FEED_URL}?v=${Date.now()}`, { cache: 'no-store' });
+        const data = await res.json();
+        const deals = Array.isArray(data.deals) ? data.deals.filter(d => img(d) && price(d)).slice(0, 4) : [];
+        if (!deals.length) {
+          grid.innerHTML = '<div class="empty-state">No live products found in the Sales Event feed.</div>';
+          return;
+        }
+        const labels = [
+          ['Clean Deal Card', 'Clean, professional, safest for all categories.'],
+          ['Hot Deal Card', 'More urgent and promotional with the corner ribbon.'],
+          ['Premium Blue Card', 'Matches the Black Lab Deals navy brand color best.'],
+          ['Bold Red Deal Card', 'Highest urgency and most eye-catching.']
+        ];
+        grid.innerHTML = labels.map((item, index) => card(deals[index] || deals[0], index + 1, item[0], item[1])).join('');
+      } catch (error) {
+        grid.innerHTML = '<div class="empty-state">Could not load the live Sales Event feed.</div>';
+      }
+    }
+    init();
+  </script>
+</body>
+</html>
