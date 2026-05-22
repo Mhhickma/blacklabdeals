@@ -1,0 +1,148 @@
+name: Add Hidden Amazon Event Pages
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/triggers/add-hidden-amazon-event-pages.txt'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: blacklabdeals-main-writer
+  cancel-in-progress: false
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Add hidden Amazon deal event pages
+        shell: python
+        run: |
+          from pathlib import Path
+          from textwrap import dedent
+
+          css = dedent('''
+          .event-hero .hero-inner{grid-template-columns:minmax(0,1fr)}
+          .event-hero h1{max-width:980px}
+          .event-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+          .event-btn{display:inline-flex;align-items:center;justify-content:center;border-radius:999px;padding:12px 18px;background:var(--accent);color:#fff;font-size:14px;font-weight:900;box-shadow:var(--shadow)}
+          .event-btn.secondary{background:var(--surface);color:var(--accent);border:1px solid var(--border)}
+          .event-note{background:#fffdf9;border:1px solid var(--border);border-radius:12px;padding:14px 16px;color:var(--text-secondary);font-size:14px;line-height:1.7;margin:18px 0 22px}
+          .event-category-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin:18px 0 28px}
+          .event-category-card{display:block;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;box-shadow:var(--shadow);min-height:128px}
+          .event-category-card strong{display:block;color:var(--text-primary);font-size:15px;line-height:1.25;margin-bottom:7px}
+          .event-category-card span{display:block;color:var(--text-secondary);font-size:13px;line-height:1.5}
+          .event-category-card:hover{border-color:#cfe0f3;box-shadow:0 8px 22px rgba(26,58,92,.08);transform:translateY(-1px)}
+          .event-related{margin:28px 0;padding:22px;background:var(--surface);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow)}
+          .event-related h2{font-family:Georgia,serif;font-size:26px;line-height:1.15;margin-bottom:12px}
+          .event-related-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+          .event-related-grid a{display:block;border:1px solid var(--border);border-radius:10px;padding:12px 14px;background:var(--bg);color:var(--accent);font-weight:900}
+          .event-legal{margin:24px 0;color:var(--text-secondary);font-size:12px;line-height:1.7}
+          .event-legal p{margin-top:8px}
+          body[data-bld-hidden-event="true"] .popular-category-nav{display:none!important}
+          @media(max-width:900px){.event-category-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+          @media(max-width:520px){.event-category-grid,.event-related-grid{grid-template-columns:1fr}.event-actions{display:grid}.event-btn{width:100%}}
+          ''').lstrip()
+
+          def shell(title, desc, url, og_image, body_attrs, crumb, h1, intro, watch_title, watch_copy, cta, cta_label, section_title, status, fallback, related):
+              links = ''.join(f'<a href="{href}">{label}</a>' for href, label in related)
+              return f'''<!DOCTYPE html>
+          <html lang="en">
+          <head>
+            <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>{title}</title>
+            <meta name="description" content="{desc}">
+            <meta name="robots" content="noindex, nofollow">
+            <link rel="manifest" href="/manifest.json"><link rel="icon" href="/favicon.ico" sizes="32x32"><link rel="apple-touch-icon" href="/logo-192.png">
+            <link rel="stylesheet" href="/site-common.css?v=2"><link rel="stylesheet" href="/site-nav.css?v=2"><link rel="stylesheet" href="/amazon-deal-event/event-page.css">
+            <link rel="canonical" href="https://blacklabdeals.com{url}">
+            <meta property="og:type" content="website"><meta property="og:site_name" content="Black Lab Deals"><meta property="og:title" content="{title}"><meta property="og:description" content="{desc}"><meta property="og:url" content="https://blacklabdeals.com{url}"><meta property="og:image" content="{og_image}"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+          </head>
+          <body {body_attrs} data-bld-hidden-event="true">
+          <div id="site-header"></div><main class="page-shell">
+            <nav class="breadcrumbs" aria-label="Breadcrumb"><a href="/amazon-deal-event/">Amazon Deal Event</a><span>&gt;</span><span>{crumb}</span></nav>
+            <section class="hero event-hero"><div class="hero-inner"><div><div class="hero-pill" id="hero-pill">Loading {crumb.lower()}...</div><h1>{h1}</h1><p>{intro}</p><div class="event-actions"><a class="event-btn" href="{cta}" target="_blank" rel="nofollow sponsored noopener">{cta_label}</a><a class="event-btn secondary" href="/amazon-deal-event/">Back to Event Hub</a></div></div></div></section>
+            <section class="category-intro-section" aria-labelledby="watch"><h2 id="watch">{watch_title}</h2><p>{watch_copy}</p></section>
+            <div class="stats-bar"><div><div class="stat-num" id="stat-active">-</div><div class="stat-label">Active deals</div></div><div><div class="stat-num" id="stat-hot">-</div><div class="stat-label">Hot deals</div></div><div><div class="stat-num" id="stat-price">-</div><div class="stat-label">Avg. price</div></div><div><div class="stat-num" id="stat-discount">-</div><div class="stat-label">Avg. discount</div></div><div><div class="stat-num" id="stat-updated">-</div><div class="stat-label">Last updated</div></div></div><div class="divider"></div>
+            <section class="section-head"><div><h2>{section_title} <span class="muted">from the current feed</span></h2></div><div class="deal-count" id="deal-count">Loading deals</div></section>
+            <section class="hot-strip"><div class="status-line" id="status-line">{status}</div><div class="hot-grid" id="hot-grid"><div class="empty-state">{fallback}</div></div></section>
+            <section class="event-related" aria-labelledby="more-categories"><h2 id="more-categories">More Amazon Deal Categories</h2><div class="event-related-grid">{links}</div></section>
+            <section class="event-legal"><p>As an Amazon Associate, Black Lab Deals earns from qualifying purchases. Prices and availability can change quickly, and final details should be confirmed on Amazon before purchase.</p><p>Amazon and the Amazon logo are trademarks of Amazon.com, Inc. or its affiliates. Black Lab Deals is independent and is not endorsed by Amazon.</p></section>
+          </main><footer class="bld-site-footer"><div class="footer-inner"><p class="footer-disclosure">As an Amazon Associate, Black Lab Deals earns from qualifying purchases. Prices and availability are accurate at time of posting.</p></div><p class="amazon-trademark-note">Amazon and the Amazon logo are trademarks of Amazon.com, Inc. or its affiliates.</p></footer><script src="/site-header.js?v=5" defer></script><script src="/site-common.js?v=4" defer></script></body></html>
+          '''
+
+          pages = {}
+          pages['amazon-deal-event/index.html'] = dedent('''
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+            <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Amazon Deal Event Deals Today | Black Lab Deals</title>
+            <meta name="description" content="Shop Black Lab Deals' hidden Amazon deal event hub with live tools, under $50, devices, electronics, and home and kitchen deals.">
+            <meta name="robots" content="noindex, nofollow">
+            <link rel="manifest" href="/manifest.json"><link rel="icon" href="/favicon.ico" sizes="32x32"><link rel="apple-touch-icon" href="/logo-192.png">
+            <link rel="stylesheet" href="/site-common.css?v=2"><link rel="stylesheet" href="/site-nav.css?v=2"><link rel="stylesheet" href="/amazon-deal-event/event-page.css">
+            <link rel="canonical" href="https://blacklabdeals.com/amazon-deal-event/">
+            <meta property="og:type" content="website"><meta property="og:site_name" content="Black Lab Deals"><meta property="og:title" content="Amazon Deal Event Deals Today | Black Lab Deals"><meta property="og:description" content="A hidden Black Lab Deals hub for live Amazon shopping-event deals across tools, devices, electronics, home, kitchen, and under-$50 finds."><meta property="og:url" content="https://blacklabdeals.com/amazon-deal-event/"><meta property="og:image" content="https://blacklabdeals.com/black-lab-deals-social-preview.jpg"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="Black Lab Deals Amazon deal event preview">
+          </head>
+          <body data-mode="event" data-bld-hidden-event="true">
+          <div id="site-header"></div><main class="page-shell">
+            <nav class="breadcrumbs" aria-label="Breadcrumb"><a href="/">Home</a><span>&gt;</span><span>Amazon Deal Event</span></nav>
+            <section class="hero event-hero"><div class="hero-inner"><div><div class="hero-pill" id="hero-pill">Loading Amazon deal event offers...</div><h1>Amazon Deal Event Deals</h1><p>Track live Amazon deals during major shopping moments, including seasonal sale events, holiday promotions, and Prime Day as one example of a larger Amazon shopping event.</p><div class="event-actions"><a class="event-btn" href="https://www.amazon.com/shop/sawdustsavings" target="_blank" rel="nofollow sponsored noopener">View Amazon Storefront List</a><a class="event-btn secondary" href="#event-deals">Browse Live Deals</a></div></div></div></section>
+            <section class="category-intro-section" aria-labelledby="event-intro"><h2 id="event-intro">Hidden Event Deal Hub</h2><p>This preview page is built for launch-ready SEO while remaining hidden from navigation, the homepage, and the sitemap. It is directly viewable by URL for testing.</p><p>Use the category paths below to review focused deal pages before the event pages are opened to search engines.</p></section>
+            <section class="event-category-grid" aria-label="Amazon deal event categories"><a class="event-category-card" href="/amazon-tool-deals/"><strong>Amazon Tool Deals</strong><span>Power tools, hand tools, workshop gear, and home improvement finds.</span></a><a class="event-category-card" href="/amazon-deals-under-50/"><strong>Amazon Deals Under $50</strong><span>Budget-friendly deals across popular Amazon categories.</span></a><a class="event-category-card" href="/amazon-device-deals/"><strong>Amazon Device Deals</strong><span>Echo, Fire TV, Kindle, Ring, Blink, eero, and Alexa-enabled finds.</span></a><a class="event-category-card" href="/amazon-electronics-deals/"><strong>Amazon Electronics Deals</strong><span>Headphones, chargers, smart home, cameras, and everyday tech.</span></a><a class="event-category-card" href="/amazon-home-kitchen-deals/"><strong>Amazon Home &amp; Kitchen Deals</strong><span>Kitchen tools, storage, bedding, small appliances, and home essentials.</span></a></section>
+            <div class="stats-bar"><div><div class="stat-num" id="stat-active">-</div><div class="stat-label">Active deals</div></div><div><div class="stat-num" id="stat-hot">-</div><div class="stat-label">Hot deals</div></div><div><div class="stat-num" id="stat-price">-</div><div class="stat-label">Avg. price</div></div><div><div class="stat-num" id="stat-discount">-</div><div class="stat-label">Avg. discount</div></div><div><div class="stat-num" id="stat-updated">-</div><div class="stat-label">Last updated</div></div></div><div class="divider"></div>
+            <section class="section-head" id="event-deals"><div><h2>Live Amazon deal event picks <span class="muted">from the current feed</span></h2></div><div class="deal-count" id="deal-count">Loading deals</div></section>
+            <section class="hot-strip"><div class="status-line" id="status-line">Loading live Black Lab Deals.</div><div class="hot-grid" id="hot-grid"><div class="empty-state">If no deals are live, check back closer to the next Amazon shopping event.</div></div></section>
+            <section class="event-related" aria-labelledby="related-event-categories"><h2 id="related-event-categories">Related Amazon Deal Categories</h2><div class="event-related-grid"><a href="/amazon-tool-deals/">Amazon Tool Deals</a><a href="/amazon-deals-under-50/">Amazon Deals Under $50</a><a href="/amazon-device-deals/">Amazon Device Deals</a><a href="/amazon-electronics-deals/">Amazon Electronics Deals</a><a href="/amazon-home-kitchen-deals/">Amazon Home &amp; Kitchen Deals</a></div></section>
+            <section class="event-legal"><p>As an Amazon Associate, Black Lab Deals earns from qualifying purchases. Prices and availability can change quickly, and final details should be confirmed on Amazon before purchase.</p><p>Amazon and the Amazon logo are trademarks of Amazon.com, Inc. or its affiliates. Black Lab Deals is independent and is not endorsed by Amazon.</p></section>
+          </main><footer class="bld-site-footer"><div class="footer-inner"><p class="footer-disclosure">As an Amazon Associate, Black Lab Deals earns from qualifying purchases. Prices and availability are accurate at time of posting.</p></div><p class="amazon-trademark-note">Amazon and the Amazon logo are trademarks of Amazon.com, Inc. or its affiliates.</p></footer><script src="/site-header.js?v=5" defer></script><script src="/site-common.js?v=4" defer></script></body></html>
+          ''').lstrip()
+
+          pages['amazon-tool-deals/index.html'] = shell('Amazon Tool Deals for Deal Events | Black Lab Deals', 'Shop hidden Amazon tool deals for major deal events, including power tools, hand tools, workshop storage, and home improvement discounts.', '/amazon-tool-deals/', 'https://blacklabdeals.com/professional_tool_deals_promotional_banner.jpg', 'data-mode="tools"', 'Tool Deals', 'Amazon Tool Deals', 'Find tool deals during Amazon shopping events, including power tools, hand tools, measuring gear, shop storage, work gloves, and practical DIY finds.', 'Live Tool Deal Watchlist', 'This hidden page is ready for launch-time SEO while it remains noindex. Prime Day may be one example of a major Amazon shopping event where tool deals become especially active.', 'https://www.amazon.com/shop/sawdustsavings', 'View Tool Storefront List', 'Live Amazon tool deals', 'Loading live tool deals.', 'No Amazon tool deals are live right now. Check back as the deal event gets closer.', [('/amazon-deals-under-50/','Amazon Deals Under $50'),('/amazon-device-deals/','Amazon Device Deals'),('/amazon-electronics-deals/','Amazon Electronics Deals'),('/amazon-home-kitchen-deals/','Amazon Home &amp; Kitchen Deals')])
+          pages['amazon-deals-under-50/index.html'] = shell('Amazon Deals Under $50 for Deal Events | Black Lab Deals', 'Shop hidden Amazon deals under $50 for major deal events, including budget tech, home, kitchen, tools, and everyday essentials.', '/amazon-deals-under-50/', 'https://blacklabdeals.com/under50image.jpg', 'data-mode="under50"', 'Deals Under $50', 'Amazon Deals Under $50', 'Browse budget-friendly Amazon deals during major shopping events, with live picks under $50 across home, tech, tools, kitchen, office, toys, and everyday essentials.', 'Live Budget Deal Watchlist', 'This hidden page is built for shoppers who want event deals without a high cart total. Prime Day can be mentioned as one example of a larger Amazon shopping event, but this page is broader than any single sale.', 'https://www.amazon.com/shop/sawdustsavings', 'View Under $50 Storefront List', 'Live Amazon deals under $50', 'Loading live under-$50 deals.', 'No Amazon deals under $50 are live right now. Check back as the deal event gets closer.', [('/amazon-tool-deals/','Amazon Tool Deals'),('/amazon-device-deals/','Amazon Device Deals'),('/amazon-electronics-deals/','Amazon Electronics Deals'),('/amazon-home-kitchen-deals/','Amazon Home &amp; Kitchen Deals')])
+          pages['amazon-device-deals/index.html'] = shell('Amazon Device Deals for Deal Events | Black Lab Deals', 'Shop hidden Amazon device deals for major deal events, including Echo, Fire TV, Kindle, Ring, Blink, eero, and Alexa-enabled devices.', '/amazon-device-deals/', 'https://blacklabdeals.com/black-lab-deals-social-preview.jpg', 'data-mode="category" data-category="devices" data-category-label="Amazon Device"', 'Device Deals', 'Amazon Device Deals', 'Watch for live deals on Amazon devices and compatible smart-home gear, including Echo speakers, Fire TV streaming devices, Kindle readers, Ring, Blink, eero, and Alexa-enabled products.', 'Live Device Deal Watchlist', 'This hidden page keeps Amazon device deal copy and metadata ready for launch while the URL remains noindex. Major Amazon shopping events, including Prime Day as one example, often feature device discounts.', 'https://www.amazon.com/shop/sawdustsavings', 'View Device Storefront List', 'Live Amazon device deals', 'Loading live Amazon device deals.', 'No Amazon device deals are live right now. Check back as the deal event gets closer.', [('/amazon-tool-deals/','Amazon Tool Deals'),('/amazon-deals-under-50/','Amazon Deals Under $50'),('/amazon-electronics-deals/','Amazon Electronics Deals'),('/amazon-home-kitchen-deals/','Amazon Home &amp; Kitchen Deals')])
+          pages['amazon-electronics-deals/index.html'] = shell('Amazon Electronics Deals for Deal Events | Black Lab Deals', 'Shop hidden Amazon electronics deals for major deal events, including headphones, chargers, smart home tech, cameras, audio, and computer accessories.', '/amazon-electronics-deals/', 'https://blacklabdeals.com/best-amazon-electronics-deals/best-electronics-deals-found-on-amazon-right-now-black-lab-deals.jpg', 'data-mode="category" data-category="electronics" data-category-label="Electronics"', 'Electronics Deals', 'Amazon Electronics Deals', 'Scan live Amazon electronics deals for major shopping events, including headphones, chargers, smart-home accessories, cameras, computer gear, audio equipment, and everyday tech.', 'Live Electronics Deal Watchlist', 'This hidden page is prepared for event-season SEO while it remains noindex. Prime Day is one example of an Amazon shopping event where electronics deals can move quickly.', 'https://www.amazon.com/shop/sawdustsavings', 'View Electronics Storefront List', 'Live Amazon electronics deals', 'Loading live electronics deals.', 'No Amazon electronics deals are live right now. Check back as the deal event gets closer.', [('/amazon-tool-deals/','Amazon Tool Deals'),('/amazon-deals-under-50/','Amazon Deals Under $50'),('/amazon-device-deals/','Amazon Device Deals'),('/amazon-home-kitchen-deals/','Amazon Home &amp; Kitchen Deals')])
+          pages['amazon-home-kitchen-deals/index.html'] = shell('Amazon Home &amp; Kitchen Deals for Deal Events | Black Lab Deals', 'Shop hidden Amazon home and kitchen deals for major deal events, including kitchen tools, storage, bedding, small appliances, cookware, and home essentials.', '/amazon-home-kitchen-deals/', 'https://blacklabdeals.com/home-kitchen-deals-banner.jpg', 'data-mode="home"', 'Home &amp; Kitchen Deals', 'Amazon Home &amp; Kitchen Deals', 'Find live Amazon home and kitchen deals during major shopping events, including cookware, small appliances, storage, cleaning tools, bedding, furniture, and everyday home essentials.', 'Live Home &amp; Kitchen Deal Watchlist', 'This hidden page keeps event copy, metadata, and internal links launch-ready while the URL remains noindex. Prime Day may be one example of a larger Amazon shopping event with strong home and kitchen offers.', 'https://www.amazon.com/shop/sawdustsavings', 'View Home &amp; Kitchen Storefront List', 'Live Amazon home and kitchen deals', 'Loading live home and kitchen deals.', 'No Amazon home and kitchen deals are live right now. Check back as the deal event gets closer.', [('/amazon-tool-deals/','Amazon Tool Deals'),('/amazon-deals-under-50/','Amazon Deals Under $50'),('/amazon-device-deals/','Amazon Device Deals'),('/amazon-electronics-deals/','Amazon Electronics Deals')])
+
+          Path('amazon-deal-event').mkdir(exist_ok=True)
+          Path('amazon-deal-event/event-page.css').write_text(css, encoding='utf-8')
+          for path, content in pages.items():
+              Path(path).parent.mkdir(parents=True, exist_ok=True)
+              Path(path).write_text(content, encoding='utf-8')
+
+          site = Path('site-common.js')
+          text = site.read_text(encoding='utf-8')
+          if "devices: ['amazon device'" not in text:
+              text = text.replace("  tools: ['tools', 'home improvement', 'tool'],\n  home: ['home', 'kitchen']", "  tools: ['tools', 'home improvement', 'tool'],\n  devices: ['amazon device', 'amazon devices', 'echo', 'kindle', 'fire tv', 'fire tablet', 'ring', 'blink', 'eero', 'alexa'],\n  home: ['home', 'kitchen']")
+          if "document.body.dataset.bldHiddenEvent === 'true'" not in text:
+              text = text.replace("function ensureBrowseSection() {\n  const main = document.querySelector('main.page-shell')", "function ensureBrowseSection() {\n  if (document.body.dataset.bldHiddenEvent === 'true') return;\n  const main = document.querySelector('main.page-shell')")
+          site.write_text(text, encoding='utf-8')
+
+      - name: Commit, push, and deploy hidden pages
+        env:
+          VERCEL_DEPLOY_HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
+        run: |
+          git config user.name "DealDrop Bot"
+          git config user.email "bot@dealdrop.com"
+          git add -f amazon-deal-event amazon-tool-deals amazon-deals-under-50 amazon-device-deals amazon-electronics-deals amazon-home-kitchen-deals site-common.js
+          git status
+          if git diff --staged --quiet; then
+            echo "No hidden Amazon event page changes to commit"
+          else
+            git commit -m "Add hidden Amazon deal event pages"
+            git push origin main
+          fi
+          if [ -n "$VERCEL_DEPLOY_HOOK_URL" ]; then
+            curl -fsS -X POST "$VERCEL_DEPLOY_HOOK_URL"
+            echo "Triggered Vercel deploy hook"
+          else
+            echo "VERCEL_DEPLOY_HOOK_URL is not set; skipping Vercel deploy hook"
+          fi
