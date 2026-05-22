@@ -1,22 +1,25 @@
 """
-Amazon Sales Event ASIN Feed + Amazon API Enrichment
-----------------------------------------------------
+Amazon Sales Event ASIN Feed + Amazon Creators API Enrichment
+-------------------------------------------------------------
 This event-only process reads ASINs from the Google Sheet, fetches product
-data from Amazon's API with signed requests, and writes amazon-sales-event-deals.json.
+pricing through the same Amazon Creators API pattern used by fetch_deals.py,
+and writes amazon-sales-event-deals.json.
+
+This does not modify the main deal fetcher or regular deals.json workflow.
 """
 
 import csv
-import hashlib
-import hmac
 import io
 import json
 import os
 import re
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
-from urllib.parse import quote
 
 import requests
+from amazon_creatorsapi import AmazonCreatorsApi, Country
+from amazon_creatorsapi.models import GetItemsResource
 
 
 # --------------------------------------------------
@@ -31,16 +34,10 @@ SHEET_CSV_URL = os.getenv(
 
 OUTPUT_FILE = os.getenv("AMAZON_SALES_EVENT_OUTPUT_FILE", "amazon-sales-event-deals.json")
 PARTNER_TAG = os.getenv("AFFILIATE_TAG", "blacklabdealsprime-20")
-ACCESS_KEY = os.getenv("CREATORS_CREDENTIAL_ID") or os.getenv("PAAPI_ACCESS_KEY") or os.getenv("AMAZON_ACCESS_KEY")
-SECRET_KEY = os.getenv("CREATORS_CREDENTIAL_SECRET") or os.getenv("PAAPI_SECRET_KEY") or os.getenv("AMAZON_SECRET_KEY")
-PARTNER_TYPE = os.getenv("AMAZON_PARTNER_TYPE", "Associates")
-MARKETPLACE = os.getenv("AMAZON_MARKETPLACE", "www.amazon.com")
-PAAPI_HOST = os.getenv("AMAZON_PAAPI_HOST", "webservices.amazon.com")
-PAAPI_REGION = os.getenv("AMAZON_PAAPI_REGION", "us-east-1")
-PAAPI_SERVICE = "ProductAdvertisingAPI"
-PAAPI_PATH = "/paapi5/getitems"
-PAAPI_TARGET = "com.amazon.paapi5.v1.ProductAdvertisingAPIv1.GetItems"
+CREDENTIAL_ID = os.getenv("CREATORS_CREDENTIAL_ID")
+CREDENTIAL_SECRET = os.getenv("CREATORS_CREDENTIAL_SECRET")
 AMAZON_BATCH_SIZE = int(os.getenv("AMAZON_SALES_EVENT_BATCH_SIZE", "10"))
+AMAZON_CONCURRENT_BATCHES = int(os.getenv("AMAZON_SALES_EVENT_CONCURRENT_BATCHES", "5"))
 AMAZON_REQUEST_DELAY_SECONDS = float(os.getenv("AMAZON_SALES_EVENT_REQUEST_DELAY_SECONDS", "1"))
 
 PAGE_COLUMNS = [
@@ -55,23 +52,6 @@ PAGE_COLUMNS = [
 
 ASIN_RE = re.compile(r"\b[A-Z0-9]{10}\b", re.IGNORECASE)
 
-BASE_RESOURCES = [
-    "Images.Primary.Large",
-    "ItemInfo.ByLineInfo",
-    "ItemInfo.Classifications",
-    "ItemInfo.Title",
-    "Offers.Listings.Availability.Message",
-    "Offers.Listings.Condition",
-    "Offers.Listings.DeliveryInfo.IsPrimeEligible",
-    "Offers.Listings.Price",
-    "Offers.Listings.SavingBasis",
-]
-
-REVIEW_RESOURCES = [
-    "CustomerReviews.Count",
-    "CustomerReviews.StarRating",
-]
-
 
 # --------------------------------------------------
 # HELPERS
@@ -79,10 +59,7 @@ REVIEW_RESOURCES = [
 def compact_image_url(url, size=220):
     if not url:
         return None
-    text = str(url)
-    text = re.sub(r"\._SL\d+_\.", f"._SL{size}_.", text)
-    text = re.sub(r"\._[A-Z0-9,]+_\.", f"._SL{size}_.", text)
-    return text
+    return re.sub(r"\._SL\d+_\.", f"._SL{size}_.", str(url))
 
 
 def clean_header(value):
@@ -93,127 +70,31 @@ def extract_asins(value):
     return [m.group(0).upper() for m in ASIN_RE.finditer(str(value or ""))]
 
 
-def get_nested(data, path, default=None):
-    cur = data
-    for key in path:
-        if isinstance(cur, dict) and key in cur:
-            cur = cur[key]
-        else:
+def safe_get(obj, path, default=None):
+    cur = obj
+    for attr in path:
+        try:
+            cur = getattr(cur, attr)
+        except Exception:
+            return default
+        if cur is None:
             return default
     return cur
 
 
-def to_float(value):
-    try:
-        if value is None or value == "":
-            return None
-        return float(str(value).replace(",", ""))
-    except Exception:
-        return None
-
-
-def to_int(value):
-    try:
-        if value is None or value == "":
-            return None
-        return int(float(str(value).replace(",", "")))
-    except Exception:
-        return None
-
-
-def normalize_rating(value):
-    if isinstance(value, dict):
-        value = value.get("Value") or value.get("DisplayValue") or value.get("Rating")
-    if isinstance(value, str):
-        match = re.search(r"\d+(?:\.\d+)?", value)
-        value = match.group(0) if match else None
-    rating = to_float(value)
-    if rating and 0 < rating <= 5:
-        return round(rating, 1)
-    return None
-
-
-def canonical_amazon_link(asin):
-    return f"https://www.amazon.com/dp/{asin}?tag={PARTNER_TAG}"
-
-
-def signed_headers(payload):
-    if not ACCESS_KEY or not SECRET_KEY:
-        raise RuntimeError("Missing CREATORS_CREDENTIAL_ID/CREATORS_CREDENTIAL_SECRET or PAAPI_ACCESS_KEY/PAAPI_SECRET_KEY")
-
-    now = datetime.utcnow()
-    amz_date = now.strftime("%Y%m%dT%H%M%SZ")
-    date_stamp = now.strftime("%Y%m%d")
-    payload_json = json.dumps(payload, separators=(",", ":"), ensure_ascii=False)
-    payload_hash = hashlib.sha256(payload_json.encode("utf-8")).hexdigest()
-
-    canonical_headers = (
-        f"content-encoding:amz-1.0\n"
-        f"content-type:application/json; charset=utf-8\n"
-        f"host:{PAAPI_HOST}\n"
-        f"x-amz-date:{amz_date}\n"
-        f"x-amz-target:{PAAPI_TARGET}\n"
-    )
-    signed_header_names = "content-encoding;content-type;host;x-amz-date;x-amz-target"
-    canonical_request = "\n".join([
-        "POST",
-        PAAPI_PATH,
-        "",
-        canonical_headers,
-        signed_header_names,
-        payload_hash,
-    ])
-
-    credential_scope = f"{date_stamp}/{PAAPI_REGION}/{PAAPI_SERVICE}/aws4_request"
-    string_to_sign = "\n".join([
-        "AWS4-HMAC-SHA256",
-        amz_date,
-        credential_scope,
-        hashlib.sha256(canonical_request.encode("utf-8")).hexdigest(),
-    ])
-
-    def sign(key, msg):
-        return hmac.new(key, msg.encode("utf-8"), hashlib.sha256).digest()
-
-    signing_key = sign(("AWS4" + SECRET_KEY).encode("utf-8"), date_stamp)
-    signing_key = sign(signing_key, PAAPI_REGION)
-    signing_key = sign(signing_key, PAAPI_SERVICE)
-    signing_key = sign(signing_key, "aws4_request")
-    signature = hmac.new(signing_key, string_to_sign.encode("utf-8"), hashlib.sha256).hexdigest()
-
-    authorization = (
-        "AWS4-HMAC-SHA256 "
-        f"Credential={ACCESS_KEY}/{credential_scope}, "
-        f"SignedHeaders={signed_header_names}, "
-        f"Signature={signature}"
-    )
-
-    return payload_json, {
-        "Content-Encoding": "amz-1.0",
-        "Content-Type": "application/json; charset=utf-8",
-        "Host": PAAPI_HOST,
-        "X-Amz-Date": amz_date,
-        "X-Amz-Target": PAAPI_TARGET,
-        "Authorization": authorization,
-    }
-
-
-def call_get_items(asins, resources):
-    payload = {
-        "ItemIds": asins,
-        "Resources": resources,
-        "PartnerTag": PARTNER_TAG,
-        "PartnerType": PARTNER_TYPE,
-        "Marketplace": MARKETPLACE,
-    }
-    body, headers = signed_headers(payload)
-    response = requests.post(f"https://{PAAPI_HOST}{PAAPI_PATH}", data=body.encode("utf-8"), headers=headers, timeout=30)
-    if not response.ok:
-        raise RuntimeError(f"Amazon API HTTP {response.status_code}: {response.text[:1000]}")
-    data = response.json()
-    if data.get("Errors"):
-        raise RuntimeError(f"Amazon API errors: {json.dumps(data.get('Errors'), ensure_ascii=False)[:1000]}")
-    return data
+def get_amazon_resources():
+    # Same resource style used by the main fetch_deals.py Creator API request.
+    return [
+        GetItemsResource.ITEM_INFO_DOT_TITLE,
+        GetItemsResource.ITEM_INFO_DOT_BY_LINE_INFO,
+        GetItemsResource.ITEM_INFO_DOT_CLASSIFICATIONS,
+        GetItemsResource.IMAGES_DOT_PRIMARY_DOT_LARGE,
+        GetItemsResource.OFFERS_V2_DOT_LISTINGS_DOT_PRICE,
+        GetItemsResource.OFFERS_V2_DOT_LISTINGS_DOT_AVAILABILITY,
+        GetItemsResource.OFFERS_V2_DOT_LISTINGS_DOT_CONDITION,
+        GetItemsResource.OFFERS_V2_DOT_LISTINGS_DOT_IS_BUY_BOX_WINNER,
+        GetItemsResource.OFFERS_V2_DOT_LISTINGS_DOT_DEAL_DETAILS,
+    ]
 
 
 # --------------------------------------------------
@@ -249,39 +130,52 @@ def load_page_asins():
 
 
 # --------------------------------------------------
-# STEP 2: FETCH AMAZON API DATA
+# STEP 2: FETCH AMAZON CREATORS API DATA
 # --------------------------------------------------
+def fetch_amazon_batch(batch, batch_num, total_batches):
+    print(f"    Batch {batch_num}/{total_batches} ({len(batch)} ASINs)...")
+    amazon = AmazonCreatorsApi(
+        credential_id=CREDENTIAL_ID,
+        credential_secret=CREDENTIAL_SECRET,
+        version="3.1",
+        tag=PARTNER_TAG,
+        country=Country.US,
+    )
+    items = amazon.get_items(batch, resources=get_amazon_resources())
+    return batch_num, items
+
+
 def get_amazon_items(asins):
-    print("[2/3] Fetching live Amazon product data...")
+    print("[2/3] Fetching live Amazon product data from Amazon Creators API...")
+    if not CREDENTIAL_ID or not CREDENTIAL_SECRET:
+        raise RuntimeError("Missing CREATORS_CREDENTIAL_ID or CREATORS_CREDENTIAL_SECRET")
+
     batches = [asins[i:i + AMAZON_BATCH_SIZE] for i in range(0, len(asins), AMAZON_BATCH_SIZE)]
-    all_items = {}
-    all_errors = []
     total_batches = len(batches)
+    worker_count = max(1, min(AMAZON_CONCURRENT_BATCHES, total_batches))
+    all_items = {}
 
-    for idx, batch in enumerate(batches, start=1):
-        print(f"    Batch {idx}/{total_batches} ({len(batch)} ASINs)...")
-        resources = BASE_RESOURCES + REVIEW_RESOURCES
-        try:
-            data = call_get_items(batch, resources)
-        except Exception as exc:
-            print(f"    Review resource/full request failed, retrying base resources only: {exc}")
-            data = call_get_items(batch, BASE_RESOURCES)
+    print(
+        f"    Processing {len(asins)} ASINs in {total_batches} batches "
+        f"with {worker_count} concurrent worker(s)."
+    )
 
-        result = data.get("ItemsResult") or {}
-        for item in result.get("Items", []):
-            asin = item.get("ASIN")
-            if asin:
-                all_items[asin] = item
+    with ThreadPoolExecutor(max_workers=worker_count) as executor:
+        futures = []
+        for idx, batch in enumerate(batches, start=1):
+            futures.append(executor.submit(fetch_amazon_batch, batch, idx, total_batches))
+            if AMAZON_REQUEST_DELAY_SECONDS > 0:
+                time.sleep(AMAZON_REQUEST_DELAY_SECONDS)
 
-        for err in data.get("Errors", []) or []:
-            all_errors.append(err)
+        for future in as_completed(futures):
+            try:
+                _, items = future.result()
+                for item in items:
+                    all_items[item.asin] = item
+            except Exception as exc:
+                print(f"    Warning: Amazon Creator API batch failed - {exc}")
 
-        if AMAZON_REQUEST_DELAY_SECONDS > 0 and idx < total_batches:
-            time.sleep(AMAZON_REQUEST_DELAY_SECONDS)
-
-    print(f"    Retrieved {len(all_items)} products from Amazon API.")
-    if all_errors:
-        print(f"    Amazon returned {len(all_errors)} item-level warnings/errors.")
+    print(f"    Retrieved {len(all_items)} products from Amazon Creators API.")
     return all_items
 
 
@@ -289,46 +183,86 @@ def get_amazon_items(asins):
 # STEP 3: BUILD EVENT DEAL FEED
 # --------------------------------------------------
 def build_deal(asin, item, pages):
-    title = get_nested(item, ["ItemInfo", "Title", "DisplayValue"])
+    title = safe_get(item, ["item_info", "title", "display_value"])
     if not title:
         return None
 
-    brand = get_nested(item, ["ItemInfo", "ByLineInfo", "Brand", "DisplayValue"])
-    category = (
-        get_nested(item, ["ItemInfo", "Classifications", "ProductGroup", "DisplayValue"])
-        or get_nested(item, ["ItemInfo", "Classifications", "Binding", "DisplayValue"])
-        or "Amazon Deals"
-    )
-    image = compact_image_url(get_nested(item, ["Images", "Primary", "Large", "URL"]))
+    brand = safe_get(item, ["item_info", "by_line_info", "brand", "display_value"])
+    category = safe_get(item, ["item_info", "classifications", "product_group", "display_value"]) or "Amazon Deals"
+    image = compact_image_url(safe_get(item, ["images", "primary", "large", "url"]))
 
-    listing = (get_nested(item, ["Offers", "Listings"], []) or [{}])[0]
-    price_amount = to_float(get_nested(listing, ["Price", "Amount"]))
-    price_display = get_nested(listing, ["Price", "DisplayAmount"])
-    currency = get_nested(listing, ["Price", "Currency"])
-    if not price_amount or not price_display:
+    listing = None
+    try:
+        listing = item.offers_v2.listings[0]
+        price_amount = listing.price.money.amount
+        price_display = listing.price.money.display_amount
+        currency = listing.price.money.currency
+    except Exception:
+        price_amount = None
+        price_display = None
+        currency = None
+
+    if not price_amount:
         return None
 
-    condition = str(get_nested(listing, ["Condition", "Value"], "") or "").lower()
-    if condition and condition != "new":
-        return None
+    try:
+        condition = listing.condition.value
+        if condition and condition.lower() != "new":
+            return None
+    except Exception:
+        pass
 
-    availability = get_nested(listing, ["Availability", "Message"])
-    url = item.get("DetailPageURL") or canonical_amazon_link(asin)
+    try:
+        availability = listing.availability.type
+    except Exception:
+        availability = None
 
-    saving_basis = get_nested(listing, ["SavingBasis", "Amount"])
-    saving_basis_display = get_nested(listing, ["SavingBasis", "DisplayAmount"])
+    try:
+        deal_type = listing.deal_details.access_type
+    except Exception:
+        deal_type = "PRICE_DROP"
+
+    try:
+        url = item.detail_page_url
+    except Exception:
+        url = f"https://www.amazon.com/dp/{asin}?tag={PARTNER_TAG}"
+
     pct_off = 0
     was_display = None
     discount_label = ""
-    if saving_basis and price_amount:
-        original = to_float(saving_basis)
-        if original and original > price_amount:
-            pct_off = round(((original - price_amount) / original) * 100)
-            was_display = saving_basis_display or f"${original:.2f}"
-            discount_label = f"-{pct_off}%"
+    is_hot = False
 
-    rating_value = normalize_rating(get_nested(item, ["CustomerReviews", "StarRating"]))
-    review_count = to_int(get_nested(item, ["CustomerReviews", "Count"]))
+    try:
+        savings = listing.price.savings
+        if savings:
+            pct_off = round(savings.percentage)
+            was_display = f"${round(price_amount + savings.money.amount, 2)}"
+            discount_label = f"-{pct_off}%"
+            is_hot = pct_off >= 40
+    except Exception:
+        pass
+
+    has_coupon = False
+    coupon_display = ""
+    try:
+        deal_details = listing.deal_details
+        if deal_details:
+            dtype = str(getattr(deal_details, "type", "") or "").upper()
+            damt = getattr(deal_details, "amount", None)
+            dpct = getattr(deal_details, "percentage", None)
+            if "PERCENT" in dtype and dpct:
+                has_coupon = True
+                coupon_display = f"Save extra {int(dpct)}%"
+            elif damt:
+                has_coupon = True
+                coupon_display = f"Save extra ${float(damt):.0f}"
+    except Exception:
+        pass
+
+    # Keep optional rating fields as null for now. The current Creator API resources used by
+    # the main fetcher do not expose rating/review count in this response.
+    rating_value = None
+    review_count = None
 
     now = datetime.now(timezone.utc).isoformat()
     return {
@@ -345,12 +279,12 @@ def build_deal(asin, item, pages):
         "savings": was_display,
         "pct": pct_off,
         "discount": discount_label,
-        "deal_type": "Amazon API",
+        "deal_type": deal_type,
         "availability": availability,
         "link": url,
-        "hot": pct_off >= 40,
-        "hasCoupon": False,
-        "couponDisplay": "",
+        "hot": is_hot,
+        "hasCoupon": has_coupon,
+        "couponDisplay": coupon_display,
         "rating": rating_value,
         "review_count": review_count,
         "desc": brand or "",
@@ -385,7 +319,7 @@ def main():
     deals.sort(key=lambda d: (len(d.get("pages", [])), d.get("pct", 0), d.get("price_amount", 0)), reverse=True)
 
     output = {
-        "source": "Amazon Sales Event Google Sheet + Amazon API",
+        "source": "Amazon Sales Event Google Sheet + Amazon Creators API",
         "sheet_id": SHEET_ID,
         "partnerTag": PARTNER_TAG,
         "updatedAt": datetime.now(timezone.utc).isoformat(),
