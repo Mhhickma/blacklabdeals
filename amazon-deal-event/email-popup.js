@@ -2,6 +2,7 @@
   const PAGE_SLUG = (window.location.pathname || '').split('/').filter(Boolean)[0];
   if (PAGE_SLUG !== 'amazon-deal-event') return;
 
+  const SHEET_ENDPOINT = 'https://script.google.com/macros/s/AKfycbw_7DAtiZJQWFwhphywmmnKuAssYQlumY32lPlJSwaSEQ9lWYx5PXOEP8BDW8_QeSsQ/exec';
   const DISMISSED_KEY = 'bldSalesEventEmailPopupDismissed';
   const SIGNED_UP_KEY = 'bldSalesEventEmailPopupSignedUp';
   const POPUP_DELAY_MS = 10000;
@@ -31,6 +32,23 @@
     if (emailInput) setTimeout(() => emailInput.focus(), 120);
   }
 
+  function setFormState(isSaving) {
+    const button = document.querySelector('#bld-email-popup-form button[type="submit"]');
+    if (!button) return;
+    button.disabled = isSaving;
+    button.textContent = isSaving ? 'Saving...' : 'Send Me the Deals';
+  }
+
+  async function submitSignup(email) {
+    const params = new URLSearchParams();
+    params.append('email', email);
+    params.append('phone', '');
+    params.append('source', 'amazon-deal-event-popup');
+    params.append('page', window.location.href);
+    params.append('referrer', document.referrer || '');
+    await fetch(`${SHEET_ENDPOINT}?${params.toString()}`, { method: 'GET', mode: 'no-cors' });
+  }
+
   function initPopup() {
     if (shouldSkipPopup()) return;
 
@@ -48,7 +66,7 @@
             <button type="submit">Send Me the Deals</button>
           </form>
           <div class="bld-email-popup-note">No spam. Just the best deals we find. You can close this and keep browsing.</div>
-          <div class="bld-email-popup-success" id="bld-email-popup-success" hidden>Thanks! Your email was saved for this session. Connect an email service next to store signups permanently.</div>
+          <div class="bld-email-popup-success" id="bld-email-popup-success" hidden>Thanks! You're on the list.</div>
         </div>
       </div>
     `);
@@ -59,16 +77,29 @@
     });
 
     const form = document.getElementById('bld-email-popup-form');
-    form?.addEventListener('submit', event => {
+    form?.addEventListener('submit', async event => {
       event.preventDefault();
       const email = document.getElementById('bld-email-popup-input')?.value.trim();
       if (!email) return;
-      localStorage.setItem(SIGNED_UP_KEY, 'true');
-      localStorage.setItem('bldSalesEventEmail', email);
-      const success = document.getElementById('bld-email-popup-success');
-      if (success) success.hidden = false;
-      if (typeof fbq === 'function') fbq('trackCustom', 'SalesEventEmailPopupSubmit');
-      setTimeout(closePopup, 1200);
+      setFormState(true);
+      try {
+        await submitSignup(email);
+        localStorage.setItem(SIGNED_UP_KEY, 'true');
+        localStorage.setItem('bldSalesEventEmail', email);
+        const success = document.getElementById('bld-email-popup-success');
+        if (success) success.hidden = false;
+        if (typeof fbq === 'function') fbq('trackCustom', 'SalesEventEmailPopupSubmit');
+        setTimeout(closePopup, 1200);
+      } catch (error) {
+        console.error('Sales Event email signup error:', error);
+        const success = document.getElementById('bld-email-popup-success');
+        if (success) {
+          success.hidden = false;
+          success.textContent = 'Something went wrong. Please try again.';
+        }
+      } finally {
+        setFormState(false);
+      }
     });
 
     setTimeout(showPopup, POPUP_DELAY_MS);
