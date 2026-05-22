@@ -1,0 +1,44 @@
+name: Update Amazon Sales Event Deals
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-amazon-sales-event-deals:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Fetch Amazon Sales Event deals
+        env:
+          CREATORS_CREDENTIAL_ID: ${{ secrets.CREATORS_CREDENTIAL_ID }}
+          CREATORS_CREDENTIAL_SECRET: ${{ secrets.CREATORS_CREDENTIAL_SECRET }}
+          AFFILIATE_TAG: blacklabdealsprime-20
+          AMAZON_SALES_EVENT_SHEET_ID: 19xrjgm9FJdiJaptD7iO2cMzxLFk5LbqivvgvaGZ3qsI
+          AMAZON_SALES_EVENT_SHEET_GID: '0'
+        run: python fetch_amazon_sales_event_deals.py
+
+      - name: Commit updated feed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add amazon-sales-event-deals.json
+          if git diff --cached --quiet; then
+            echo "No feed changes to commit."
+          else
+            git commit -m "Update Amazon Sales Event feed"
+            git push
+          fi
