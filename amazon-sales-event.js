@@ -1,5 +1,6 @@
 (() => {
   const EVENT_FEED_URL = '/amazon-sales-event-deals.json';
+  const AFFILIATE_TAG = 'simplewoodsho-20';
   const EVENT_PAGE_SLUGS = new Set([
     'amazon-deal-event',
     'amazon-tool-deals',
@@ -84,8 +85,27 @@
     return deal.title || deal.name || deal.product_title || 'Amazon Sales Event Deal';
   }
 
+  function addAffiliateTag(url) {
+    const raw = String(url || '').trim();
+    if (!raw) return raw;
+    try {
+      const parsed = new URL(raw, window.location.origin);
+      if (parsed.hostname.includes('amazon.') && !parsed.searchParams.has('tag')) {
+        parsed.searchParams.set('tag', AFFILIATE_TAG);
+      }
+      return parsed.href;
+    } catch (error) {
+      if (raw.includes('amazon.com') && !raw.includes('tag=')) {
+        return `${raw}${raw.includes('?') ? '&' : '?'}tag=${AFFILIATE_TAG}`;
+      }
+      return raw;
+    }
+  }
+
   function link(deal) {
-    return deal.link || deal.url || deal.amazon_url || deal.affiliate_url || `https://www.amazon.com/dp/${encodeURIComponent(deal.asin || '')}`;
+    const supplied = deal.link || deal.url || deal.amazon_url || deal.affiliate_url;
+    const fallback = deal.asin ? `https://www.amazon.com/dp/${encodeURIComponent(deal.asin)}?tag=${AFFILIATE_TAG}` : '#';
+    return addAffiliateTag(supplied || fallback);
   }
 
   function category(deal) {
@@ -171,9 +191,10 @@
       const dealTitle = title(deal);
       const amount = price(deal);
       const discount = pct(deal);
+      const destination = link(deal);
       const primaryBadge = discount ? `${discount}% off` : isHot(deal) ? 'Hot Deal' : hasCoupon(deal) ? 'Coupon' : 'Deal';
       const secondaryBadge = slug === 'amazon-deal-event' ? `#${index + 1}` : 'Amazon Sales Event';
-      return `<article class="best-seller-card deal-card-unified" data-asin="${esc(deal.asin || '')}" data-deal-title="${esc(dealTitle)}" data-deal-category="${esc(category(deal))}" data-deal-price="${esc(amount)}" data-deal-discount="${esc(discount)}"><div class="best-seller-img">${cardImage(deal, dealTitle)}</div><div class="best-seller-body"><div class="best-seller-badges"><span class="best-seller-badge">${esc(primaryBadge)}</span><span class="best-seller-badge rank">${esc(secondaryBadge)}</span></div><div class="best-seller-title">${esc(dealTitle)}</div><div class="best-seller-category">${esc(category(deal))}</div><div class="best-seller-price-row"><span class="best-seller-price">${amount ? money(amount) : esc(deal.price || 'See deal')}</span>${deal.was ? `<span class="best-seller-was">${esc(deal.was)}</span>` : ''}</div>${deal.couponDisplay ? `<div class="best-seller-category">${esc(deal.couponDisplay)}</div>` : ''}<a class="best-seller-btn" href="${esc(link(deal))}" target="_blank" rel="nofollow sponsored noopener">View on Amazon</a></div></article>`;
+      return `<a class="best-seller-card deal-card-unified bld-clickable-card" href="${esc(destination)}" target="_blank" rel="nofollow sponsored noopener" data-asin="${esc(deal.asin || '')}" data-deal-title="${esc(dealTitle)}" data-deal-category="${esc(category(deal))}" data-deal-price="${esc(amount)}" data-deal-discount="${esc(discount)}" aria-label="View ${esc(dealTitle)} on Amazon"><div class="best-seller-img">${cardImage(deal, dealTitle)}</div><div class="best-seller-body"><div class="best-seller-badges"><span class="best-seller-badge">${esc(primaryBadge)}</span><span class="best-seller-badge rank">${esc(secondaryBadge)}</span></div><div class="best-seller-title">${esc(dealTitle)}</div><div class="best-seller-category">${esc(category(deal))}</div><div class="best-seller-price-row"><span class="best-seller-price">${amount ? money(amount) : esc(deal.price || 'See deal')}</span>${deal.was ? `<span class="best-seller-was">${esc(deal.was)}</span>` : ''}</div>${deal.couponDisplay ? `<div class="best-seller-category">${esc(deal.couponDisplay)}</div>` : ''}<span class="best-seller-btn">View on Amazon</span></div></a>`;
     }).join('');
 
     const { wrap, button } = ensureLoadMoreButton(grid);
