@@ -121,6 +121,21 @@
     return Boolean(deal.hasCoupon || deal.has_coupon || deal.couponDisplay || deal.coupon);
   }
 
+  function ribbonText(deal) {
+    const discount = pct(deal);
+    if (discount > 0) return `${Math.round(discount)}% OFF`;
+    if (hasCoupon(deal)) return 'COUPON';
+    return 'HOT DEAL';
+  }
+
+  function savingsText(deal) {
+    const discount = pct(deal);
+    if (discount > 0) return `Save ${Math.round(discount)}% today`;
+    if (hasCoupon(deal)) return deal.couponDisplay || 'Coupon available';
+    if (deal.was) return 'Limited-time deal price';
+    return 'Check current deal';
+  }
+
   function score(deal) {
     return (isHot(deal) ? 1000 : 0) + (hasCoupon(deal) ? 180 : 0) + pct(deal) * 12 + Math.max(0, 80 - price(deal)) + updated(deal) / 1000000000;
   }
@@ -193,9 +208,9 @@
       const amount = price(deal);
       const discount = pct(deal);
       const destination = link(deal);
-      const primaryBadge = discount ? `${discount}% off` : isHot(deal) ? 'Hot Deal' : hasCoupon(deal) ? 'Coupon' : 'Deal';
+      const primaryBadge = discount ? `${Math.round(discount)}% off` : isHot(deal) ? 'Hot Deal' : hasCoupon(deal) ? 'Coupon' : 'Deal';
       const secondaryBadge = slug === 'amazon-deal-event' ? `#${index + 1}` : 'Amazon Sales Event';
-      return `<a class="best-seller-card deal-card-unified bld-clickable-card" href="${esc(destination)}" target="_blank" rel="nofollow sponsored noopener" data-asin="${esc(deal.asin || '')}" data-deal-title="${esc(dealTitle)}" data-deal-category="${esc(category(deal))}" data-deal-price="${esc(amount)}" data-deal-discount="${esc(discount)}" aria-label="View ${esc(dealTitle)} on Amazon"><div class="best-seller-img">${cardImage(deal, dealTitle)}</div><div class="best-seller-body"><div class="best-seller-badges"><span class="best-seller-badge">${esc(primaryBadge)}</span><span class="best-seller-badge rank">${esc(secondaryBadge)}</span></div><div class="best-seller-title">${esc(dealTitle)}</div><div class="best-seller-category">${esc(category(deal))}</div><div class="best-seller-price-row"><span class="best-seller-price">${amount ? money(amount) : esc(deal.price || 'See deal')}</span>${deal.was ? `<span class="best-seller-was">${esc(deal.was)}</span>` : ''}</div>${deal.couponDisplay ? `<div class="best-seller-category">${esc(deal.couponDisplay)}</div>` : ''}<span class="best-seller-btn">View on Amazon</span></div></a>`;
+      return `<a class="best-seller-card deal-card-unified bld-clickable-card" href="${esc(destination)}" target="_blank" rel="nofollow sponsored noopener" data-asin="${esc(deal.asin || '')}" data-deal-title="${esc(dealTitle)}" data-deal-category="${esc(category(deal))}" data-deal-price="${esc(amount)}" data-deal-discount="${esc(discount)}" aria-label="View ${esc(dealTitle)} on Amazon"><span class="deal-ribbon">${esc(ribbonText(deal))}</span><div class="best-seller-img">${cardImage(deal, dealTitle)}</div><div class="best-seller-body"><div class="best-seller-badges"><span class="best-seller-badge">${esc(primaryBadge)}</span><span class="best-seller-badge rank">${esc(secondaryBadge)}</span></div><div class="best-seller-title">${esc(dealTitle)}</div><div class="best-seller-category">${esc(category(deal))}</div><div class="best-seller-price-row"><span class="best-seller-price">${amount ? money(amount) : esc(deal.price || 'See deal')}</span>${deal.was ? `<span class="best-seller-was">${esc(deal.was)}</span>` : ''}</div><div class="deal-savings-line">${esc(savingsText(deal))}</div>${deal.couponDisplay ? `<div class="best-seller-category">${esc(deal.couponDisplay)}</div>` : ''}<span class="best-seller-btn">View on Amazon</span></div></a>`;
     }).join('');
 
     const { wrap, button } = ensureLoadMoreButton(grid);
