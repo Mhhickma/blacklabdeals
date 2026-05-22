@@ -37,7 +37,7 @@ SHEET_CSV_URL = os.getenv(
 )
 
 OUTPUT_FILE = os.getenv("AMAZON_SALES_EVENT_OUTPUT_FILE", "amazon-sales-event-deals.json")
-PARTNER_TAG = os.getenv("AFFILIATE_TAG", "sawdustsavings-20")
+PARTNER_TAG = os.getenv("AFFILIATE_TAG", "blacklabdealsprime-20")
 CREDENTIAL_ID = os.getenv("CREATORS_CREDENTIAL_ID")
 CREDENTIAL_SECRET = os.getenv("CREATORS_CREDENTIAL_SECRET")
 AMAZON_BATCH_SIZE = int(os.getenv("AMAZON_SALES_EVENT_BATCH_SIZE", "10"))
