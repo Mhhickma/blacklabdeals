@@ -125,7 +125,7 @@
     const discount = pct(deal);
     if (discount > 0) return `${Math.round(discount)}% OFF`;
     if (hasCoupon(deal)) return 'COUPON';
-    return 'HOT DEAL';
+    return 'DEAL';
   }
 
   function savingsText(deal) {
