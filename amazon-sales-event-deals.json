@@ -2,19 +2,20 @@
   "source": "Amazon Sales Event Google Sheet + Amazon Creators API",
   "sheet_id": "19xrjgm9FJdiJaptD7iO2cMzxLFk5LbqivvgvaGZ3qsI",
   "partnerTag": "blacklabdealsprime-20",
-  "updatedAt": "2026-05-22T15:48:20.018827+00:00",
-  "count": 17,
-  "totalDeals": 17,
+  "updatedAt": "2026-05-22T15:57:32.718799+00:00",
+  "count": 22,
+  "totalDeals": 22,
   "pageCounts": {
     "amazon-deal-event": 0,
-    "amazon-tool-deals": 3,
-    "amazon-electronics-deals": 3,
-    "amazon-home-kitchen-deals": 3,
-    "amazon-device-deals": 3,
-    "amazon-deals-under-50": 3,
-    "amazon-household-essentials-deals": 3
+    "amazon-tool-deals": 4,
+    "amazon-electronics-deals": 4,
+    "amazon-home-kitchen-deals": 4,
+    "amazon-device-deals": 4,
+    "amazon-deals-under-50": 4,
+    "amazon-household-essentials-deals": 4
   },
   "skippedAsins": [
+    "B07YCRT6BZ",
     "B0CTMSDBTY"
   ],
   "deals": [
@@ -43,8 +44,8 @@
       "rating": null,
       "review_count": null,
       "desc": "vhbw",
-      "seen_at": "2026-05-22T15:48:20.018654+00:00",
-      "updated_at": "2026-05-22T15:48:20.018654+00:00"
+      "seen_at": "2026-05-22T15:57:32.718564+00:00",
+      "updated_at": "2026-05-22T15:57:32.718564+00:00"
     },
     {
       "asin": "B0CSFV5NJR",
@@ -71,8 +72,8 @@
       "rating": null,
       "review_count": null,
       "desc": "CHAUNVEN",
-      "seen_at": "2026-05-22T15:48:20.018723+00:00",
-      "updated_at": "2026-05-22T15:48:20.018723+00:00"
+      "seen_at": "2026-05-22T15:57:32.718678+00:00",
+      "updated_at": "2026-05-22T15:57:32.718678+00:00"
     },
     {
       "asin": "B0CQM7YTV9",
@@ -99,8 +100,8 @@
       "rating": null,
       "review_count": null,
       "desc": "AKNgoes",
-      "seen_at": "2026-05-22T15:48:20.018696+00:00",
-      "updated_at": "2026-05-22T15:48:20.018696+00:00"
+      "seen_at": "2026-05-22T15:57:32.718648+00:00",
+      "updated_at": "2026-05-22T15:57:32.718648+00:00"
     },
     {
       "asin": "B0GRCN8775",
@@ -127,8 +128,36 @@
       "rating": null,
       "review_count": null,
       "desc": "Festool",
-      "seen_at": "2026-05-22T15:48:20.018811+00:00",
-      "updated_at": "2026-05-22T15:48:20.018811+00:00"
+      "seen_at": "2026-05-22T15:57:32.718779+00:00",
+      "updated_at": "2026-05-22T15:57:32.718779+00:00"
+    },
+    {
+      "asin": "B004T82Q1U",
+      "pages": [
+        "amazon-home-kitchen-deals"
+      ],
+      "title": "JET Vortex Cone Dust Collector, 2-Micron Canister Filter, 2 HP, 230V 1Ph (DC-1200VX-CK1)",
+      "brand": "Jet",
+      "cat": "Tools",
+      "image": "https://m.media-amazon.com/images/I/41nZlwSKUXL._SL220_.jpg",
+      "price": "$1,099.00",
+      "price_amount": 1099.0,
+      "currency": "USD",
+      "was": null,
+      "savings": null,
+      "pct": 0,
+      "discount": "",
+      "deal_type": "PRICE_DROP",
+      "availability": "IN_STOCK",
+      "link": "https://www.amazon.com/dp/B004T82Q1U?tag=blacklabdealsprime-20&linkCode=ogi&th=1&psc=1",
+      "hot": false,
+      "hasCoupon": false,
+      "couponDisplay": "",
+      "rating": null,
+      "review_count": null,
+      "desc": "Jet",
+      "seen_at": "2026-05-22T15:57:32.718392+00:00",
+      "updated_at": "2026-05-22T15:57:32.718392+00:00"
     },
     {
       "asin": "B07SHJTPMY",
@@ -155,8 +184,8 @@
       "rating": null,
       "review_count": null,
       "desc": "DEWALT",
-      "seen_at": "2026-05-22T15:48:20.018592+00:00",
-      "updated_at": "2026-05-22T15:48:20.018592+00:00"
+      "seen_at": "2026-05-22T15:57:32.718489+00:00",
+      "updated_at": "2026-05-22T15:57:32.718489+00:00"
     },
     {
       "asin": "B00WSUX7SC",
@@ -183,8 +212,8 @@
       "rating": null,
       "review_count": null,
       "desc": "Makita",
-      "seen_at": "2026-05-22T15:48:20.018568+00:00",
-      "updated_at": "2026-05-22T15:48:20.018568+00:00"
+      "seen_at": "2026-05-22T15:57:32.718438+00:00",
+      "updated_at": "2026-05-22T15:57:32.718438+00:00"
     },
     {
       "asin": "B08BQ4RGPZ",
@@ -211,8 +240,36 @@
       "rating": null,
       "review_count": null,
       "desc": "Kreg",
-      "seen_at": "2026-05-22T15:48:20.018615+00:00",
-      "updated_at": "2026-05-22T15:48:20.018615+00:00"
+      "seen_at": "2026-05-22T15:57:32.718528+00:00",
+      "updated_at": "2026-05-22T15:57:32.718528+00:00"
+    },
+    {
+      "asin": "B0749SJZXM",
+      "pages": [
+        "amazon-household-essentials-deals"
+      ],
+      "title": "Benchmark Abrasives TCT 14 Inch Circular Saw Blade, Tungsten Carbide Tipped Inch Miter Saw Blade for Cutting Metal, Stainless Steel, Ferrous Metals, 14 Inch Metal Cutting Blade (14\" 66 Teeth)",
+      "brand": "Benchmark Abrasives",
+      "cat": "Tools",
+      "image": "https://m.media-amazon.com/images/I/41BodqbLGlL._SL220_.jpg",
+      "price": "$72.06",
+      "price_amount": 72.06,
+      "currency": "USD",
+      "was": null,
+      "savings": null,
+      "pct": 0,
+      "discount": "",
+      "deal_type": "PRICE_DROP",
+      "availability": "IN_STOCK_SCARCE",
+      "link": "https://www.amazon.com/dp/B0749SJZXM?tag=blacklabdealsprime-20&linkCode=ogi&th=1&psc=1",
+      "hot": false,
+      "hasCoupon": false,
+      "couponDisplay": "",
+      "rating": null,
+      "review_count": null,
+      "desc": "Benchmark Abrasives",
+      "seen_at": "2026-05-22T15:57:32.718452+00:00",
+      "updated_at": "2026-05-22T15:57:32.718452+00:00"
     },
     {
       "asin": "B0DNRBY5HB",
@@ -239,8 +296,8 @@
       "rating": null,
       "review_count": null,
       "desc": "Kreg",
-      "seen_at": "2026-05-22T15:48:20.018758+00:00",
-      "updated_at": "2026-05-22T15:48:20.018758+00:00"
+      "seen_at": "2026-05-22T15:57:32.718711+00:00",
+      "updated_at": "2026-05-22T15:57:32.718711+00:00"
     },
     {
       "asin": "B07NVK7CDZ",
@@ -267,8 +324,8 @@
       "rating": null,
       "review_count": null,
       "desc": "ZENY",
-      "seen_at": "2026-05-22T15:48:20.018580+00:00",
-      "updated_at": "2026-05-22T15:48:20.018580+00:00"
+      "seen_at": "2026-05-22T15:57:32.718465+00:00",
+      "updated_at": "2026-05-22T15:57:32.718465+00:00"
     },
     {
       "asin": "B0CX4Q3V21",
@@ -295,8 +352,36 @@
       "rating": null,
       "review_count": null,
       "desc": "AUXTUR",
-      "seen_at": "2026-05-22T15:48:20.018746+00:00",
-      "updated_at": "2026-05-22T15:48:20.018746+00:00"
+      "seen_at": "2026-05-22T15:57:32.718700+00:00",
+      "updated_at": "2026-05-22T15:57:32.718700+00:00"
+    },
+    {
+      "asin": "B00ATZKV0K",
+      "pages": [
+        "amazon-electronics-deals"
+      ],
+      "title": "Kreg 14-Inch Rail Set - Modular Workbench System for Custom Workbench Setup & Precision Table - Universal Bench System Supports Stability & Organized Tool Space - KBS1005 - Set of 4",
+      "brand": "Kreg",
+      "cat": "Tools",
+      "image": "https://m.media-amazon.com/images/I/31D079IX5lL._SL220_.jpg",
+      "price": "$32.97",
+      "price_amount": 32.97,
+      "currency": "USD",
+      "was": null,
+      "savings": null,
+      "pct": 0,
+      "discount": "",
+      "deal_type": "PRICE_DROP",
+      "availability": "IN_STOCK_SCARCE",
+      "link": "https://www.amazon.com/dp/B00ATZKV0K?tag=blacklabdealsprime-20&linkCode=ogi&th=1&psc=1",
+      "hot": false,
+      "hasCoupon": false,
+      "couponDisplay": "",
+      "rating": null,
+      "review_count": null,
+      "desc": "Kreg",
+      "seen_at": "2026-05-22T15:57:32.718411+00:00",
+      "updated_at": "2026-05-22T15:57:32.718411+00:00"
     },
     {
       "asin": "B0DWXP4V6F",
@@ -323,8 +408,8 @@
       "rating": null,
       "review_count": null,
       "desc": "Fabater",
-      "seen_at": "2026-05-22T15:48:20.018780+00:00",
-      "updated_at": "2026-05-22T15:48:20.018780+00:00"
+      "seen_at": "2026-05-22T15:57:32.718738+00:00",
+      "updated_at": "2026-05-22T15:57:32.718738+00:00"
     },
     {
       "asin": "B07ZV6G6DQ",
@@ -351,8 +436,8 @@
       "rating": null,
       "review_count": null,
       "desc": "Hot Favorable",
-      "seen_at": "2026-05-22T15:48:20.018604+00:00",
-      "updated_at": "2026-05-22T15:48:20.018604+00:00"
+      "seen_at": "2026-05-22T15:57:32.718514+00:00",
+      "updated_at": "2026-05-22T15:57:32.718514+00:00"
     },
     {
       "asin": "B00B6K4VKS",
@@ -379,8 +464,36 @@
       "rating": null,
       "review_count": null,
       "desc": "DEWALT",
-      "seen_at": "2026-05-22T15:48:20.018550+00:00",
-      "updated_at": "2026-05-22T15:48:20.018550+00:00"
+      "seen_at": "2026-05-22T15:57:32.718425+00:00",
+      "updated_at": "2026-05-22T15:57:32.718425+00:00"
+    },
+    {
+      "asin": "B09ZQYL9NL",
+      "pages": [
+        "amazon-deals-under-50"
+      ],
+      "title": "2 Pack 36\" T Track for Woodworking, Aluminum Alloy Woodworking Tools Kit Double Cut Profile Universal T-Tracks with Predrilled Mounting Holes,Anodized Blue",
+      "brand": "Bikykose",
+      "cat": "Tools",
+      "image": "https://m.media-amazon.com/images/I/4137craerKL._SL220_.jpg",
+      "price": "$22.99",
+      "price_amount": 22.99,
+      "currency": "USD",
+      "was": null,
+      "savings": null,
+      "pct": 0,
+      "discount": "",
+      "deal_type": "PRICE_DROP",
+      "availability": "IN_STOCK",
+      "link": "https://www.amazon.com/dp/B09ZQYL9NL?tag=blacklabdealsprime-20&linkCode=ogi&th=1&psc=1",
+      "hot": false,
+      "hasCoupon": false,
+      "couponDisplay": "",
+      "rating": null,
+      "review_count": null,
+      "desc": "Bikykose",
+      "seen_at": "2026-05-22T15:57:32.718604+00:00",
+      "updated_at": "2026-05-22T15:57:32.718604+00:00"
     },
     {
       "asin": "B0DW7NJSH5",
@@ -407,8 +520,8 @@
       "rating": null,
       "review_count": null,
       "desc": "Hiinny",
-      "seen_at": "2026-05-22T15:48:20.018769+00:00",
-      "updated_at": "2026-05-22T15:48:20.018769+00:00"
+      "seen_at": "2026-05-22T15:57:32.718725+00:00",
+      "updated_at": "2026-05-22T15:57:32.718725+00:00"
     },
     {
       "asin": "B0016V7JOC",
@@ -435,8 +548,8 @@
       "rating": null,
       "review_count": null,
       "desc": "goot",
-      "seen_at": "2026-05-22T15:48:20.018507+00:00",
-      "updated_at": "2026-05-22T15:48:20.018507+00:00"
+      "seen_at": "2026-05-22T15:57:32.718340+00:00",
+      "updated_at": "2026-05-22T15:57:32.718340+00:00"
     },
     {
       "asin": "B0GBTN3LR3",
@@ -463,8 +576,8 @@
       "rating": null,
       "review_count": null,
       "desc": "ozner",
-      "seen_at": "2026-05-22T15:48:20.018800+00:00",
-      "updated_at": "2026-05-22T15:48:20.018800+00:00"
+      "seen_at": "2026-05-22T15:57:32.718769+00:00",
+      "updated_at": "2026-05-22T15:57:32.718769+00:00"
     },
     {
       "asin": "B0F8BB69SK",
@@ -491,8 +604,36 @@
       "rating": null,
       "review_count": null,
       "desc": "DULIWO",
-      "seen_at": "2026-05-22T15:48:20.018790+00:00",
-      "updated_at": "2026-05-22T15:48:20.018790+00:00"
+      "seen_at": "2026-05-22T15:57:32.718756+00:00",
+      "updated_at": "2026-05-22T15:57:32.718756+00:00"
+    },
+    {
+      "asin": "B099NV2TRK",
+      "pages": [
+        "amazon-tool-deals"
+      ],
+      "title": "Cutting Wheel Set for Drills Rotary Tool, 8Pcs HSS Rotary Drill Saw Blades Steel Saw Disc Wheel Cutting Blades with 1/8\" Straight Shank Mandrel, one Screwdriver(Power Tools are not Included)",
+      "brand": "SZYUNQ",
+      "cat": "Tools",
+      "image": "https://m.media-amazon.com/images/I/41yy-OjcNmS._SL220_.jpg",
+      "price": "$9.49",
+      "price_amount": 9.49,
+      "currency": "USD",
+      "was": null,
+      "savings": null,
+      "pct": 0,
+      "discount": "",
+      "deal_type": "PRICE_DROP",
+      "availability": "IN_STOCK",
+      "link": "https://www.amazon.com/dp/B099NV2TRK?tag=blacklabdealsprime-20&linkCode=ogi&th=1&psc=1",
+      "hot": false,
+      "hasCoupon": false,
+      "couponDisplay": "",
+      "rating": null,
+      "review_count": null,
+      "desc": "SZYUNQ",
+      "seen_at": "2026-05-22T15:57:32.718579+00:00",
+      "updated_at": "2026-05-22T15:57:32.718579+00:00"
     }
   ]
 }
