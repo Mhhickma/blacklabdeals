@@ -42,7 +42,6 @@ AMAZON_REQUEST_DELAY_SECONDS = float(os.getenv("AMAZON_SALES_EVENT_REQUEST_DELAY
 
 PAGE_COLUMNS = [
     "amazon-deal-event",
-    "amazon-electronics-deals",
     "amazon-furniture-deals",
     "amazon-health-personal-care-deals",
     "amazon-home-deals",
@@ -55,17 +54,12 @@ PAGE_COLUMNS = [
     "amazon-kitchen-deals",
     "amazon-pet-products-deals",
     "amazon-sports-deals",
-    "amazon-tool-deals",
     "amazon-toys-deals",
     "amazon-video-devices-deals",
     "amazon-wireless-deals",
-    "amazon-home-kitchen-deals",
     "amazon-device-deals",
     "amazon-deals-under-50",
     "amazon-household-essentials-deals",
-    "amazon-gaming-deals",
-    "amazon-outdoor-garden-deals",
-    "amazon-pet-deals",
 ]
 
 ASIN_RE = re.compile(r"\b[A-Z0-9]{10}\b", re.IGNORECASE)
