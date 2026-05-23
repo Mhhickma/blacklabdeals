@@ -42,8 +42,23 @@ AMAZON_REQUEST_DELAY_SECONDS = float(os.getenv("AMAZON_SALES_EVENT_REQUEST_DELAY
 
 PAGE_COLUMNS = [
     "amazon-deal-event",
-    "amazon-tool-deals",
     "amazon-electronics-deals",
+    "amazon-furniture-deals",
+    "amazon-health-personal-care-deals",
+    "amazon-home-deals",
+    "amazon-home-improvement-deals",
+    "amazon-home-entertainment-deals",
+    "amazon-lawn-garden-deals",
+    "amazon-office-products-deals",
+    "amazon-outdoors-deals",
+    "amazon-pc-deals",
+    "amazon-kitchen-deals",
+    "amazon-pet-products-deals",
+    "amazon-sports-deals",
+    "amazon-tool-deals",
+    "amazon-toys-deals",
+    "amazon-video-devices-deals",
+    "amazon-wireless-deals",
     "amazon-home-kitchen-deals",
     "amazon-device-deals",
     "amazon-deals-under-50",
@@ -262,8 +277,6 @@ def build_deal(asin, item, pages):
     except Exception:
         pass
 
-    # Keep optional rating fields as null for now. The current Creator API resources used by
-    # the main fetcher do not expose rating/review count in this response.
     rating_value = None
     review_count = None
 
