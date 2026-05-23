@@ -3,6 +3,7 @@
   const AFFILIATE_TAG = 'blacklabdealsprime-20';
   const EVENT_PAGE_SLUGS = new Set([
     'amazon-deal-event',
+    'amazon-electronics-deals',
     'amazon-furniture-deals',
     'amazon-health-personal-care-deals',
     'amazon-home-deals',
@@ -15,6 +16,7 @@
     'amazon-kitchen-deals',
     'amazon-pet-products-deals',
     'amazon-sports-deals',
+    'amazon-tool-deals',
     'amazon-toys-deals',
     'amazon-video-devices-deals',
     'amazon-wireless-deals',
