@@ -174,30 +174,55 @@ def iter_tab_rows(tab_name):
     yield from csv.DictReader(io.StringIO(response.content.decode("utf-8-sig")))
 
 
+def merge_deal(deals_by_asin, deal):
+    existing = deals_by_asin.get(deal["asin"])
+    if existing:
+        for page in deal["pages"]:
+            add_page(existing["pages"], page)
+        return existing
+    deals_by_asin[deal["asin"]] = deal
+    return deal
+
+
 def main():
     now = datetime.now(timezone.utc).isoformat()
     deals_by_asin = {}
     sampled_tabs = {}
     household_added = 0
 
+    # Pass 1: always pull the requested number of samples from every category tab.
     for tab_name, page_slug in TAB_PAGE_MAP.items():
         sampled_tabs[tab_name] = 0
         for row in iter_tab_rows(tab_name):
             deal = build_deal(row, tab_name, page_slug, now)
             if not deal:
                 continue
-            if sampled_tabs[tab_name] < SAMPLE_PER_CATEGORY:
-                deals_by_asin.setdefault(deal["asin"], deal)
-                sampled_tabs[tab_name] += 1
-            if household_added < HOUSEHOLD_LIMIT and is_household(row):
-                existing = deals_by_asin.setdefault(deal["asin"], deal)
-                add_page(existing["pages"], "amazon-household-essentials-deals")
-                household_added += 1
-            if sampled_tabs[tab_name] >= SAMPLE_PER_CATEGORY and household_added >= HOUSEHOLD_LIMIT:
+            merge_deal(deals_by_asin, deal)
+            sampled_tabs[tab_name] += 1
+            if sampled_tabs[tab_name] >= SAMPLE_PER_CATEGORY:
                 break
-        if household_added >= HOUSEHOLD_LIMIT and all(v >= SAMPLE_PER_CATEGORY for v in sampled_tabs.values()):
-            break
 
+    # Pass 2: scan across all tabs for household essentials until the household page has 100 unique items.
+    household_asins = {
+        asin for asin, deal in deals_by_asin.items()
+        if "amazon-household-essentials-deals" in deal.get("pages", [])
+    }
+    for tab_name, page_slug in TAB_PAGE_MAP.items():
+        if len(household_asins) >= HOUSEHOLD_LIMIT:
+            break
+        for row in iter_tab_rows(tab_name):
+            if not is_household(row):
+                continue
+            deal = build_deal(row, tab_name, page_slug, now)
+            if not deal:
+                continue
+            merged = merge_deal(deals_by_asin, deal)
+            add_page(merged["pages"], "amazon-household-essentials-deals")
+            household_asins.add(deal["asin"])
+            if len(household_asins) >= HOUSEHOLD_LIMIT:
+                break
+
+    household_added = len(household_asins)
     deals = list(deals_by_asin.values())
     page_counts = {}
     for deal in deals:
@@ -225,7 +250,7 @@ def main():
         json.dump(output, f, indent=2, ensure_ascii=False)
 
     print(f"Saved {len(deals)} product cards to {OUTPUT_FILE}")
-    print(f"Household essentials added: {household_added}")
+    print(f"Household essentials on page: {household_added}")
     print(json.dumps(page_counts, indent=2))
 
 
