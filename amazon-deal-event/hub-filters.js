@@ -13,6 +13,7 @@
   const pct = deal => Number(deal.pct || deal.discount_percent || deal.percent_off || 0) || 0;
   const updated = deal => Date.parse(deal.updated_at || deal.updatedAt || deal.seen_at || 0) || 0;
   const title = deal => deal.title || deal.name || 'Amazon Sales Event Deal';
+  const brand = deal => deal.brand || deal.desc || '';
   const category = deal => deal.cat || deal.category || 'Amazon Deals';
   const image = deal => String(deal.image || deal.image_url || deal.thumbnail || '').replace(/\._SL\d+_\./, '._SL160_.');
   const hasCoupon = deal => Boolean(deal.hasCoupon || deal.has_coupon || deal.couponDisplay || deal.coupon);
@@ -57,13 +58,28 @@
     });
   }
 
+  function matchesSearch(deal, query) {
+    if (!query) return true;
+    const haystack = [
+      title(deal),
+      brand(deal),
+      category(deal),
+      deal.asin,
+      deal.couponDisplay,
+      Array.isArray(deal.pages) ? deal.pages.join(' ') : ''
+    ].join(' ').toLowerCase();
+    return query.split(/\s+/).filter(Boolean).every(term => haystack.includes(term));
+  }
+
   function filteredDeals() {
     const categoryFilter = $('event-category-filter')?.value || 'all';
     const sortMode = $('event-sort-select')?.value || 'featured';
+    const searchQuery = String($('event-search-input')?.value || '').trim().toLowerCase();
     let deals = uniqueDeals(allDeals.slice());
     if (categoryFilter !== 'all') {
       deals = deals.filter(deal => Array.isArray(deal.pages) && deal.pages.includes(categoryFilter));
     }
+    deals = deals.filter(deal => matchesSearch(deal, searchQuery));
     deals.sort((a, b) => {
       if (sortMode === 'discount-desc') return pct(b) - pct(a) || score(b) - score(a);
       if (sortMode === 'price-asc') return price(a) - price(b) || score(b) - score(a);
@@ -90,10 +106,11 @@
     const status = $('status-line');
     if (!grid) return;
     const deals = filteredDeals();
+    const searchQuery = String($('event-search-input')?.value || '').trim();
     updateStats(deals);
-    if (status) status.textContent = 'Showing all preloaded Amazon Sales Event ASINs. Use the controls to filter or sort.';
+    if (status) status.textContent = searchQuery ? `Showing deals matching “${searchQuery}”.` : 'Showing all preloaded Amazon Sales Event ASINs. Use the controls to filter, search, or sort.';
     if (!deals.length) {
-      grid.innerHTML = '<div class="empty-state">No Amazon Sales Event deals match this filter yet.</div>';
+      grid.innerHTML = '<div class="empty-state">No Amazon Sales Event deals match this search or filter yet.</div>';
       return;
     }
     grid.innerHTML = deals.slice(0, visibleCount).map((deal, index) => {
@@ -115,6 +132,7 @@
       visibleCount = DEALS_PER_PAGE;
       $('event-category-filter')?.addEventListener('change', () => { visibleCount = DEALS_PER_PAGE; render(); });
       $('event-sort-select')?.addEventListener('change', () => { visibleCount = DEALS_PER_PAGE; render(); });
+      $('event-search-input')?.addEventListener('input', () => { visibleCount = DEALS_PER_PAGE; render(); });
       render();
     } catch (error) {
       console.error(error);
