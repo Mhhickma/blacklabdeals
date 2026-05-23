@@ -8,7 +8,10 @@
     'amazon-home-kitchen-deals',
     'amazon-device-deals',
     'amazon-deals-under-50',
-    'amazon-household-essentials-deals'
+    'amazon-household-essentials-deals',
+    'amazon-gaming-deals',
+    'amazon-outdoor-garden-deals',
+    'amazon-pet-deals'
   ]);
   const DEALS_PER_PAGE = 50;
   let allDeals = [];
