@@ -26,21 +26,21 @@ jobs:
           python-version: '3.11'
 
       - name: Install dependencies
-        run: pip install requests keepa numpy python-amazon-paapi
+        run: pip install requests
 
       - name: Sync to latest main
         run: |
           git fetch origin main
           git reset --hard origin/main
 
-      - name: Fetch Amazon Sales Event deals
+      - name: Build Amazon Sales Event feed from category tabs
         env:
-          CREATORS_CREDENTIAL_ID: ${{ secrets.CREATORS_CREDENTIAL_ID }}
-          CREATORS_CREDENTIAL_SECRET: ${{ secrets.CREATORS_CREDENTIAL_SECRET }}
           AFFILIATE_TAG: blacklabdealsprime-20
-          AMAZON_SALES_EVENT_SHEET_ID: 19xrjgm9FJdiJaptD7iO2cMzxLFk5LbqivvgvaGZ3qsI
-          AMAZON_SALES_EVENT_SHEET_GID: '0'
-        run: python fetch_amazon_sales_event_deals.py
+          AMAZON_SALES_EVENT_SHEET_ID: 15kLY4nPg-ydq9kcqUcSTrzttQxtCkeXGoU2HoO4KTkc
+          AMAZON_SALES_EVENT_SAMPLE_PER_CATEGORY: 5
+          AMAZON_SALES_EVENT_HOUSEHOLD_LIMIT: 100
+          AMAZON_SALES_EVENT_SAMPLE_OUTPUT: amazon-sales-event-deals.json
+        run: python scripts/build_sales_event_sample.py
 
       - name: Commit updated feed
         run: |
