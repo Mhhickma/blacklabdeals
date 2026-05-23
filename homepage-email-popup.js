@@ -7,7 +7,7 @@
   const SESSION_COUNT_KEY = 'bldHomepageEmailPopupSessionCount';
   const SESSION_SEEN_KEY = 'bldHomepageEmailPopupSeenThisSession';
   const POPUP_DELAY_MS = 6000;
-  const SHOW_EVERY_N_SESSIONS = 3;
+  const SHOW_EVERY_N_SESSIONS = 1;
 
   function getSessionCount() {
     const current = Number(localStorage.getItem(SESSION_COUNT_KEY) || '0');
