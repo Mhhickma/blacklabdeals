@@ -48,6 +48,9 @@ PAGE_COLUMNS = [
     "amazon-device-deals",
     "amazon-deals-under-50",
     "amazon-household-essentials-deals",
+    "amazon-gaming-deals",
+    "amazon-outdoor-garden-deals",
+    "amazon-pet-deals",
 ]
 
 ASIN_RE = re.compile(r"\b[A-Z0-9]{10}\b", re.IGNORECASE)
