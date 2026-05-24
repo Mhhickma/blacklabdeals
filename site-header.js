@@ -81,6 +81,9 @@
   `;
 
   const MOBILE_DRAWER_CSS = `
+    .popular-category-nav{display:none!important;}
+    .best-seller-card,.deal-card,.hot-card,.deal-card-unified{cursor:pointer;}
+    .best-seller-card:focus-visible,.deal-card:focus-visible,.hot-card:focus-visible,.deal-card-unified:focus-visible{outline:3px solid rgba(26,58,92,.35);outline-offset:3px;}
     .bld-header-search-row{background:var(--surface,#fff);border-top:1px solid var(--border,#e8e6e1);border-bottom:1px solid var(--border,#e8e6e1);padding:12px 24px 14px;}
     .bld-header-search{max-width:760px;margin:0 auto;display:flex;align-items:center;gap:10px;}
     .bld-header-search input{width:100%;height:44px;border:1px solid var(--border,#e8e6e1);border-radius:999px;background:var(--bg,#f9f8f5);color:var(--text-primary,#1a1a18);font-family:Arial, sans-serif;font-size:15px;font-weight:700;padding:0 18px;outline:none;box-shadow:0 1px 3px rgba(0,0,0,.04);}
@@ -133,6 +136,58 @@
     script.src = '/mobile-deal-fixes.js?v=1';
     script.defer = true;
     document.body.appendChild(script);
+  }
+
+  function makeProductCardsClickable() {
+    if (window.__bldProductCardsClickable) return;
+    window.__bldProductCardsClickable = true;
+
+    const cardSelector = '.best-seller-card,.deal-card,.hot-card,.deal-card-unified';
+    const linkSelector = 'a.best-seller-btn,a.btn-deal,a.hot-btn,a[href*="amazon.com"],a[href*="amzn.to"]';
+
+    function getDealLink(card) {
+      return card ? card.querySelector(linkSelector) : null;
+    }
+
+    function prepareCards(root) {
+      const scope = root && root.querySelectorAll ? root : document;
+      scope.querySelectorAll(cardSelector).forEach(card => {
+        if (!getDealLink(card)) return;
+        card.setAttribute('role', 'link');
+        card.setAttribute('tabindex', '0');
+        card.setAttribute('aria-label', 'View this deal on Amazon');
+      });
+    }
+
+    prepareCards(document);
+
+    document.addEventListener('click', event => {
+      if (event.target.closest('a,button,input,select,textarea,label')) return;
+      const card = event.target.closest(cardSelector);
+      const link = getDealLink(card);
+      if (!link || !link.href) return;
+      window.open(link.href, '_blank', 'noopener');
+    });
+
+    document.addEventListener('keydown', event => {
+      if (event.key !== 'Enter' && event.key !== ' ') return;
+      const card = event.target.closest(cardSelector);
+      const link = getDealLink(card);
+      if (!link || !link.href) return;
+      event.preventDefault();
+      window.open(link.href, '_blank', 'noopener');
+    });
+
+    if ('MutationObserver' in window) {
+      const observer = new MutationObserver(mutations => {
+        mutations.forEach(mutation => {
+          mutation.addedNodes.forEach(node => {
+            if (node.nodeType === 1) prepareCards(node);
+          });
+        });
+      });
+      observer.observe(document.body, { childList: true, subtree: true });
+    }
   }
 
   function buildHeader() {
@@ -275,6 +330,7 @@
     wireMobileMenu(mount);
     initMegaMenu(mount);
     injectMobileDealFixes();
+    makeProductCardsClickable();
   }
 
   if (document.readyState === 'loading') {
