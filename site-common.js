@@ -24,9 +24,7 @@ function bldTrack(eventName, params = {}) {
 }
 
 function title(d) { return d.title || d.name || d.product_title || d.productTitle || 'Amazon Deal'; }
-function optimizeDealImage(src) {
-  return String(src || '').replace(/\._SL\d+_\./, '._SL160_.');
-}
+function optimizeDealImage(src) { return String(src || '').replace(/\._SL\d+_\./, '._SL160_.'); }
 function asinImageUrl(asin) {
   const value = String(asin || '').trim().toUpperCase();
   return /^[A-Z0-9]{10}$/.test(value) ? `https://images-na.ssl-images-amazon.com/images/P/${value}.01._SL160_.jpg` : '';
@@ -51,12 +49,8 @@ function ago(ts) {
   return h < 24 ? `${h}h ago` : `${Math.floor(h / 24)}d ago`;
 }
 function avg(a) { return a.length ? a.reduce((s, v) => s + v, 0) / a.length : 0; }
-function esc(s) {
-  return String(s || '').replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m]));
-}
-function norm(s) {
-  return String(s || '').toLowerCase().replace(/&/g, 'and').replace(/[^a-z0-9]+/g, ' ').trim();
-}
+function esc(s) { return String(s || '').replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m])); }
+function norm(s) { return String(s || '').toLowerCase().replace(/&/g, 'and').replace(/[^a-z0-9]+/g, ' ').trim(); }
 function hasAny(value, terms) {
   const n = norm(value);
   return terms.some(term => n.includes(norm(term)));
@@ -82,10 +76,21 @@ const CATEGORY_KEYWORDS = {
   home: ['home', 'kitchen']
 };
 
-const TOOL_ALLOWED_CATEGORY_TERMS = [
-  'tools and home improvement', 'industrial and scientific', 'automotive', 'patio lawn and garden'
+const SITEWIDE_EXCLUDED_CATEGORY_TERMS = ['clothing', 'shoes', 'jewelry', 'apparel', 'books'];
+const SITEWIDE_JUNK_TITLE_TERMS = [
+  'cute bow phone case', 'cow print phone case', 'coquette', 'preppy pink ribbon', 'pattern phone cover',
+  'lip scrub', 'paint by numbers', 'pet hoodie', 'dog hoodie', 'best wife ever', 'gift for wife',
+  'stocking stuffer', 'stocking stuffers', 'valentines day', 'halloween costume', 'cosplay', 'ornament'
 ];
+function isSitewideJunk(d) {
+  const c = cat(d);
+  const t = title(d);
+  if (hasAny(c, SITEWIDE_EXCLUDED_CATEGORY_TERMS)) return true;
+  if (hasAny(t, SITEWIDE_JUNK_TITLE_TERMS)) return true;
+  return false;
+}
 
+const TOOL_ALLOWED_CATEGORY_TERMS = ['tools and home improvement', 'industrial and scientific', 'automotive', 'patio lawn and garden'];
 const TOOL_TITLE_INCLUDE_TERMS = [
   'tool', 'tools', 'power tool', 'hand tool', 'saw', 'blade', 'drill', 'driver', 'impact', 'bit', 'bits', 'hole saw',
   'wrench', 'ratchet', 'socket', 'pliers', 'clamp', 'sander', 'sandpaper', 'sanding', 'router', 'dremel', 'grinder',
@@ -95,7 +100,6 @@ const TOOL_TITLE_INCLUDE_TERMS = [
   'safety glasses', 'safety goggles', 'respirator', 'work gloves', 'utility knife', 'paint sprayer', 'caulk gun',
   'fastener', 'screw', 'screws', 'anchor', 'hinge', 'bracket', 'abrasive', 'buffing', 'polishing', 'extension cord'
 ];
-
 const TOOL_TITLE_EXCLUDE_TERMS = [
   'bluetooth speaker', 'wireless speaker', 'portable speaker', 'shower speaker', 'earbuds', 'headphones', 'phone case',
   'iphone case', 'samsung galaxy', 'translator earbuds', 'paint by numbers', 'hair dryer', 'lip scrub', 'makeup',
@@ -103,58 +107,127 @@ const TOOL_TITLE_EXCLUDE_TERMS = [
   'wrapping paper', 'gift wrap', 'best wife ever', 'gift for wife', 'valentines', 'stocking stuffer', 'stocking stuffers',
   'bike spoke reflectors', 'decorative', 'ornament', 'canvas', 'costume', 'apparel', 'shirt', 'sweater', 'hoodie'
 ];
-
 const TOOL_EXCLUDED_CATEGORY_TERMS = [
   'beauty', 'personal care', 'pet supplies', 'toys and games', 'clothing', 'shoes', 'jewelry', 'books', 'grocery',
   'health and household', 'cell phones and accessories', 'electronics', 'baby products', 'musical instruments'
 ];
-
 function isToolDeal(d) {
   const c = cat(d);
   const t = title(d);
   const categoryLooksTool = hasAny(c, TOOL_ALLOWED_CATEGORY_TERMS);
   const titleLooksTool = hasAny(t, TOOL_TITLE_INCLUDE_TERMS);
-
+  if (isSitewideJunk(d)) return false;
   if (hasAny(c, TOOL_EXCLUDED_CATEGORY_TERMS)) return false;
   if (hasAny(t, TOOL_TITLE_EXCLUDE_TERMS)) return false;
-
   if (categoryLooksTool && titleLooksTool) return true;
   if (titleLooksTool && !hasAny(c, TOOL_EXCLUDED_CATEGORY_TERMS)) return true;
   return false;
 }
 
+const HOME_ALLOWED_CATEGORY_TERMS = ['home and kitchen', 'kitchen and dining', 'appliances', 'health and household', 'tools and home improvement'];
+const HOME_TITLE_INCLUDE_TERMS = [
+  'kitchen', 'cookware', 'bakeware', 'pan', 'pot', 'skillet', 'knife', 'knives', 'cutting board', 'utensil', 'spatula',
+  'coffee', 'mug', 'cup', 'bottle', 'storage', 'organizer', 'shelf', 'rack', 'basket', 'bin', 'drawer', 'cabinet',
+  'bedding', 'sheet', 'sheets', 'pillow', 'blanket', 'comforter', 'towel', 'bath', 'shower', 'rug', 'mat',
+  'vacuum', 'mop', 'broom', 'cleaning', 'laundry', 'trash', 'garbage', 'air purifier', 'humidifier', 'fan',
+  'lamp', 'light', 'curtain', 'home', 'household', 'countertop', 'pantry', 'closet', 'garage storage'
+];
+const HOME_TITLE_EXCLUDE_TERMS = [
+  'phone case', 'iphone case', 'samsung galaxy', 'earbuds', 'headphones', 'translator', 'pet hoodie', 'dog toy',
+  'paint by numbers', 'canvas diy', 'lip scrub', 'hair dryer', 'makeup', 'skincare', 'card shuffler', 'video game',
+  'xbox', 'playstation', 'costume', 'shirt', 'hoodie', 'sweater', 'bracelet', 'necklace'
+];
+const HOME_EXCLUDED_CATEGORY_TERMS = [
+  'cell phones and accessories', 'electronics', 'pet supplies', 'toys and games', 'beauty', 'personal care',
+  'clothing', 'shoes', 'jewelry', 'books', 'baby products', 'musical instruments'
+];
+function isHomeDeal(d) {
+  const c = cat(d);
+  const t = title(d);
+  if (isSitewideJunk(d)) return false;
+  if (hasAny(c, HOME_EXCLUDED_CATEGORY_TERMS)) return false;
+  if (hasAny(t, HOME_TITLE_EXCLUDE_TERMS)) return false;
+  return hasAny(c, HOME_ALLOWED_CATEGORY_TERMS) || hasAny(t, HOME_TITLE_INCLUDE_TERMS);
+}
+
+const ELECTRONICS_ALLOWED_CATEGORY_TERMS = ['electronics', 'cell phones and accessories', 'computers', 'camera and photo', 'video games'];
+const ELECTRONICS_TITLE_INCLUDE_TERMS = [
+  'charger', 'charging', 'cable', 'usb', 'usb c', 'power bank', 'battery pack', 'adapter', 'hub', 'dock',
+  'earbuds', 'headphones', 'speaker', 'bluetooth', 'soundbar', 'microphone', 'camera', 'webcam', 'tripod',
+  'monitor', 'keyboard', 'mouse', 'tablet', 'laptop', 'computer', 'ssd', 'hard drive', 'memory card',
+  'smart plug', 'smart home', 'wifi', 'wi fi', 'router', 'modem', 'tv', 'streaming', 'fire tv', 'echo', 'kindle',
+  'ring', 'blink', 'eero', 'alexa', 'projector', 'dash cam', 'security camera'
+];
+const ELECTRONICS_TITLE_EXCLUDE_TERMS = [
+  'phone case', 'iphone case', 'samsung galaxy case', 'cute', 'coquette', 'cow print', 'bow', 'ribbon',
+  'paint by numbers', 'hair dryer', 'pet hoodie', 'dog toy', 'costume', 'shirt', 'hoodie', 'book holder'
+];
+const ELECTRONICS_EXCLUDED_CATEGORY_TERMS = [
+  'beauty', 'personal care', 'pet supplies', 'clothing', 'shoes', 'jewelry', 'grocery', 'home and kitchen',
+  'tools and home improvement', 'baby products', 'books'
+];
+function isElectronicsDeal(d) {
+  const c = cat(d);
+  const t = title(d);
+  if (isSitewideJunk(d)) return false;
+  if (hasAny(c, ELECTRONICS_EXCLUDED_CATEGORY_TERMS)) return false;
+  if (hasAny(t, ELECTRONICS_TITLE_EXCLUDE_TERMS)) return false;
+  return hasAny(c, ELECTRONICS_ALLOWED_CATEGORY_TERMS) || hasAny(t, ELECTRONICS_TITLE_INCLUDE_TERMS);
+}
+
+const UNDER50_EXCLUDED_CATEGORY_TERMS = ['clothing', 'shoes', 'jewelry', 'books'];
+const UNDER50_EXCLUDED_TITLE_TERMS = [
+  'phone case', 'iphone case', 'samsung galaxy case', 'paint by numbers', 'lip scrub', 'pet hoodie', 'dog hoodie',
+  'best wife ever', 'gift for wife', 'stocking stuffer', 'stocking stuffers', 'costume', 'shirt', 'hoodie', 'sweater'
+];
+function isUnder50Deal(d) {
+  const p = price(d);
+  if (!(p > 0 && p <= 50)) return false;
+  if (isSitewideJunk(d)) return false;
+  if (hasAny(cat(d), UNDER50_EXCLUDED_CATEGORY_TERMS)) return false;
+  if (hasAny(title(d), UNDER50_EXCLUDED_TITLE_TERMS)) return false;
+  return isToolDeal(d) || isHomeDeal(d) || isElectronicsDeal(d) || matchCategory(d, 'pet') || matchCategory(d, 'automotive') || matchCategory(d, 'patio') || matchCategory(d, 'office') || matchCategory(d, 'sports') || matchCategory(d, 'health');
+}
+
 function matchCategory(d, key) {
   const c = norm(cat(d));
   const k = norm(key);
+  if (isSitewideJunk(d)) return false;
   if (k === 'tools' || k === 'tool') return isToolDeal(d);
+  if (k === 'home' || k === 'home kitchen' || k === 'home and kitchen') return isHomeDeal(d);
+  if (k === 'electronics') return isElectronicsDeal(d);
   const words = CATEGORY_KEYWORDS[k] || [k];
   return words.some(w => c.includes(norm(w))) || norm(title(d)).includes(k);
 }
 
 function pageMatch(d) {
-  const c = cat(d).toLowerCase().trim();
   const p = price(d);
+  if (isSitewideJunk(d) && MODE !== 'all' && MODE !== 'top100') return false;
   if (PAGE_CATEGORY) return matchCategory(d, PAGE_CATEGORY);
   if (MODE === 'tools') return isToolDeal(d);
-  if (MODE === 'home') return c === 'home & kitchen' || c.includes('home') || c.includes('kitchen');
-  if (MODE === 'under50') return p > 0 && p <= 50;
+  if (MODE === 'home') return isHomeDeal(d);
+  if (MODE === 'under50') return isUnder50Deal(d);
+  if (MODE === 'electronics') return isElectronicsDeal(d);
   return p > 0 || title(d);
 }
 
 function topFilter(d) {
-  const c = cat(d).toLowerCase();
   const p = price(d);
+  if (isSitewideJunk(d)) return false;
   if (currentFilter === 'hot') return hot(d);
   if (currentFilter === 'coupon') return coupon(d);
-  if (currentFilter === 'under50') return p > 0 && p <= 50;
-  if (currentFilter === 'home') return c.includes('home') || c.includes('kitchen');
-  if (currentFilter === 'electronics') return matchCategory(d, 'electronics');
+  if (currentFilter === 'under50') return isUnder50Deal(d);
+  if (currentFilter === 'home') return isHomeDeal(d);
+  if (currentFilter === 'electronics') return isElectronicsDeal(d);
   if (currentFilter === 'tools') return isToolDeal(d);
-  return true;
+  return p > 0 || title(d);
 }
 
 function score(d) {
-  return (hot(d) ? 1000 : 0) + (coupon(d) ? 180 : 0) + pct(d) * 12 + (was(d) ? 60 : 0) + updated(d) / 1000000000 + Math.max(0, 80 - price(d));
+  let quality = 0;
+  if (isToolDeal(d) || isHomeDeal(d) || isElectronicsDeal(d)) quality += 80;
+  if (isSitewideJunk(d)) quality -= 500;
+  return quality + (hot(d) ? 1000 : 0) + (coupon(d) ? 180 : 0) + pct(d) * 12 + (was(d) ? 60 : 0) + updated(d) / 1000000000 + Math.max(0, 80 - price(d));
 }
 function sorted(a) { return [...a].sort((x, y) => score(y) - score(x)); }
 function shown() {
@@ -177,16 +250,11 @@ function ensureDealCount() {
   head.appendChild(count);
   return count;
 }
-
-function dealCountText(total) {
-  return `Showing ${Math.min(visibleDealsCount, total)} of ${total} deals`;
-}
-
+function dealCountText(total) { return `Showing ${Math.min(visibleDealsCount, total)} of ${total} deals`; }
 function displayableDeals(deals) {
   const imageDeals = deals.filter(hasDealImage);
   return imageDeals.length ? imageDeals : deals;
 }
-
 function stats(d) {
   const label = PAGE_CATEGORY_LABEL || 'deals';
   if ($('hero-pill')) $('hero-pill').textContent = PAGE_CATEGORY ? `${d.length} ${label} deals live right now` : `${d.length} deals live right now`;
@@ -203,32 +271,22 @@ function stats(d) {
   const n = Math.max(...d.map(updated), 0);
   if ($('stat-updated')) $('stat-updated').textContent = n ? ago(n) : '-';
 }
-
 function cardImage(d, t) {
   const i = img(d);
   return i ? `<img src="${esc(i)}" alt="${esc(t)}" width="160" height="160" loading="lazy" decoding="async">` : `<div class="img-fallback">Deal image unavailable</div>`;
 }
-
 function findDealsGrid() {
   return $('hot-grid') || $('deals-grid') || $('dealsGrid') || document.querySelector('.hot-grid,.deals-grid,[id*="hot"][id*="grid"],[class*="hot"][class*="grid"],[id*="deal"][id*="grid"],[class*="deal"][class*="grid"]');
 }
-
 function bindLoadMoreButton(button) {
   if (!button || button.dataset.bldLoadMoreBound) return;
   button.dataset.bldLoadMoreBound = 'true';
-  button.addEventListener('click', () => {
-    visibleDealsCount += DEALS_PER_PAGE;
-    render();
-  });
+  button.addEventListener('click', () => { visibleDealsCount += DEALS_PER_PAGE; render(); });
 }
-
 function ensureLoadMoreButton() {
   let wrap = $('load-more-wrap');
   let button = $('load-more-btn');
-  if (wrap && button) {
-    bindLoadMoreButton(button);
-    return { wrap, button };
-  }
+  if (wrap && button) { bindLoadMoreButton(button); return { wrap, button }; }
   const grid = findDealsGrid();
   if (!grid) return { wrap: null, button: null };
   wrap = document.createElement('div');
@@ -240,7 +298,6 @@ function ensureLoadMoreButton() {
   bindLoadMoreButton(button);
   return { wrap, button };
 }
-
 function more(c) {
   const { wrap, button } = ensureLoadMoreButton();
   if (!wrap || !button) return;
@@ -256,7 +313,6 @@ function more(c) {
     wrap.hidden = true;
   }
 }
-
 function removeCompetingLoadMoreButtons(grid) {
   if (!grid) return;
   let next = grid.nextElementSibling;
@@ -266,7 +322,6 @@ function removeCompetingLoadMoreButtons(grid) {
     current.remove();
   }
 }
-
 function render() {
   const g = findDealsGrid();
   const s = $('status-line');
@@ -312,11 +367,7 @@ const POPULAR_CATEGORY_LINKS = [
   { href: '/best-amazon-baby-products-deals/', title: 'Best Amazon Baby Product Deals', desc: 'Nursery, feeding, bath, travel, and family supplies.' },
   { href: '/best-amazon-musical-instruments-deals/', title: 'Best Amazon Musical Instrument Deals', desc: 'Music accessories, stands, strings, and audio gear.' }
 ];
-
-function cleanPath(path) {
-  return (`/${String(path || '').split('?')[0].split('#')[0].replace(/^\/+|\/+$/g, '')}/`).replace('//', '/');
-}
-
+function cleanPath(path) { return (`/${String(path || '').split('?')[0].split('#')[0].replace(/^\/+|\/+$/g, '')}/`).replace('//', '/'); }
 function renderPopularCategoryNav() {
   const currentPath = cleanPath(window.location.pathname || '/');
   const links = POPULAR_CATEGORY_LINKS.map(item => {
@@ -326,7 +377,6 @@ function renderPopularCategoryNav() {
   }).join('');
   return `<!-- BLD POPULAR CATEGORY NAV START --><section class="popular-category-nav" aria-labelledby="popular-category-nav-title"><div class="popular-category-nav-head"><h2 id="popular-category-nav-title">Popular Amazon Deal Categories</h2><p>Jump to current deal pages by category, price range, and trending finds.</p></div><div class="popular-category-grid">${links}</div></section><!-- BLD POPULAR CATEGORY NAV END -->`;
 }
-
 function markCurrentPopularCategoryNav(nav) {
   if (!nav) return;
   const currentPath = cleanPath(window.location.pathname || '/');
@@ -343,21 +393,17 @@ function markCurrentPopularCategoryNav(nav) {
     }
   });
 }
-
 function ensureBrowseSection() {
   if (document.body.dataset.bldHiddenEvent === 'true') return;
   const main = document.querySelector('main.page-shell') || document.querySelector('main');
   if (!main) return;
-
   let nav = document.querySelector('.popular-category-nav');
   if (!nav) {
     const holder = document.createElement('div');
     holder.innerHTML = renderPopularCategoryNav();
     nav = holder.firstElementChild;
   }
-
   markCurrentPopularCategoryNav(nav);
-
   const dealSection = main.querySelector('.hot-strip');
   const intro = main.querySelector('.category-intro-section');
   if (dealSection && dealSection.parentNode) {
@@ -371,15 +417,10 @@ function ensureBrowseSection() {
     afterDeals.insertAdjacentElement('afterend', nav);
     return;
   }
-
   const fallback = main.querySelector('.section-head') || main.querySelector('.filter-row');
-  if (fallback && fallback.parentNode) {
-    fallback.parentNode.insertBefore(nav, fallback);
-  } else {
-    main.appendChild(nav);
-  }
+  if (fallback && fallback.parentNode) fallback.parentNode.insertBefore(nav, fallback);
+  else main.appendChild(nav);
 }
-
 async function fetchDealsFeed() {
   const r = await fetch(DEAL_FEED_URL, { cache: 'default' });
   if (!r.ok) throw new Error('Could not load Black Lab deals.json');
@@ -388,7 +429,6 @@ async function fetchDealsFeed() {
   if (!source.length) throw new Error('Black Lab deals.json had no deals');
   return source;
 }
-
 async function loadDeals() {
   ensureBrowseSection();
   const s = $('status-line');
@@ -405,7 +445,6 @@ async function loadDeals() {
     if (findDealsGrid()) findDealsGrid().innerHTML = '<div class="empty-state">This page is live, but the Black Lab deal feed could not be loaded right now.</div>';
   }
 }
-
 function initFilters() {
   document.querySelectorAll('.filter-btn').forEach(b => b.addEventListener('click', () => {
     document.querySelectorAll('.filter-btn').forEach(x => x.classList.remove('active'));
@@ -416,19 +455,16 @@ function initFilters() {
     render();
   }));
 }
-
 function initUniversalDealPagination() {
   const state = new WeakMap();
   const gridSelector = '.hot-grid,.deals-grid,.product-grid,.products-grid,.best-seller-grid,#hot-grid,#deals-grid,#dealsGrid,#products-grid,#hot-deals-grid,#hotDealsGrid,#hot-deals-list,#hotDealsList,#deals-list,#dealsList,[id*="hot"][id*="grid"],[class*="hot"][class*="grid"],[id*="hot"][id*="list"],[class*="hot"][class*="list"],[id*="deal"][id*="grid"],[class*="deal"][class*="grid"],[id*="deal"][id*="list"],[class*="deal"][class*="list"],[id*="product"][id*="grid"],[class*="product"][class*="grid"]';
   const cardSelector = '.hot-card,.deal-card,.product-card,.best-seller-card,.amazon-card,a[href*="amazon.com"],a[href*="amzn.to"],a[href*="joylink.io"]';
-
   function isCard(el) {
     if (!el || !el.matches || !el.matches(cardSelector)) return false;
     if (el.closest('header,nav,footer,.bld-header-shell,.bld-mobile-drawer,.bld-mega-menu,.browse-pages-section,.browse-pages-grid,.panel,.link-list,.seo-info-section,.seo-content')) return false;
     if (el.matches('.share-btn,.copy-btn,[data-share],[data-copy]')) return false;
     return true;
   }
-
   function getCards(grid) {
     const direct = [...grid.children].filter(isCard);
     if (direct.length) return direct;
@@ -438,13 +474,9 @@ function initUniversalDealPagination() {
       return !parentGrid || parentGrid === grid;
     });
   }
-
   function applyGrid(grid) {
     if (!grid || grid.dataset.bldUniversalPager === 'off') return;
-    if (grid.dataset.bldDynamicPager === 'true') {
-      removeCompetingLoadMoreButtons(grid);
-      return;
-    }
+    if (grid.dataset.bldDynamicPager === 'true') { removeCompetingLoadMoreButtons(grid); return; }
     const cards = getCards(grid);
     if (cards.length <= DEALS_PER_PAGE) return;
     let current = state.get(grid) || DEALS_PER_PAGE;
@@ -476,7 +508,6 @@ function initUniversalDealPagination() {
       wrap.hidden = true;
     }
   }
-
   function applyAll() { document.querySelectorAll(gridSelector).forEach(applyGrid); }
   applyAll();
   window.addEventListener('load', applyAll);
@@ -484,7 +515,6 @@ function initUniversalDealPagination() {
   const observer = new MutationObserver(() => applyAll());
   observer.observe(document.body, { childList: true, subtree: true });
 }
-
 function initDealClickTracking() {
   document.addEventListener('click', event => {
     const dealLink = event.target.closest('a.hot-card, a.deal-card, a.product-card, a.card, a[href*="amazon.com"], a[href*="joylink.io"]');
@@ -494,7 +524,6 @@ function initDealClickTracking() {
     bldTrack('deal_click', { deal_title: dealLink.dataset.dealTitle || dealLink.textContent.trim().slice(0, 120), outbound_url: href, page_mode: MODE, page_category: PAGE_CATEGORY || 'all' });
   }, true);
 }
-
 function initSearchTracking() {
   let searchTimer;
   document.addEventListener('input', event => {
@@ -509,7 +538,6 @@ function initSearchTracking() {
     }, 900);
   });
 }
-
 function initScrollDepthTracking() {
   const marks = [25, 50, 75, 90];
   const tracked = new Set();
@@ -528,11 +556,9 @@ function initScrollDepthTracking() {
   window.addEventListener('scroll', checkScroll, { passive: true });
   window.addEventListener('load', checkScroll);
 }
-
 function initTimeOnPageTracking() {
   [30, 60, 120, 300].forEach(seconds => setTimeout(() => bldTrack('time_on_page', { seconds_on_page: seconds, page_mode: MODE, page_category: PAGE_CATEGORY || 'all' }), seconds * 1000));
 }
-
 function ensureMobileDealNav() {}
 
 const SHOULD_RENDER_SHARED_DEALS = Boolean(document.body.dataset.mode)
