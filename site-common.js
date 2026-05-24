@@ -1,4 +1,4 @@
-﻿const MODE = document.body.dataset.mode || 'all';
+const MODE = document.body.dataset.mode || 'all';
 const PAGE_CATEGORY = (document.body.dataset.category || '').toLowerCase().trim();
 const PAGE_CATEGORY_LABEL = document.body.dataset.categoryLabel || '';
 const DEALS_PER_PAGE = 50;
@@ -57,6 +57,10 @@ function esc(s) {
 function norm(s) {
   return String(s || '').toLowerCase().replace(/&/g, 'and').replace(/[^a-z0-9]+/g, ' ').trim();
 }
+function hasAny(value, terms) {
+  const n = norm(value);
+  return terms.some(term => n.includes(norm(term)));
+}
 
 const CATEGORY_KEYWORDS = {
   electronics: ['electronics', 'cell phones', 'cell phone', 'computers', 'computer', 'camera', 'audio', 'headphones', 'tablet', 'tv', 'television'],
@@ -78,9 +82,51 @@ const CATEGORY_KEYWORDS = {
   home: ['home', 'kitchen']
 };
 
+const TOOL_ALLOWED_CATEGORY_TERMS = [
+  'tools and home improvement', 'industrial and scientific', 'automotive', 'patio lawn and garden'
+];
+
+const TOOL_TITLE_INCLUDE_TERMS = [
+  'tool', 'tools', 'power tool', 'hand tool', 'saw', 'blade', 'drill', 'driver', 'impact', 'bit', 'bits', 'hole saw',
+  'wrench', 'ratchet', 'socket', 'pliers', 'clamp', 'sander', 'sandpaper', 'sanding', 'router', 'dremel', 'grinder',
+  'oscillating', 'multitool', 'multi tool', 'chisel', 'punch', 'mallet', 'hammer', 'level', 'laser level', 'tape measure',
+  'measuring', 'square', 'miter', 'table saw', 'jigsaw', 'circular saw', 'reciprocating', 'planer', 'jointer', 'lathe',
+  'woodworking', 'workshop', 'shop vac', 'dust collection', 'air compressor', 'nail gun', 'stapler', 'welding', 'soldering',
+  'safety glasses', 'safety goggles', 'respirator', 'work gloves', 'utility knife', 'paint sprayer', 'caulk gun',
+  'fastener', 'screw', 'screws', 'anchor', 'hinge', 'bracket', 'abrasive', 'buffing', 'polishing', 'extension cord'
+];
+
+const TOOL_TITLE_EXCLUDE_TERMS = [
+  'bluetooth speaker', 'wireless speaker', 'portable speaker', 'shower speaker', 'earbuds', 'headphones', 'phone case',
+  'iphone case', 'samsung galaxy', 'translator earbuds', 'paint by numbers', 'hair dryer', 'lip scrub', 'makeup',
+  'skincare', 'pet hoodie', 'dog hoodie', 'cat', 'dog toy', 'card shuffler', 'book holder', 'umbrella holder',
+  'wrapping paper', 'gift wrap', 'best wife ever', 'gift for wife', 'valentines', 'stocking stuffer', 'stocking stuffers',
+  'bike spoke reflectors', 'decorative', 'ornament', 'canvas', 'costume', 'apparel', 'shirt', 'sweater', 'hoodie'
+];
+
+const TOOL_EXCLUDED_CATEGORY_TERMS = [
+  'beauty', 'personal care', 'pet supplies', 'toys and games', 'clothing', 'shoes', 'jewelry', 'books', 'grocery',
+  'health and household', 'cell phones and accessories', 'electronics', 'baby products', 'musical instruments'
+];
+
+function isToolDeal(d) {
+  const c = cat(d);
+  const t = title(d);
+  const categoryLooksTool = hasAny(c, TOOL_ALLOWED_CATEGORY_TERMS);
+  const titleLooksTool = hasAny(t, TOOL_TITLE_INCLUDE_TERMS);
+
+  if (hasAny(c, TOOL_EXCLUDED_CATEGORY_TERMS)) return false;
+  if (hasAny(t, TOOL_TITLE_EXCLUDE_TERMS)) return false;
+
+  if (categoryLooksTool && titleLooksTool) return true;
+  if (titleLooksTool && !hasAny(c, TOOL_EXCLUDED_CATEGORY_TERMS)) return true;
+  return false;
+}
+
 function matchCategory(d, key) {
   const c = norm(cat(d));
   const k = norm(key);
+  if (k === 'tools' || k === 'tool') return isToolDeal(d);
   const words = CATEGORY_KEYWORDS[k] || [k];
   return words.some(w => c.includes(norm(w))) || norm(title(d)).includes(k);
 }
@@ -89,7 +135,7 @@ function pageMatch(d) {
   const c = cat(d).toLowerCase().trim();
   const p = price(d);
   if (PAGE_CATEGORY) return matchCategory(d, PAGE_CATEGORY);
-  if (MODE === 'tools') return c === 'tools & home improvement' || c.includes('tool') || c.includes('home improvement') || norm(title(d)).includes('tool');
+  if (MODE === 'tools') return isToolDeal(d);
   if (MODE === 'home') return c === 'home & kitchen' || c.includes('home') || c.includes('kitchen');
   if (MODE === 'under50') return p > 0 && p <= 50;
   return p > 0 || title(d);
@@ -103,7 +149,7 @@ function topFilter(d) {
   if (currentFilter === 'under50') return p > 0 && p <= 50;
   if (currentFilter === 'home') return c.includes('home') || c.includes('kitchen');
   if (currentFilter === 'electronics') return matchCategory(d, 'electronics');
-  if (currentFilter === 'tools') return matchCategory(d, 'tools');
+  if (currentFilter === 'tools') return isToolDeal(d);
   return true;
 }
 
