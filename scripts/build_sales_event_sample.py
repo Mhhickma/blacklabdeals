@@ -64,7 +64,7 @@ def build(row,tab,slug,now):
     if any(w in low for w in DEVICE_TERMS) or brand.lower() in {'amazon','amazon basics','amazonbasics','ring','blink','eero'}: add(pages,'amazon-device-deals')
     if is_hh(row): add(pages,'amazon-household-essentials-deals')
     was=f'${ytd:.2f}' if ytd and price and ytd>price else ''
-    return {'asin':asin,'pages':pages,'title':title,'brand':brand,'cat':val(row,'category_description','category') or tab,'image':f'https://images-na.ssl-images-amazon.com/images/P/{asin}.01._SL160_.jpg','price':f'${price:.2f}' if price else 'See deal','price_amount':price,'was':was,'savings':was,'pct':disc,'discount':f'-{disc}%' if disc else '','deal_type':'SAMPLE_FROM_SHEET','availability':'','link':link(asin,val(row,'asin_url','url')),'hot':disc>=30,'hasCoupon':False,'couponDisplay':'','rating':num(val(row,'star_rating','rating')) or None,'review_count':None,'desc':brand,'seen_at':now,'updated_at':now}
+    return {'asin':asin,'pages':pages,'title':title,'brand':brand,'cat':val(row,'category_description','category') or tab,'image':f'https://images-na.ssl-images-amazon.com/images/P/{asin}.01._AC_SL500_.jpg','price':f'${price:.2f}' if price else 'See deal','price_amount':price,'was':was,'savings':was,'pct':disc,'discount':f'-{disc}%' if disc else '','deal_type':'SAMPLE_FROM_SHEET','availability':'','link':link(asin,val(row,'asin_url','url')),'hot':disc>=30,'hasCoupon':False,'couponDisplay':'','rating':num(val(row,'star_rating','rating')) or None,'review_count':None,'desc':brand,'seen_at':now,'updated_at':now}
 
 def merge(d,deal):
     old=d.get(deal['asin'])
