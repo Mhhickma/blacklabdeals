@@ -1,0 +1,4 @@
+/* Keep only total deal count and last updated stat visible. */
+.stats-bar{display:flex!important;visibility:visible!important;height:auto!important;max-height:none!important;overflow:visible!important;margin:8px 0 20px!important;padding:0!important}
+#dealCount,#updatedAt,#stat-total,#stat-active,#stat-updated{display:block!important;visibility:visible!important;height:auto!important;max-height:none!important;overflow:visible!important;margin:0!important;padding:0!important}
+#stat-hot,#stat-price,#stat-discount,#stat-avg-price,#stat-avg-discount,#watchCount,#checkedCount,#hotCount{display:none!important}
