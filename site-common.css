@@ -32,3 +32,28 @@ html body #hot-section[style*="display"]{
   border:0!important;
 }
 /* BLD REMOVE HOT DEALS PAGE/SECTION END */
+/* BLD REMOVE DEAL STATS BARS START */
+.stats-bar,
+.stat,
+#stat-active,
+#stat-hot,
+#stat-price,
+#stat-discount,
+#stat-total,
+#stat-avg-price,
+#stat-avg-discount,
+#dealCount,
+#watchCount,
+#checkedCount,
+#updatedAt,
+#hotCount{
+  display:none!important;
+  visibility:hidden!important;
+  height:0!important;
+  min-height:0!important;
+  max-height:0!important;
+  overflow:hidden!important;
+  margin:0!important;
+  padding:0!important;
+}
+/* BLD REMOVE DEAL STATS BARS END */
