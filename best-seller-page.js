@@ -118,10 +118,10 @@
       return matchesSearch && matchesCat;
     });
 
-    const sort = sortFilter ? sortFilter.value : 'discount';
+    const sort = sortFilter ? sortFilter.value : 'newest';
     if (sort === 'price-low') deals.sort((a, b) => (a.price_amount || 999999) - (b.price_amount || 999999));
     else if (sort === 'rank') deals.sort((a, b) => (a.bestSellerRank || 999999) - (b.bestSellerRank || 999999));
-    else deals.sort((a, b) => (b.pct || 0) - (a.pct || 0));
+    else deals.sort((a, b) => new Date(b.updatedAt || b.updated_at || 0) - new Date(a.updatedAt || a.updated_at || 0));
 
     return deals;
   }
@@ -154,7 +154,7 @@
       visibleDealsCount = PAGE_SIZE;
 
       const sortFilter = getEl('sortFilter');
-      if (sortFilter) sortFilter.value = 'discount';
+      if (sortFilter) sortFilter.value = 'newest';
 
       const dealCount = getEl('dealCount');
       const watchCount = getEl('watchCount');
