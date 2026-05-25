@@ -81,6 +81,51 @@
   `;
 
   const MOBILE_DRAWER_CSS = `
+    /* BLD SITEWIDE CLEAN CARD LAYOUT START */
+    .best-seller-badges,
+    .best-seller-badge,
+    .hot-card-badge,
+    .rank-badge,
+    .hot-off,
+    .discount-badge,
+    .card-badge-hot,
+    .card-badge-discount,
+    .card-discount,
+    .deal-discount,
+    .sale-discount,
+    .percent-off,
+    .percentage-off,
+    .savings-badge,
+    .savings-pill,
+    .price-was,
+    .hot-price-was,
+    .best-seller-was,
+    .search-was,
+    .was-price,
+    .list-price,
+    .original-price,
+    .strike-price,
+    .compare-at-price,
+    [data-discount],
+    [data-percent-off] {
+      display: none !important;
+    }
+    .best-seller-price-row,
+    .hot-card-prices,
+    .price-block,
+    .card-footer,
+    .search-price-row {
+      gap: 0 !important;
+    }
+    .best-seller-card .best-seller-body,
+    .deal-card-unified .best-seller-body,
+    .hot-card-body,
+    .card-body,
+    .search-body {
+      gap: 8px !important;
+    }
+    /* BLD SITEWIDE CLEAN CARD LAYOUT END */
+
     .popular-category-nav{display:none!important;}
     .best-seller-card,.deal-card,.hot-card,.deal-card-unified{cursor:pointer;}
     .best-seller-card:focus-visible,.deal-card:focus-visible,.hot-card:focus-visible,.deal-card-unified:focus-visible{outline:3px solid rgba(26,58,92,.35);outline-offset:3px;}
