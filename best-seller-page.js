@@ -53,7 +53,6 @@
   }
 
   function dealCard(deal) {
-    const rank = deal.bestSellerRank ? `#${deal.bestSellerRank}` : 'Best Seller';
     const image = deal.image
       ? `<img src="${cleanText(optimizeDealImage(deal.image))}" alt="${cleanText(deal.title)}" loading="lazy" decoding="async">`
       : '<div class="img-fallback">Deal image unavailable</div>';
@@ -61,9 +60,8 @@
     return `<article class="best-seller-card">
       <div class="best-seller-img">${image}</div>
       <div class="best-seller-body">
-        <div class="best-seller-badges"><span class="best-seller-badge rank">${cleanText(rank)}</span></div>
         <div class="best-seller-title">${cleanText(deal.title)}</div>
-        <div class="best-seller-category">${cleanText(deal.cat || 'Best Sellers')}</div>
+        <div class="best-seller-category">${cleanText(deal.cat || 'Amazon Deals')}</div>
         <div class="best-seller-price-row"><span class="best-seller-price">${cleanText(deal.price || money(deal.price_amount))}</span></div>
         <a class="best-seller-btn" href="${cleanText(deal.link)}" target="_blank" rel="nofollow sponsored noopener">View on Amazon</a>
       </div>
@@ -141,7 +139,7 @@
     grid.innerHTML = visibleDeals.map(dealCard).join('');
     const dealCount = getEl('deal-count');
     if (dealCount) dealCount.textContent = deals.length ? `${Math.min(visibleDealsCount, deals.length)} of ${deals.length} deals` : '0 deals';
-    statusEl.textContent = deals.length ? '' : 'No matching best seller deals are showing yet. Check back after the next hourly update.';
+    statusEl.textContent = deals.length ? '' : 'No matching deals are showing yet. Check back after the next hourly update.';
     statusEl.className = deals.length ? 'best-seller-status hidden' : 'best-seller-status';
     renderLoadMore(deals.length);
   }
@@ -170,13 +168,13 @@
       if (checkedCount) checkedCount.textContent = data.asinsCheckedThisRun ?? '-';
       if (hotCount) hotCount.textContent = data.hotDeals ?? bestSellerDeals.filter(d => d.hot).length;
       if (updatedAt) updatedAt.textContent = fmtDate(data.updatedAt);
-      if (heroPill) heroPill.textContent = `${data.count ?? bestSellerDeals.length} best seller deals found`;
+      if (heroPill) heroPill.textContent = `${data.count ?? bestSellerDeals.length} deals found`;
 
       renderFilters();
       renderDeals(true);
     } catch (err) {
       if (statusEl) {
-        statusEl.textContent = 'Best seller deals are not loaded yet. Try refreshing in a few minutes.';
+        statusEl.textContent = 'Deals are not loaded yet. Try refreshing in a few minutes.';
         statusEl.className = 'best-seller-status';
       }
       console.error('Best Seller Deals load failed:', err);
