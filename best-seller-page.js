@@ -54,19 +54,17 @@
 
   function dealCard(deal) {
     const rank = deal.bestSellerRank ? `#${deal.bestSellerRank}` : 'Best Seller';
-    const pct = deal.pct ? `${deal.pct}% off` : 'Price Drop';
     const image = deal.image
       ? `<img src="${cleanText(optimizeDealImage(deal.image))}" alt="${cleanText(deal.title)}" loading="lazy" decoding="async">`
       : '<div class="img-fallback">Deal image unavailable</div>';
-    const was = deal.was ? `<span class="best-seller-was">${cleanText(deal.was)}</span>` : '';
 
     return `<article class="best-seller-card">
       <div class="best-seller-img">${image}</div>
       <div class="best-seller-body">
-        <div class="best-seller-badges"><span class="best-seller-badge">${cleanText(pct)}</span><span class="best-seller-badge rank">${cleanText(rank)}</span></div>
+        <div class="best-seller-badges"><span class="best-seller-badge rank">${cleanText(rank)}</span></div>
         <div class="best-seller-title">${cleanText(deal.title)}</div>
         <div class="best-seller-category">${cleanText(deal.cat || 'Best Sellers')}</div>
-        <div class="best-seller-price-row"><span class="best-seller-price">${cleanText(deal.price || money(deal.price_amount))}</span>${was}</div>
+        <div class="best-seller-price-row"><span class="best-seller-price">${cleanText(deal.price || money(deal.price_amount))}</span></div>
         <a class="best-seller-btn" href="${cleanText(deal.link)}" target="_blank" rel="nofollow sponsored noopener">View on Amazon</a>
       </div>
     </article>`;
