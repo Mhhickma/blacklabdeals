@@ -10,3 +10,25 @@
 /* BLD HIDE MOBILE POPULAR CATEGORY MENU START */
 @media(max-width:760px){.popular-category-nav{display:none!important}}
 /* BLD HIDE MOBILE POPULAR CATEGORY MENU END */
+/* BLD REMOVE HOT DEALS PAGE/SECTION START */
+.bld-hot-link,
+a[href="/#hot-section"],
+a[href="#hot-section"],
+a[href$="#hot-section"],
+.hot-section,
+#hot-section,
+html body main.page-shell > #hot-section,
+html body main.page-shell > .hot-section,
+html body #hot-section[style],
+html body #hot-section[style*="display"]{
+  display:none!important;
+  visibility:hidden!important;
+  height:0!important;
+  min-height:0!important;
+  max-height:0!important;
+  overflow:hidden!important;
+  margin:0!important;
+  padding:0!important;
+  border:0!important;
+}
+/* BLD REMOVE HOT DEALS PAGE/SECTION END */
