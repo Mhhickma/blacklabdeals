@@ -47,7 +47,7 @@
     const replacements = [
       [/All Deals/g, 'Product Picks'], [/all deals/g, 'product picks'],
       [/Hot Deals/g, 'Product Picks'], [/hot deals/g, 'product picks'], [/Hot Deal/g, 'Product Pick'], [/hot deal/g, 'product pick'],
-      [/price drops/gi, 'current Amazon product information'], [/deal feed/gi, 'product feed'],
+      [/price drops/gi, 'current Amazon product information'], [/deal feed/gi, 'product feed'], [/current deal data/gi, 'current Amazon product information'],
       [/stronger deals first/gi, 'useful product picks first'], [/discounts/gi, 'product information'],
       [/Avg\. discount/gi, ''], [/average discount/gi, ''],
       [/Load\s+50\s+More\s+Deals\s*\([^)]*\)/gi, 'Show 50 More Product Picks'],
@@ -61,7 +61,7 @@
       acceptNode(node) {
         const parent = node.parentElement;
         if (!parent || ['SCRIPT','STYLE','NOSCRIPT'].includes(parent.tagName)) return NodeFilter.FILTER_REJECT;
-        return /deals?|discount|price drops?|hot|product picks|load/i.test(node.nodeValue || '') ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP;
+        return /deals?|discount|price drops?|hot|product picks|load|current deal data/i.test(node.nodeValue || '') ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP;
       }
     });
     const nodes = [];
@@ -77,8 +77,11 @@
     qs('.deal-count,#deal-count,[class*="deal-count"]').forEach(el => {
       const text = (el.textContent || '').trim();
       const match = text.match(/(?:Product Picks\s*-\s*)?Showing\s+(\d+)\s+of\s+(\d+)\s+(?:deals|product picks)/i);
-      if (match) el.textContent = `Showing ${match[1]} of ${match[2]} Product Picks`;
-      else el.textContent = text.replace(/\bdeals\b/gi, 'Product Picks').replace(/Product Picks\s*-\s*/i, '');
+      if (match) {
+        el.textContent = `Showing ${match[1]} of ${match[2]} Product Picks`;
+      } else {
+        el.textContent = text.replace(/\bdeals\b/gi, 'Product Picks').replace(/Product Picks\s*-\s*/i, '');
+      }
     });
     qs('button,a').forEach(el => {
       const text = (el.textContent || '').trim();
@@ -156,6 +159,11 @@
   function start() {
     applyCompliance();
     let timer;
+    const interval = window.setInterval(function () {
+      cleanTextCopy();
+      normalizeCountsAndButtons();
+    }, 1000);
+    window.setTimeout(function () { window.clearInterval(interval); }, 30000);
     new MutationObserver(() => {
       clearTimeout(timer);
       timer = setTimeout(() => {
@@ -164,11 +172,12 @@
         });
         applyCompliance();
       }, 75);
-    }).observe(document.body, { childList: true, subtree: true });
+    }).observe(document.body, { childList: true, subtree: true, characterData: true });
     window.addEventListener('load', applyCompliance);
     setTimeout(applyCompliance, 500);
     setTimeout(applyCompliance, 1500);
     setTimeout(applyCompliance, 3000);
+    setTimeout(applyCompliance, 6000);
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
