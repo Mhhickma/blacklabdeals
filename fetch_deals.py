@@ -1,184 +1,120 @@
-"""
-Keepa Deals Endpoint + Amazon Creators API  Deal Scraper
-----------------------------------------------------------
-Uses Keepa's deals endpoint across Amazon, New, and FBA price types,
-then validates pricing via Amazon Creators API.
+"""Compliant Black Lab Deals product-picks generator.
+
+Keepa is used only to discover candidate ASINs. Public pricing, images,
+titles, availability, and links are fetched from Amazon Creators API. The
+public JSON intentionally excludes old/was pricing, savings, percentage-off,
+price-drop labels, hot-deal flags, Keepa stats, and coupon fields.
 """
 
 import json
 import os
 import re
 import time
-import requests
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone, timedelta
+
+import requests
 from amazon_creatorsapi import AmazonCreatorsApi, Country
 from amazon_creatorsapi.models import GetItemsResource
 
-# ---------------------------------------------
-# CREDENTIALS
-# ---------------------------------------------
-KEEPA_API_KEY     = os.getenv("KEEPA_API_KEY")
-CREDENTIAL_ID     = os.getenv("CREATORS_CREDENTIAL_ID")
+KEEPA_API_KEY = os.getenv("KEEPA_API_KEY")
+CREDENTIAL_ID = os.getenv("CREATORS_CREDENTIAL_ID")
 CREDENTIAL_SECRET = os.getenv("CREATORS_CREDENTIAL_SECRET")
-PARTNER_TAG       = os.getenv("AFFILIATE_TAG", "sawdustsavings-20")
+PARTNER_TAG = os.getenv("AFFILIATE_TAG", "sawdustsavings-20")
 
-if not KEEPA_API_KEY:
-    raise RuntimeError("Missing KEEPA_API_KEY")
-if not CREDENTIAL_ID or not CREDENTIAL_SECRET:
-    raise RuntimeError("Missing CREATORS_CREDENTIAL_ID or CREATORS_CREDENTIAL_SECRET")
-
-# ---------------------------------------------
-# SETTINGS
-# ---------------------------------------------
-OUTPUT_FILE       = "deals.json"
-MEMORY_FILE       = "deals_memory.json"
-MAX_DISPLAY       = 5000
-DEAL_TTL_HOURS    = 24
+OUTPUT_FILE = "deals.json"
+MEMORY_FILE = "deals_memory.json"
+PRODUCT_TTL_HOURS = int(os.getenv("PRODUCT_TTL_HOURS", "23"))
+MAX_DISPLAY = int(os.getenv("MAX_DISPLAY", "5000"))
+KEEPA_DEAL_PAGES = int(os.getenv("KEEPA_DEAL_PAGES", "15"))
+MAX_NEW_ASINS_PER_RUN = int(os.getenv("MAX_NEW_ASINS_PER_RUN", "0"))
 AMAZON_BATCH_SIZE = 10
-MIN_DISCOUNT_PCT  = 5
-KEEPA_DEALS_URL   = "https://api.keepa.com/deal"
-
-# Pull more candidates from Keepa by scanning multiple deal pages per price type.
-# Set MAX_NEW_ASINS_PER_RUN to 0 for no cap.
-# Keep AMAZON_BATCH_SIZE at 10 because Amazon GetItems supports up to 10 ASINs per request.
-# AMAZON_CONCURRENT_BATCHES controls how many legal 10-ASIN requests run at the same time.
-# You can override these in GitHub Actions/Vercel env vars without editing code.
-KEEPA_DEAL_PAGES             = int(os.getenv("KEEPA_DEAL_PAGES", "15"))
-MAX_NEW_ASINS_PER_RUN        = int(os.getenv("MAX_NEW_ASINS_PER_RUN", "0"))
-DEAL_REQUEST_DELAY_SECONDS   = float(os.getenv("DEAL_REQUEST_DELAY_SECONDS", "3"))
+AMAZON_CONCURRENT_BATCHES = int(os.getenv("AMAZON_CONCURRENT_BATCHES", "5"))
 AMAZON_REQUEST_DELAY_SECONDS = float(os.getenv("AMAZON_REQUEST_DELAY_SECONDS", "1"))
-AMAZON_CONCURRENT_BATCHES    = int(os.getenv("AMAZON_CONCURRENT_BATCHES", "5"))
-
-# Keepa price types: 0 = Amazon, 1 = New, 10 = New FBA.
+DEAL_REQUEST_DELAY_SECONDS = float(os.getenv("DEAL_REQUEST_DELAY_SECONDS", "3"))
+KEEPA_DEALS_URL = "https://api.keepa.com/deal"
 PRICE_TYPES = [0, 1, 10]
 
+PUBLIC_KEYS = [
+    "asin", "title", "brand", "cat", "image", "price", "price_amount",
+    "currency", "availability", "link", "desc", "seen_at", "updated_at",
+]
+
 EXCLUDED_CATEGORIES = [
-    283155, 5174, 133140011, 2625373011, 7141123011,
-    163856011, 18145289011, 2350149011, 2238192011,
-    4991425011, 229534, 18981045011, 11260432011,
-    16310091,
+    283155, 5174, 133140011, 2625373011, 7141123011, 163856011,
+    18145289011, 2350149011, 2238192011, 4991425011, 229534,
+    18981045011, 11260432011, 16310091,
 ]
 
 BAD_KEYWORDS = [
-    "sex", "doll", "erotic", "fetish", "penis", "vagina",
-    "dildo", "vibrator", "nude", "naked", "porn", "xxx",
-    "bdsm", "bondage",
-    "abrasive", "torque", "fiber optic", "qsfp", "sfp",
-    "evaporator", "flame retardant", "safety vest", "hard hat",
-    "bearing", "set screw", "end mill", "clamp", "permaculture",
-    "grass paint", "field line", "marking paint", "hydraulic",
-    "pneumatic", "actuator", "splice", "scotchcast", "schuko",
-    "waffle polish", "roller refill", "dental", "vapor-tight",
-    "jute", "bohemian", "hinge", "barrel hinge", "mortise",
-    "water pump", "latex glove", "circuit breaker",
-    "conduit", "junction box", "wire connector",
+    "sex", "doll", "erotic", "fetish", "penis", "vagina", "dildo",
+    "vibrator", "nude", "naked", "porn", "xxx", "bdsm", "bondage",
+    "abrasive", "torque", "fiber optic", "qsfp", "sfp", "evaporator",
+    "flame retardant", "safety vest", "hard hat", "bearing", "set screw",
+    "end mill", "clamp", "permaculture", "grass paint", "field line",
+    "marking paint", "hydraulic", "pneumatic", "actuator", "splice",
+    "scotchcast", "schuko", "waffle polish", "roller refill", "dental",
+    "vapor-tight", "jute", "bohemian", "hinge", "barrel hinge", "mortise",
+    "water pump", "latex glove", "circuit breaker", "conduit", "junction box",
+    "wire connector",
 ]
 
 BLACKLISTED_ASINS = {
-    "B0CNSFQ988", "B0CNSDDJ1C", "B0CNSDNT27",
-    "B0CNSCN4KW", "B0CNSCZQ1W", "B0CNSBX4ZK",
+    "B0CNSFQ988", "B0CNSDDJ1C", "B0CNSDNT27", "B0CNSCN4KW", "B0CNSCZQ1W", "B0CNSBX4ZK",
 }
 
-# ---------------------------------------------
-# TITLE DECODER
-# Keepa returns titles as int arrays in deals endpoint
-# ---------------------------------------------
+CATEGORY_MAP = {
+    "health": "Health & Household", "beauty": "Health & Household", "personal care": "Health & Household",
+    "grocery": "Health & Household", "electronics": "Electronics", "computer": "Electronics",
+    "camera": "Electronics", "television": "Electronics", "audio": "Electronics",
+    "headphone": "Electronics", "speaker": "Electronics", "tablet": "Electronics",
+    "laptop": "Electronics", "cell phone": "Cell Phones & Accessories", "smartphone": "Cell Phones & Accessories",
+    "wireless": "Cell Phones & Accessories", "kitchen": "Home & Kitchen", "home": "Home & Kitchen",
+    "bedding": "Home & Kitchen", "furniture": "Home & Kitchen", "lighting": "Home & Kitchen",
+    "vacuum": "Home & Kitchen", "appliance": "Home & Kitchen", "cookware": "Home & Kitchen",
+    "patio": "Patio, Lawn & Garden", "lawn": "Patio, Lawn & Garden", "garden": "Patio, Lawn & Garden",
+    "outdoor": "Patio, Lawn & Garden", "toy": "Toys & Games", "game": "Toys & Games",
+    "kids": "Toys & Games", "sport": "Sports & Outdoors", "fitness": "Sports & Outdoors",
+    "camping": "Sports & Outdoors", "automotive": "Automotive", "vehicle": "Automotive", "car": "Automotive",
+    "office": "Office Products", "baby": "Baby Products", "pet": "Pet Supplies", "dog": "Pet Supplies",
+    "tool": "Tools & Home Improvement", "hardware": "Tools & Home Improvement",
+    "home improvement": "Tools & Home Improvement", "craft": "Arts, Crafts & Sewing",
+    "sewing": "Arts, Crafts & Sewing", "musical": "Musical Instruments",
+}
+
+KNOWN_CATEGORIES = {v.lower() for v in CATEGORY_MAP.values()} | {"everything else", "appliances"}
+
+
+def iso_now():
+    return datetime.now(timezone.utc).isoformat()
+
+
+def clean_product(product):
+    return {key: product.get(key) for key in PUBLIC_KEYS}
+
+
 def decode_title(raw):
-    """Keepa deal titles can be a list of ints (char codes) or a plain string."""
     if isinstance(raw, list):
         try:
             return "".join(chr(c) for c in raw if isinstance(c, int))
-        except:
+        except Exception:
             return ""
-    if isinstance(raw, str):
-        return raw
-    return ""
+    return raw if isinstance(raw, str) else ""
 
 
 def is_bad_title(title):
-    if not title or len(title) < 3:
+    if not title or len(title.strip()) < 3:
         return True
-    try:
-        if not all(ord(c) < 128 for c in title[:10]):
-            return True
-    except:
-        return True
-    title_lower = title.lower()
-    if any(w in title_lower for w in BAD_KEYWORDS):
-        return True
-    return False
-
-
-# ---------------------------------------------
-# CATEGORY NORMALIZATION
-# ---------------------------------------------
-CATEGORY_MAP = {
-    "health": "Health & Household",
-    "beauty": "Health & Household",
-    "personal care": "Health & Household",
-    "grocery": "Health & Household",
-    "electronics": "Electronics",
-    "computer": "Electronics",
-    "camera": "Electronics",
-    "television": "Electronics",
-    "audio": "Electronics",
-    "headphone": "Electronics",
-    "speaker": "Electronics",
-    "tablet": "Electronics",
-    "laptop": "Electronics",
-    "cell phone": "Cell Phones & Accessories",
-    "smartphone": "Cell Phones & Accessories",
-    "wireless": "Cell Phones & Accessories",
-    "kitchen": "Home & Kitchen",
-    "home": "Home & Kitchen",
-    "bedding": "Home & Kitchen",
-    "furniture": "Home & Kitchen",
-    "lighting": "Home & Kitchen",
-    "vacuum": "Home & Kitchen",
-    "appliance": "Home & Kitchen",
-    "cookware": "Home & Kitchen",
-    "patio": "Patio, Lawn & Garden",
-    "lawn": "Patio, Lawn & Garden",
-    "garden": "Patio, Lawn & Garden",
-    "outdoor": "Patio, Lawn & Garden",
-    "toy": "Toys & Games",
-    "game": "Toys & Games",
-    "kids": "Toys & Games",
-    "sport": "Sports & Outdoors",
-    "fitness": "Sports & Outdoors",
-    "camping": "Sports & Outdoors",
-    "automotive": "Automotive",
-    "vehicle": "Automotive",
-    "car": "Automotive",
-    "office": "Office Products",
-    "baby": "Baby Products",
-    "pet": "Pet Supplies",
-    "dog": "Pet Supplies",
-    "tool": "Tools & Home Improvement",
-    "hardware": "Tools & Home Improvement",
-    "home improvement": "Tools & Home Improvement",
-    "craft": "Arts, Crafts & Sewing",
-    "sewing": "Arts, Crafts & Sewing",
-    "musical": "Musical Instruments",
-}
-
-KNOWN_CATEGORIES = {
-    "appliances", "arts, crafts & sewing", "automotive",
-    "baby products", "cell phones & accessories", "electronics",
-    "everything else", "health & household", "home & kitchen",
-    "musical instruments", "office products", "patio, lawn & garden",
-    "pet supplies", "sports & outdoors", "tools & home improvement",
-    "toys & games",
-}
+    lower = title.lower()
+    return any(word in lower for word in BAD_KEYWORDS)
 
 
 def normalize_category(raw_cat):
     if not raw_cat:
         return "Everything Else"
-    if raw_cat.lower() in KNOWN_CATEGORIES:
-        return raw_cat
-    lower = raw_cat.lower()
+    lower = str(raw_cat).lower()
+    if lower in KNOWN_CATEGORIES:
+        return str(raw_cat)
     for key, mapped in CATEGORY_MAP.items():
         if key in lower:
             return mapped
@@ -186,127 +122,82 @@ def normalize_category(raw_cat):
 
 
 def compact_image_url(url, size=160):
-    if not url:
-        return None
-    return re.sub(r"\._SL\d+_\.", f"._SL{size}_.", str(url))
+    return re.sub(r"\._SL\d+_\.", f"._SL{size}_.", str(url)) if url else None
 
 
-# ---------------------------------------------
-# MEMORY
-# ---------------------------------------------
-def load_memory():
-    if not os.path.exists(MEMORY_FILE):
-        return {}
+def load_json(path, default):
+    if not os.path.exists(path):
+        return default
     try:
-        with open(MEMORY_FILE, "r", encoding="utf-8") as f:
+        with open(path, "r", encoding="utf-8") as f:
             return json.load(f)
-    except:
-        return {}
+    except Exception:
+        return default
+
+
+def load_memory():
+    raw = load_json(MEMORY_FILE, {})
+    return {asin: clean_product(item) for asin, item in raw.items() if isinstance(item, dict)}
 
 
 def save_memory(memory):
     with open(MEMORY_FILE, "w", encoding="utf-8") as f:
-        json.dump(memory, f, indent=2)
+        json.dump({asin: clean_product(item) for asin, item in memory.items()}, f, indent=2)
 
 
 def purge_expired(memory):
-    cutoff = datetime.now(timezone.utc) - timedelta(hours=DEAL_TTL_HOURS)
-    now_str = datetime.now(timezone.utc).isoformat()
-    before = len(memory)
-    memory = {
-        asin: deal for asin, deal in memory.items()
-        if datetime.fromisoformat(deal.get("seen_at", now_str)) > cutoff
-    }
-    purged = before - len(memory)
-    if purged:
-        print(f"    Purged {purged} expired deals (older than {DEAL_TTL_HOURS}h).")
-    return memory
+    cutoff = datetime.now(timezone.utc) - timedelta(hours=PRODUCT_TTL_HOURS)
+    kept = {}
+    for asin, item in memory.items():
+        try:
+            seen_at = datetime.fromisoformat(item.get("seen_at") or item.get("updated_at") or iso_now())
+        except Exception:
+            seen_at = datetime.now(timezone.utc)
+        if seen_at > cutoff:
+            kept[asin] = clean_product(item)
+    return kept
 
 
-# ---------------------------------------------
-# STEP 1: Pull ASINs from Keepa Deals Endpoint
-# ---------------------------------------------
-def get_keepa_deals(api_key, cached_asins):
-    print("\n[1/3] Fetching deals from Keepa deals endpoint...")
-    print(f"    Scanning {KEEPA_DEAL_PAGES} page(s) for each of {len(PRICE_TYPES)} price types.")
-
-    all_deals = []
-
+def get_keepa_candidates(cached_asins):
+    if not KEEPA_API_KEY:
+        raise RuntimeError("Missing KEEPA_API_KEY")
+    candidates = []
     for pt in PRICE_TYPES:
         for page in range(KEEPA_DEAL_PAGES):
             payload = {
-                "domainId":          1,
-                "priceTypes":        [pt],
-                "dateRange":         4,
-                "sortType":          4,
-                "page":              page,
-                "filterErotic":      True,
-                "hasReviews":        True,
-                "minRating":         40,
-                "deltaPercentRange": [-100, -MIN_DISCOUNT_PCT],
+                "domainId": 1,
+                "priceTypes": [pt],
+                "dateRange": 4,
+                "sortType": 4,
+                "page": page,
+                "filterErotic": True,
+                "hasReviews": True,
+                "minRating": 40,
+                "deltaPercentRange": [-100, -5],
                 "excludeCategories": EXCLUDED_CATEGORIES,
             }
             try:
-                r = requests.post(
-                    KEEPA_DEALS_URL,
-                    params={"key": api_key, "domain": 1},
-                    json=payload,
-                    timeout=15,
-                )
-                r.raise_for_status()
-                data = r.json()
-                dr = data.get("deals", {}).get("dr", [])
-                all_deals.extend(dr)
-                print(
-                    f"    priceType {pt} page {page} -> {len(dr)} deals | "
-                    f"tokens left: {data.get('tokensLeft', '?')}"
-                )
-            except Exception as e:
-                print(f"    priceType {pt} page {page} failed: {e}")
+                response = requests.post(KEEPA_DEALS_URL, params={"key": KEEPA_API_KEY, "domain": 1}, json=payload, timeout=15)
+                response.raise_for_status()
+                candidates.extend(response.json().get("deals", {}).get("dr", []))
+            except Exception as exc:
+                print(f"Keepa candidate page failed: {exc}")
             time.sleep(DEAL_REQUEST_DELAY_SECONDS)
 
     seen = set(BLACKLISTED_ASINS)
-    unique_asins = []
-
-    for item in all_deals:
-        asin = item.get("asin", "")
-        if not asin or asin in seen:
+    asins = []
+    for item in candidates:
+        asin = item.get("asin")
+        if not asin or asin in seen or asin in cached_asins:
             continue
-
-        raw_title = item.get("title", "")
-        title = decode_title(raw_title)
-
-        if is_bad_title(title):
+        if is_bad_title(decode_title(item.get("title", ""))):
             continue
-
-        prices = [x for x in item.get("current", []) if isinstance(x, (int, float)) and x > 500]
-        if not prices or min(prices) < 1000:
-            continue
-
         seen.add(asin)
-        unique_asins.append(asin)
-
-    print(f"    {len(unique_asins)} unique clean ASINs after filtering.")
-
-    new_asins = [a for a in unique_asins if a not in cached_asins]
-    cached_count = len(unique_asins) - len(new_asins)
-    print(f"    {len(new_asins)} new ASINs found ({cached_count} already cached).")
-
-    if MAX_NEW_ASINS_PER_RUN > 0 and len(new_asins) > MAX_NEW_ASINS_PER_RUN:
-        print(
-            f"    Capping Amazon pricing lookup to first {MAX_NEW_ASINS_PER_RUN} "
-            f"new ASINs this run."
-        )
-        new_asins = new_asins[:MAX_NEW_ASINS_PER_RUN]
-
-    print(f"    {len(new_asins)} new ASINs to fetch from Amazon.")
-    return new_asins
+        asins.append(asin)
+    return asins[:MAX_NEW_ASINS_PER_RUN] if MAX_NEW_ASINS_PER_RUN > 0 else asins
 
 
-# ---------------------------------------------
-# STEP 2: Pull pricing from Amazon Creators API
-# ---------------------------------------------
-def get_amazon_resources():
+def amazon_resources():
     return [
         GetItemsResource.ITEM_INFO_DOT_TITLE,
         GetItemsResource.ITEM_INFO_DOT_BY_LINE_INFO,
@@ -315,265 +206,125 @@ def get_amazon_resources():
         GetItemsResource.OFFERS_V2_DOT_LISTINGS_DOT_PRICE,
         GetItemsResource.OFFERS_V2_DOT_LISTINGS_DOT_AVAILABILITY,
         GetItemsResource.OFFERS_V2_DOT_LISTINGS_DOT_CONDITION,
-        GetItemsResource.OFFERS_V2_DOT_LISTINGS_DOT_IS_BUY_BOX_WINNER,
-        GetItemsResource.OFFERS_V2_DOT_LISTINGS_DOT_DEAL_DETAILS,
     ]
 
 
-def fetch_amazon_batch(batch, batch_num, total_batches, credential_id, credential_secret, partner_tag):
-    print(f"    Batch {batch_num}/{total_batches} ({len(batch)} items)...")
+def fetch_batch(batch):
     amazon = AmazonCreatorsApi(
-        credential_id=credential_id,
-        credential_secret=credential_secret,
+        credential_id=CREDENTIAL_ID,
+        credential_secret=CREDENTIAL_SECRET,
         version="3.1",
-        tag=partner_tag,
+        tag=PARTNER_TAG,
         country=Country.US,
     )
-    items = amazon.get_items(batch, resources=get_amazon_resources())
-    return batch_num, items
+    return amazon.get_items(batch, resources=amazon_resources())
 
 
-def get_amazon_pricing(asins, credential_id, credential_secret, partner_tag):
-    print("\n[2/3] Fetching pricing from Amazon Creators API...")
-
-    if not asins:
-        return {}
-
+def get_amazon_items(asins):
+    if not CREDENTIAL_ID or not CREDENTIAL_SECRET:
+        raise RuntimeError("Missing CREATORS_CREDENTIAL_ID or CREATORS_CREDENTIAL_SECRET")
     batches = [asins[i:i + AMAZON_BATCH_SIZE] for i in range(0, len(asins), AMAZON_BATCH_SIZE)]
-    total_batches = len(batches)
-    worker_count = max(1, min(AMAZON_CONCURRENT_BATCHES, total_batches))
-
-    print(
-        f"    Processing {len(asins)} ASINs in {total_batches} batches "
-        f"with {worker_count} concurrent worker(s)."
-    )
-
-    all_items = {}
-
-    with ThreadPoolExecutor(max_workers=worker_count) as executor:
+    items = {}
+    with ThreadPoolExecutor(max_workers=max(1, min(AMAZON_CONCURRENT_BATCHES, len(batches) or 1))) as executor:
         futures = []
-        for idx, batch in enumerate(batches, start=1):
-            futures.append(
-                executor.submit(
-                    fetch_amazon_batch,
-                    batch,
-                    idx,
-                    total_batches,
-                    credential_id,
-                    credential_secret,
-                    partner_tag,
-                )
-            )
-            if AMAZON_REQUEST_DELAY_SECONDS > 0:
-                time.sleep(AMAZON_REQUEST_DELAY_SECONDS)
-
+        for batch in batches:
+            futures.append(executor.submit(fetch_batch, batch))
+            time.sleep(AMAZON_REQUEST_DELAY_SECONDS)
         for future in as_completed(futures):
             try:
-                batch_num, items = future.result()
-                for item in items:
-                    all_items[item.asin] = item
-            except Exception as e:
-                print(f"    Warning: batch failed - {e}")
-
-    print(f"    Retrieved {len(all_items)} items from Amazon.")
-    return all_items
+                for item in future.result():
+                    items[item.asin] = item
+            except Exception as exc:
+                print(f"Amazon batch failed: {exc}")
+    return items
 
 
-# ---------------------------------------------
-# STEP 3: Build deals and merge with memory
-# ---------------------------------------------
-def build_and_merge(asins, amazon_items, memory):
-    print("\n[3/3] Building and merging deals...")
-    now = datetime.now(timezone.utc).isoformat()
-    new_count = 0
-    skip_count = 0
+def item_to_product(asin, item, existing):
+    try:
+        title = item.item_info.title.display_value
+    except Exception:
+        return None
+    if is_bad_title(title):
+        return None
 
-    for asin in asins:
-        item = amazon_items.get(asin)
-        if not item:
-            continue
+    try:
+        listing = item.offers_v2.listings[0]
+        price_amount = float(listing.price.money.amount)
+        price_display = listing.price.money.display_amount
+        currency = listing.price.money.currency
+    except Exception:
+        return None
+    if not price_amount:
+        return None
 
-        try:
-            title = item.item_info.title.display_value
-        except:
-            title = None
-        if not title:
-            skip_count += 1
-            continue
+    try:
+        condition = listing.condition.value
+        if condition and condition.lower() != "new":
+            return None
+    except Exception:
+        pass
 
-        try:
-            brand = item.item_info.by_line_info.brand.display_value
-        except:
-            brand = None
+    try:
+        brand = item.item_info.by_line_info.brand.display_value
+    except Exception:
+        brand = None
+    try:
+        raw_category = item.item_info.classifications.product_group.display_value
+    except Exception:
+        raw_category = None
+    try:
+        image = compact_image_url(item.images.primary.large.url)
+    except Exception:
+        image = None
+    try:
+        availability = listing.availability.type
+    except Exception:
+        availability = None
+    try:
+        url = item.detail_page_url
+    except Exception:
+        url = f"https://www.amazon.com/dp/{asin}?tag={PARTNER_TAG}"
 
-        try:
-            raw_category = item.item_info.classifications.product_group.display_value
-        except:
-            raw_category = None
-        category = normalize_category(raw_category)
-
-        try:
-            image = compact_image_url(item.images.primary.large.url)
-        except:
-            image = None
-
-        try:
-            listing       = item.offers_v2.listings[0]
-            price_amount  = listing.price.money.amount
-            price_display = listing.price.money.display_amount
-            currency      = listing.price.money.currency
-        except:
-            listing       = None
-            price_amount  = None
-            price_display = None
-            currency      = None
-
-        if not price_amount:
-            print(f"    Skipping {asin} - no price available")
-            skip_count += 1
-            continue
-
-        try:
-            condition = listing.condition.value
-            if condition and condition.lower() != "new":
-                skip_count += 1
-                continue
-        except:
-            pass
-
-        try:
-            availability = listing.availability.type
-        except:
-            availability = None
-
-        try:
-            deal_type = listing.deal_details.access_type
-        except:
-            deal_type = "PRICE_DROP"
-
-        try:
-            url = item.detail_page_url
-        except:
-            url = f"https://www.amazon.com/dp/{asin}?tag={PARTNER_TAG}"
-
-        pct_off        = MIN_DISCOUNT_PCT
-        was_display    = None
-        discount_label = f"-{pct_off}%+"
-        is_hot         = False
-
-        try:
-            savings = listing.price.savings
-            if savings:
-                pct_off        = round(savings.percentage)
-                was_display    = f"${round(price_amount + savings.money.amount, 2)}"
-                discount_label = f"-{pct_off}%"
-                is_hot         = pct_off >= 40
-        except:
-            pass
-
-        has_coupon = False
-        coupon_display = ""
-        try:
-            deal_details = listing.deal_details
-            if deal_details:
-                dtype = str(getattr(deal_details, 'type', '') or '').upper()
-                damt  = getattr(deal_details, 'amount', None)
-                dpct  = getattr(deal_details, 'percentage', None)
-                if 'PERCENT' in dtype and dpct:
-                    has_coupon    = True
-                    coupon_display = f"Save extra {int(dpct)}%"
-                elif damt:
-                    has_coupon    = True
-                    coupon_display = f"Save extra ${float(damt):.0f}"
-        except:
-            pass
-
-        deal = {
-            "asin":          asin,
-            "title":         title,
-            "brand":         brand,
-            "cat":           category,
-            "image":         image,
-            "price":         price_display,
-            "price_amount":  price_amount,
-            "currency":      currency,
-            "was":           was_display,
-            "savings":       was_display,
-            "pct":           pct_off,
-            "discount":      discount_label,
-            "deal_type":     deal_type,
-            "availability":  availability,
-            "link":          url,
-            "hot":           is_hot,
-            "hasCoupon":     has_coupon,
-            "couponDisplay": coupon_display,
-            "desc":          brand or "",
-            "seen_at":       memory.get(asin, {}).get("seen_at", now),
-            "updated_at":    now,
-        }
-
-        if asin not in memory:
-            new_count += 1
-
-        memory[asin] = deal
-
-    print(f"    {new_count} new deals added.")
-    print(f"    {skip_count} items skipped.")
-    return memory
+    now = iso_now()
+    return clean_product({
+        "asin": asin,
+        "title": title,
+        "brand": brand,
+        "cat": normalize_category(raw_category),
+        "image": image,
+        "price": price_display,
+        "price_amount": price_amount,
+        "currency": currency,
+        "availability": availability,
+        "link": url,
+        "desc": brand or "",
+        "seen_at": (existing or {}).get("seen_at", now),
+        "updated_at": now,
+    })
 
 
-# ---------------------------------------------
-# MAIN
-# ---------------------------------------------
 def main():
-    print("=" * 55)
-    print("  Keepa Deals + Amazon Creators API  DealDrop")
-    print("=" * 55)
-
-    memory = load_memory()
-    print(f"\n    Memory: {len(memory)} deals before purge.")
-    memory = purge_expired(memory)
-    print(f"    Memory: {len(memory)} deals after purge.")
-
-    # Re-check cached ASINs that are missing images. A previous run can leave
-    # image-less deals in memory, and those should be repaired instead of kept.
-    cached_asins = {
-        asin for asin, deal in memory.items()
-        if deal.get("image") or deal.get("image_url") or deal.get("imageUrl") or deal.get("img") or deal.get("thumbnail")
-    }
-
-    new_asins = get_keepa_deals(KEEPA_API_KEY, cached_asins)
-
-    if not new_asins:
-        print("No new ASINs to process.")
-    else:
-        amazon_items = get_amazon_pricing(
-            new_asins, CREDENTIAL_ID, CREDENTIAL_SECRET, PARTNER_TAG
-        )
-        memory = build_and_merge(new_asins, amazon_items, memory)
-
+    memory = purge_expired(load_memory())
+    cached_asins = set(memory.keys())
+    asins = get_keepa_candidates(cached_asins)
+    if asins:
+        amazon_items = get_amazon_items(asins)
+        for asin in asins:
+            product = item_to_product(asin, amazon_items.get(asin), memory.get(asin)) if amazon_items.get(asin) else None
+            if product:
+                memory[asin] = product
     save_memory(memory)
-
-    all_deals = sorted(
-        memory.values(),
-        key=lambda d: d.get("updated_at", d.get("seen_at", "")),
-        reverse=True
-    )[:MAX_DISPLAY]
-
+    products = sorted(memory.values(), key=lambda item: item.get("updated_at", ""), reverse=True)[:MAX_DISPLAY]
     output = {
-        "deals":       all_deals,
-        "count":       len(all_deals),
-        "totalDeals":  len(all_deals),
-        "hotDeals":    sum(1 for d in all_deals if d.get("hot")),
-        "couponDeals": 0,
-        "updatedAt":   datetime.now(timezone.utc).isoformat(),
+        "source": "Amazon current product information feed",
+        "count": len(products),
+        "totalProducts": len(products),
+        "updatedAt": iso_now(),
+        "deals": [clean_product(item) for item in products],
     }
-
     with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
         json.dump(output, f, indent=2)
-
-    print(f"\nSaved {len(all_deals)} deals to {OUTPUT_FILE}")
-    print("Done.")
+    print(f"Saved {len(products)} product picks to {OUTPUT_FILE}")
 
 
 if __name__ == "__main__":
