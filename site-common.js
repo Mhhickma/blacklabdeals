@@ -1,10 +1,8 @@
-/* Black Lab Deals Amazon compliance layer
-   Sitewide emergency safeguard: public cards show current Amazon price only with timestamp/disclaimer.
-   The permanent backend fix should still remove was/discount/price-drop fields from generated data. */
+/* Black Lab Deals sitewide Amazon compliance cleanup */
 (function () {
   const PRICE_MAX_AGE_HOURS = 23;
   const PRICE_DISCLAIMER = 'Product prices and availability are accurate as of the date/time indicated and are subject to change. Any price and availability information displayed on Amazon at the time of purchase will apply to the purchase of this product.';
-  const CARD_SELECTOR = '.best-seller-card,.deal-card,.hot-card,.product-card,.amazon-card,.search-card,article[class*="card"],a[class*="card"]';
+  const CARD_SELECTOR = '.best-seller-card,.deal-card,.hot-card,.product-card,.amazon-card,.search-card,article[class*="card"]';
   const PRICE_SELECTOR = '.best-seller-price,.price-now,.hot-price-now,.product-price,.current-price,.search-price,[class*="price"]';
   const BUTTON_SELECTOR = '.best-seller-btn,.hot-btn,.btn-deal,.search-btn,a[href*="amazon.com"],a[href*="amzn.to"],a[href*="joylink.io"]';
 
@@ -26,6 +24,8 @@
   }
   function isExpired(ts) { return Date.now() - ts > PRICE_MAX_AGE_HOURS * 60 * 60 * 1000; }
   function isPriceText(text) { return /^\$\s*\d/.test(String(text || '').trim()) || /^Check current price/i.test(String(text || '').trim()); }
+  function isDisclaimerText(text) { return /Product prices and availability are accurate as of the date\/time indicated/i.test(String(text || '')); }
+  function isTimestampText(text) { return /^Price shown as of\s+/i.test(String(text || '').trim()) || /^Price expired after 23 hours/i.test(String(text || '').trim()); }
 
   function addStyles() {
     if (document.getElementById('bld-amazon-compliance-style')) return;
@@ -37,7 +37,6 @@
       .bld-current-amazon-price{color:#c94040!important;font-weight:900!important}
       .bld-price-timestamp{display:block!important;font-size:11px!important;line-height:1.35!important;color:#6b6b65!important;margin-top:4px!important}
       .bld-card-price-disclaimer{display:block!important;font-size:10px!important;line-height:1.35!important;color:#7a6a45!important;margin:6px 0 8px!important;background:#fffdf7!important;border:1px solid #f0e4bd!important;border-radius:8px!important;padding:6px!important}
-      .bld-sitewide-price-disclaimer{max-width:1180px;margin:0 auto 14px;background:#fffdf7;border:1px solid #f0e4bd;border-radius:12px;padding:10px 14px;color:#6f5a1c;font-size:12px;line-height:1.45}
       .bld-price-expired{font-size:14px!important;color:#1a3a5c!important}
     `;
     document.head.appendChild(style);
@@ -98,9 +97,7 @@
       qs('option', select).forEach(option => {
         const text = (option.textContent || '').trim();
         const value = String(option.value || '');
-        if (/biggest\s+discount/i.test(text) || /discount/i.test(value)) {
-          option.remove();
-        }
+        if (/biggest\s+discount/i.test(text) || /discount/i.test(value)) option.remove();
       });
       if (/discount/i.test(String(select.value || ''))) {
         const first = qs('option', select)[0];
@@ -113,31 +110,41 @@
     qs('.deal-count,#deal-count,[class*="deal-count"]').forEach(el => {
       const text = (el.textContent || '').trim();
       const match = text.match(/(?:Product Picks\s*-\s*)?Showing\s+(\d+)\s+of\s+(\d+)\s+(?:deals|product picks)/i);
-      if (match) {
-        el.textContent = `Showing ${match[1]} of ${match[2]} Product Picks`;
-      } else {
-        el.textContent = text.replace(/\bdeals\b/gi, 'Product Picks').replace(/Product Picks\s*-\s*/i, '');
-      }
+      if (match) el.textContent = `Showing ${match[1]} of ${match[2]} Product Picks`;
+      else el.textContent = text.replace(/\bdeals\b/gi, 'Product Picks').replace(/Product Picks\s*-\s*/i, '');
     });
     qs('button,a').forEach(el => {
       const text = (el.textContent || '').trim();
-      if (/load\s+50\s+more\s+deals/i.test(text) || /load\s+50\s+more\s+product picks/i.test(text)) {
-        el.textContent = 'Show 50 More Product Picks';
-      } else if (/load\s+more\s+deals/i.test(text) || /load\s+more\s+product picks/i.test(text)) {
-        el.textContent = 'Show More Product Picks';
+      if (/load\s+50\s+more\s+deals/i.test(text) || /load\s+50\s+more\s+product picks/i.test(text)) el.textContent = 'Show 50 More Product Picks';
+      else if (/load\s+more\s+deals/i.test(text) || /load\s+more\s+product picks/i.test(text)) el.textContent = 'Show More Product Picks';
+    });
+  }
+
+  function dedupeCardComplianceText(card) {
+    const textElements = qs('div,p,span,small', card);
+    const disclaimerEls = textElements.filter(el => isDisclaimerText(el.textContent));
+    disclaimerEls.forEach((el, index) => {
+      if (index === 0) {
+        el.classList.add('bld-card-price-disclaimer');
+        el.textContent = PRICE_DISCLAIMER;
+      } else {
+        el.remove();
       }
+    });
+    const timestampEls = textElements.filter(el => isTimestampText(el.textContent));
+    timestampEls.forEach((el, index) => {
+      if (index === 0) el.classList.add('bld-price-timestamp');
+      else el.remove();
     });
   }
 
   function cleanCard(card, ts) {
-    if (!card || card.dataset.bldComplianceApplied === 'true') return;
+    if (!card) return;
     const priceEl = qs(PRICE_SELECTOR, card).find(el => isPriceText(el.textContent));
     const btn = card.querySelector(BUTTON_SELECTOR);
     if (!priceEl && !btn) return;
 
-    card.dataset.bldComplianceApplied = 'true';
     ['data-deal-discount','data-discount','data-price-drop','data-hot','data-was-price','data-lowest-price','data-highest-price'].forEach(attr => card.removeAttribute(attr));
-
     qs('.best-seller-badges,.best-seller-badge,.discount-badge,.hot-card-badge,.card-badge-hot,.hot-off,.deal-badge,.coupon-badge,.rank-badge,.percent-off,.savings-badge,.savings-pill,.best-seller-was,.price-was,.hot-price-was,.was-price,.old-price,.compare-price,.list-price,.original-price,.strike-price,.compare-at-price', card).forEach(el => el.remove());
     qs('*', card).forEach(el => {
       const text = (el.textContent || '').trim();
@@ -156,30 +163,32 @@
       }
     }
 
+    dedupeCardComplianceText(card);
+
+    const hasTimestamp = qs('div,p,span,small', card).some(el => isTimestampText(el.textContent));
+    const hasDisclaimer = qs('div,p,span,small', card).some(el => isDisclaimerText(el.textContent));
     const priceRow = priceEl?.closest('.best-seller-price-row,.hot-card-prices,.price-block,.price-row,.search-price-row') || priceEl || card.querySelector('.best-seller-body,.hot-card-body,.card-body,.search-body') || card;
-    if (!card.querySelector('.bld-price-timestamp')) {
+
+    if (!hasTimestamp) {
       const stamp = document.createElement('div');
       stamp.className = 'bld-price-timestamp';
       stamp.textContent = stale ? 'Price expired after 23 hours. Confirm current price on Amazon.' : `Price shown as of ${formatStamp(ts)}.`;
       priceRow.insertAdjacentElement('afterend', stamp);
     }
-    if (!card.querySelector('.bld-card-price-disclaimer')) {
+    if (!hasDisclaimer) {
       const disc = document.createElement('div');
       disc.className = 'bld-card-price-disclaimer';
       disc.textContent = PRICE_DISCLAIMER;
       if (btn) btn.insertAdjacentElement('beforebegin', disc);
       else card.appendChild(disc);
     }
+
+    dedupeCardComplianceText(card);
     if (btn && /deal|check|view/i.test(btn.textContent || '')) btn.textContent = 'View on Amazon';
   }
 
-  function addSitewideDisclaimer() {
-    if (document.querySelector('.bld-sitewide-price-disclaimer')) return;
-    const anchor = document.querySelector('.section-head,.filter-row,.hot-strip,.hot-grid,.deals-grid,main') || document.body;
-    const box = document.createElement('div');
-    box.className = 'bld-sitewide-price-disclaimer';
-    box.textContent = PRICE_DISCLAIMER;
-    anchor.insertAdjacentElement(anchor.matches('.section-head,.filter-row') ? 'afterend' : 'beforebegin', box);
+  function removeDuplicateSitewideDisclaimers() {
+    qs('.bld-sitewide-price-disclaimer').forEach(el => el.remove());
   }
 
   function applyCompliance() {
@@ -193,27 +202,17 @@
     normalizeHomepageCopy();
     normalizeSortMenus();
     normalizeCountsAndButtons();
-    addSitewideDisclaimer();
+    removeDuplicateSitewideDisclaimers();
   }
 
   function start() {
     applyCompliance();
     let timer;
-    const interval = window.setInterval(function () {
-      cleanTextCopy();
-      normalizeHomepageCopy();
-      normalizeSortMenus();
-      normalizeCountsAndButtons();
-    }, 1000);
-    window.setTimeout(function () { window.clearInterval(interval); }, 30000);
+    const interval = window.setInterval(applyCompliance, 1000);
+    window.setTimeout(function () { window.clearInterval(interval); }, 12000);
     new MutationObserver(() => {
       clearTimeout(timer);
-      timer = setTimeout(() => {
-        qs('[data-bld-compliance-applied="true"]').forEach(card => {
-          if (!card.querySelector('.bld-price-timestamp') || !card.querySelector('.bld-card-price-disclaimer')) card.dataset.bldComplianceApplied = 'false';
-        });
-        applyCompliance();
-      }, 75);
+      timer = setTimeout(applyCompliance, 75);
     }).observe(document.body, { childList: true, subtree: true, characterData: true });
     window.addEventListener('load', applyCompliance);
     setTimeout(applyCompliance, 500);
