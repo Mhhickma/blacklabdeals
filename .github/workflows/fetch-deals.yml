@@ -45,12 +45,12 @@ jobs:
           from pathlib import Path
 
           replacements = {
-              'Top Amazon discounts across every category — updated every 30 minutes automatically.': 'Top deals found on Amazon across every category — updated every 30 minutes automatically.',
-              'Top Amazon discounts across every category - updated every 30 minutes automatically.': 'Top deals found on Amazon across every category - updated every 30 minutes automatically.',
-              'Updated every 30 minutes · Powered by live Amazon data': 'Updated every 30 minutes · Deal data refreshed regularly',
-              'Updated every 30 minutes &middot; Powered by live Amazon data': 'Updated every 30 minutes &middot; Deal data refreshed regularly',
-              'Updated every 30 minutes • Powered by live Amazon data': 'Updated every 30 minutes • Deal data refreshed regularly',
-              'Updated every 30 minutes - Powered by live Amazon data': 'Updated every 30 minutes - Deal data refreshed regularly',
+              'Top Amazon discounts across every category — updated every 30 minutes automatically.': 'Top product picks found on Amazon across every category.',
+              'Top Amazon discounts across every category - updated every 30 minutes automatically.': 'Top product picks found on Amazon across every category.',
+              'Updated every 30 minutes · Powered by live Amazon data': 'Product information refreshed regularly',
+              'Updated every 30 minutes &middot; Powered by live Amazon data': 'Product information refreshed regularly',
+              'Updated every 30 minutes • Powered by live Amazon data': 'Product information refreshed regularly',
+              'Updated every 30 minutes - Powered by live Amazon data': 'Product information refreshed regularly',
               'Prices sourced live from Amazon.': 'Prices and availability are checked at time of posting and may change.',
               'As an Amazon Associate we earn from qualifying purchases.': 'As an Amazon Associate, Black Lab Deals earns from qualifying purchases.',
               'As an Amazon Associate I earn from qualifying purchases.': 'As an Amazon Associate, Black Lab Deals earns from qualifying purchases.',
@@ -65,13 +65,11 @@ jobs:
                   path.write_text(text, encoding='utf-8')
                   print(f'Updated compliance copy in {path}')
           PY
-      - name: Commit and push updated deal files
+      - name: Commit and push updated product files
         run: |
           git config user.name "DealDrop Bot"
           git config user.email "bot@dealdrop.com"
 
-          git add -f *.html || true
-          git add -f */index.html || true
           git add -f deals.json || true
           git add -f deals_memory.json || true
           [ -f notified_deals.json ] && git add -f notified_deals.json || true
@@ -83,6 +81,22 @@ jobs:
             exit 0
           fi
 
-          git commit -m "Update deals $(date -u '+%Y-%m-%d %H:%M UTC')"
-          git push origin main
-          echo "Pushed updated deal data. Vercel auto-deploys are disabled in vercel.json, so this does not trigger a site rebuild."
+          git commit -m "Update product picks $(date -u '+%Y-%m-%d %H:%M UTC')"
+
+          pushed=false
+          for attempt in 1 2 3; do
+            if git push origin main; then
+              pushed=true
+              break
+            fi
+            echo "Push failed because main moved; rebasing and retrying ($attempt/3)"
+            git fetch origin main
+            git rebase origin/main
+          done
+
+          if [ "$pushed" != "true" ]; then
+            echo "Could not push product update after retries"
+            exit 1
+          fi
+
+          echo "Pushed updated product data. Vercel auto-deploys are disabled in vercel.json, so this does not trigger a site rebuild."
