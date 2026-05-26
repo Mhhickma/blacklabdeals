@@ -45,11 +45,11 @@
 
   function cleanTextCopy() {
     const replacements = [
-      [/All Deals/g, 'Product Picks'], [/all deals/g, 'product picks'],
+      [/All Deals/g, 'All Product Picks'], [/all deals/g, 'all product picks'],
       [/Hot Deals/g, 'Product Picks'], [/hot deals/g, 'product picks'], [/Hot Deal/g, 'Product Pick'], [/hot deal/g, 'product pick'],
       [/price drops/gi, 'current Amazon product information'], [/deal feed/gi, 'product feed'], [/current deal data/gi, 'current Amazon product information'],
       [/stronger deals first/gi, 'useful product picks first'], [/discounts/gi, 'product information'],
-      [/Avg\. discount/gi, ''], [/average discount/gi, ''],
+      [/Avg\. discount/gi, ''], [/average discount/gi, ''], [/Search deals/gi, 'Search product picks'],
       [/Load\s+50\s+More\s+Deals\s*\([^)]*\)/gi, 'Show 50 More Product Picks'],
       [/Load\s+More\s+Deals\s*\([^)]*\)/gi, 'Show More Product Picks'],
       [/Load\s+More\s+Deals/gi, 'Show More Product Picks'],
@@ -61,7 +61,7 @@
       acceptNode(node) {
         const parent = node.parentElement;
         if (!parent || ['SCRIPT','STYLE','NOSCRIPT'].includes(parent.tagName)) return NodeFilter.FILTER_REJECT;
-        return /deals?|discount|price drops?|hot|product picks|load|current deal data/i.test(node.nodeValue || '') ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP;
+        return /deals?|discount|price drops?|hot|product picks|load|current deal data|search deals/i.test(node.nodeValue || '') ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP;
       }
     });
     const nodes = [];
@@ -70,6 +70,42 @@
       let text = node.nodeValue;
       replacements.forEach(([from, to]) => { text = text.replace(from, to); });
       node.nodeValue = text;
+    });
+  }
+
+  function normalizeHomepageCopy() {
+    qs('p,div,span,strong,small').forEach(el => {
+      const text = (el.textContent || '').trim();
+      if (!text) return;
+      if (/How these deals are checked/i.test(text) || /flags strong .*current Amazon product information/i.test(text) || /flags strong .*price drops/i.test(text)) {
+        if (el.children.length <= 2 && text.length < 500) {
+          el.textContent = 'How product picks are checked: Black Lab Deals refreshes product picks automatically and sends each click to Amazon so you can confirm the final price, shipping, coupon status, and availability before buying.';
+        }
+      }
+    });
+    qs('input[placeholder],textarea[placeholder]').forEach(el => {
+      if (/search deals/i.test(el.getAttribute('placeholder') || '')) el.setAttribute('placeholder', 'Search product picks');
+    });
+    qs('.filter-btn,button,a').forEach(el => {
+      const text = (el.textContent || '').trim();
+      if (/^All Deals$/i.test(text)) el.textContent = 'All Product Picks';
+      if (/^Hot Deals$/i.test(text)) el.textContent = 'Product Picks';
+    });
+  }
+
+  function normalizeSortMenus() {
+    qs('select').forEach(select => {
+      qs('option', select).forEach(option => {
+        const text = (option.textContent || '').trim();
+        const value = String(option.value || '');
+        if (/biggest\s+discount/i.test(text) || /discount/i.test(value)) {
+          option.remove();
+        }
+      });
+      if (/discount/i.test(String(select.value || ''))) {
+        const first = qs('option', select)[0];
+        if (first) select.value = first.value;
+      }
     });
   }
 
@@ -150,8 +186,12 @@
     const ts = fetchedAt();
     addStyles();
     cleanTextCopy();
+    normalizeHomepageCopy();
+    normalizeSortMenus();
     normalizeCountsAndButtons();
     qs(CARD_SELECTOR).forEach(card => cleanCard(card, ts));
+    normalizeHomepageCopy();
+    normalizeSortMenus();
     normalizeCountsAndButtons();
     addSitewideDisclaimer();
   }
@@ -161,6 +201,8 @@
     let timer;
     const interval = window.setInterval(function () {
       cleanTextCopy();
+      normalizeHomepageCopy();
+      normalizeSortMenus();
       normalizeCountsAndButtons();
     }, 1000);
     window.setTimeout(function () { window.clearInterval(interval); }, 30000);
