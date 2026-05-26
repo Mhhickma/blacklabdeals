@@ -49,14 +49,19 @@
       [/Hot Deals/g, 'Product Picks'], [/hot deals/g, 'product picks'], [/Hot Deal/g, 'Product Pick'], [/hot deal/g, 'product pick'],
       [/price drops/gi, 'current Amazon product information'], [/deal feed/gi, 'product feed'],
       [/stronger deals first/gi, 'useful product picks first'], [/discounts/gi, 'product information'],
-      [/Avg\. discount/gi, ''], [/average discount/gi, ''], [/Load More Deals/g, 'Load More Product Picks'],
-      [/Showing (\d+) of (\d+) deals/gi, 'Showing $1 of $2 product picks']
+      [/Avg\. discount/gi, ''], [/average discount/gi, ''],
+      [/Load\s+50\s+More\s+Deals\s*\([^)]*\)/gi, 'Show 50 More Product Picks'],
+      [/Load\s+More\s+Deals\s*\([^)]*\)/gi, 'Show More Product Picks'],
+      [/Load\s+More\s+Deals/gi, 'Show More Product Picks'],
+      [/Showing\s+(\d+)\s+of\s+(\d+)\s+deals/gi, 'Showing $1 of $2 Product Picks'],
+      [/Product Picks\s*-\s*Showing\s+(\d+)\s+of\s+(\d+)\s+deals/gi, 'Showing $1 of $2 Product Picks'],
+      [/Product Picks\s*-\s*Showing\s+(\d+)\s+of\s+(\d+)\s+Product Picks/gi, 'Showing $1 of $2 Product Picks']
     ];
     const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
       acceptNode(node) {
         const parent = node.parentElement;
         if (!parent || ['SCRIPT','STYLE','NOSCRIPT'].includes(parent.tagName)) return NodeFilter.FILTER_REJECT;
-        return /deals?|discount|price drops?|hot/i.test(node.nodeValue || '') ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP;
+        return /deals?|discount|price drops?|hot|product picks|load/i.test(node.nodeValue || '') ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP;
       }
     });
     const nodes = [];
@@ -65,6 +70,23 @@
       let text = node.nodeValue;
       replacements.forEach(([from, to]) => { text = text.replace(from, to); });
       node.nodeValue = text;
+    });
+  }
+
+  function normalizeCountsAndButtons() {
+    qs('.deal-count,#deal-count,[class*="deal-count"]').forEach(el => {
+      const text = (el.textContent || '').trim();
+      const match = text.match(/(?:Product Picks\s*-\s*)?Showing\s+(\d+)\s+of\s+(\d+)\s+(?:deals|product picks)/i);
+      if (match) el.textContent = `Showing ${match[1]} of ${match[2]} Product Picks`;
+      else el.textContent = text.replace(/\bdeals\b/gi, 'Product Picks').replace(/Product Picks\s*-\s*/i, '');
+    });
+    qs('button,a').forEach(el => {
+      const text = (el.textContent || '').trim();
+      if (/load\s+50\s+more\s+deals/i.test(text) || /load\s+50\s+more\s+product picks/i.test(text)) {
+        el.textContent = 'Show 50 More Product Picks';
+      } else if (/load\s+more\s+deals/i.test(text) || /load\s+more\s+product picks/i.test(text)) {
+        el.textContent = 'Show More Product Picks';
+      }
     });
   }
 
@@ -125,7 +147,9 @@
     const ts = fetchedAt();
     addStyles();
     cleanTextCopy();
+    normalizeCountsAndButtons();
     qs(CARD_SELECTOR).forEach(card => cleanCard(card, ts));
+    normalizeCountsAndButtons();
     addSitewideDisclaimer();
   }
 
