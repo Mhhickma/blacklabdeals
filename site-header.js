@@ -1,6 +1,13 @@
 /* Black Lab Deals clean shared header */
 (function(){
   function isHome(){return location.pathname==='/'||location.pathname==='/index.html'}
+  function normalizeSortLabels(){
+    var select=document.getElementById('sort-select');
+    if(!select) return;
+    var current=select.value;
+    select.innerHTML='<option value="best">Product Picks</option><option value="newest">Newest First</option><option value="featured">Featured Picks</option>';
+    select.value=(current==='newest')?'newest':(current==='featured'?'featured':'best');
+  }
   function addStyles(){
     if(document.getElementById('bld-header-style')) return;
     var s=document.createElement('style');
@@ -20,6 +27,6 @@
     var alerts=isHome()?'#alerts-box':'/#alerts-box';
     return '<header class="bld-header-shell"><div class="bld-header-main"><a href="/" class="bld-brand"><img class="bld-brand-logo" src="/logo-128.jpg" alt="Black Lab Deals logo"><div><div class="bld-brand-title">Black Lab <span>Deals</span></div><div class="bld-brand-tagline">Fresh Amazon product picks updated daily</div></div></a><nav class="bld-nav"><a href="/categories/">Categories</a><a href="'+picks+'">All Product Picks</a><a href="/top-100-amazon-deals-today/">Top 100</a><a href="/best-amazon-tool-deals/">Tools</a><a href="/best-amazon-home-kitchen-deals/">Home &amp; Kitchen</a><a class="bld-alert-btn" href="'+alerts+'">Get Alerts</a></nav></div><div class="bld-search-row"><form class="bld-search" action="/search.html" method="get"><input type="search" name="q" placeholder="Search product picks"><button type="submit">Search</button></form></div></header>';
   }
-  function mount(){addStyles();var el=document.getElementById('site-header');if(el)el.innerHTML=headerHtml();addCompliance();}
+  function mount(){addStyles();var el=document.getElementById('site-header');if(el)el.innerHTML=headerHtml();normalizeSortLabels();addCompliance();}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mount);else mount();
 })();
