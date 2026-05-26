@@ -1,28 +1,29 @@
 (() => {
   const EVENT_FEED_URL = '/amazon-sales-event-deals.json';
   const AFFILIATE_TAG = 'blacklabdealsprime-20';
+  const PRICE_DISCLAIMER = 'Product prices and availability are accurate as of the date/time indicated and are subject to change. Any price and availability information displayed on Amazon at the time of purchase will apply to the purchase of this product.';
 
   const CATEGORIES = [
-    ['amazon-electronics-deals', 'Amazon Electronics Deals', 'Tech accessories, audio gear, charging items, gadgets, and electronics finds.', '🎧'],
-    ['amazon-furniture-deals', 'Amazon Furniture Deals', 'Storage, shelves, desks, chairs, and home furniture finds.', '🪑'],
-    ['amazon-health-personal-care-deals', 'Amazon Health & Personal Care Deals', 'Personal care, grooming, health, and everyday wellness deals.', '💚'],
-    ['amazon-home-deals', 'Amazon Home Deals', 'General home finds, storage, decor, cleaning, and everyday essentials.', '🏠'],
-    ['amazon-home-improvement-deals', 'Amazon Home Improvement Deals', 'DIY, repair, hardware, and project supplies.', '🔨'],
-    ['amazon-home-entertainment-deals', 'Amazon Home Entertainment Deals', 'Streaming, audio, TV accessories, and entertainment items.', '📺'],
-    ['amazon-lawn-garden-deals', 'Amazon Lawn and Garden Deals', 'Lawn, garden, patio, and backyard items.', '🍃'],
-    ['amazon-office-products-deals', 'Amazon Office Products Deals', 'Desk gear, office supplies, printers, and work-from-home items.', '💼'],
-    ['amazon-outdoors-deals', 'Amazon Outdoors Deals', 'Outdoor gear, camping, sports, and adventure finds.', '⛺'],
-    ['amazon-pc-deals', 'Amazon PC Deals', 'Computer accessories, PC gear, monitors, and peripherals.', '🖥️'],
-    ['amazon-kitchen-deals', 'Amazon Kitchen Deals', 'Kitchen tools, cookware, storage, and small appliances.', '🍲'],
-    ['amazon-pet-products-deals', 'Amazon Pet Products Deals', 'Dog, cat, grooming, beds, toys, and pet essentials.', '🐾'],
-    ['amazon-sports-deals', 'Amazon Sports Deals', 'Fitness, training, sports gear, and outdoor activity deals.', '🏃'],
-    ['amazon-tool-deals', 'Amazon Tool Deals', 'Power tools, hand tools, shop accessories, DIY tools, and project gear.', '🔧'],
-    ['amazon-toys-deals', 'Amazon Toys Deals', 'Toys, games, gifts, and family finds.', '🧸'],
-    ['amazon-video-devices-deals', 'Amazon Video Devices Deals', 'Streaming devices, video gear, and TV accessories.', '▶️'],
-    ['amazon-wireless-deals', 'Amazon Wireless Deals', 'Wireless tech, phones, earbuds, chargers, and accessories.', '📱'],
-    ['amazon-device-deals', 'Amazon Device Deals', 'Echo, Fire TV, Kindle, Ring, Blink, eero, and Alexa-enabled finds.', '🔊'],
-    ['amazon-deals-under-50', 'Amazon Deals Under $50', 'Budget-friendly deals across popular Amazon categories.', '🏷️'],
-    ['amazon-household-essentials-deals', 'Amazon Household Essentials Deals', 'Cleaning supplies, laundry, paper goods, storage bags, and household basics.', '🧺']
+    ['amazon-electronics-deals', 'Amazon Electronics Product Picks', 'Tech accessories, audio gear, charging items, gadgets, and electronics finds.', '🎧'],
+    ['amazon-furniture-deals', 'Amazon Furniture Product Picks', 'Storage, shelves, desks, chairs, and home furniture finds.', '🪑'],
+    ['amazon-health-personal-care-deals', 'Amazon Health & Personal Care Product Picks', 'Personal care, grooming, health, and everyday wellness items.', '💚'],
+    ['amazon-home-deals', 'Amazon Home Product Picks', 'General home finds, storage, decor, cleaning, and everyday essentials.', '🏠'],
+    ['amazon-home-improvement-deals', 'Amazon Home Improvement Product Picks', 'DIY, repair, hardware, and project supplies.', '🔨'],
+    ['amazon-home-entertainment-deals', 'Amazon Home Entertainment Product Picks', 'Streaming, audio, TV accessories, and entertainment items.', '📺'],
+    ['amazon-lawn-garden-deals', 'Amazon Lawn and Garden Product Picks', 'Lawn, garden, patio, and backyard items.', '🍃'],
+    ['amazon-office-products-deals', 'Amazon Office Product Picks', 'Desk gear, office supplies, printers, and work-from-home items.', '💼'],
+    ['amazon-outdoors-deals', 'Amazon Outdoors Product Picks', 'Outdoor gear, camping, sports, and adventure finds.', '⛺'],
+    ['amazon-pc-deals', 'Amazon PC Product Picks', 'Computer accessories, PC gear, monitors, and peripherals.', '🖥️'],
+    ['amazon-kitchen-deals', 'Amazon Kitchen Product Picks', 'Kitchen tools, cookware, storage, and small appliances.', '🍲'],
+    ['amazon-pet-products-deals', 'Amazon Pet Product Picks', 'Dog, cat, grooming, beds, toys, and pet essentials.', '🐾'],
+    ['amazon-sports-deals', 'Amazon Sports Product Picks', 'Fitness, training, sports gear, and outdoor activity items.', '🏃'],
+    ['amazon-tool-deals', 'Amazon Tool Product Picks', 'Power tools, hand tools, shop accessories, DIY tools, and project gear.', '🔧'],
+    ['amazon-toys-deals', 'Amazon Toys Product Picks', 'Toys, games, gifts, and family finds.', '🧸'],
+    ['amazon-video-devices-deals', 'Amazon Video Device Product Picks', 'Streaming devices, video gear, and TV accessories.', '▶️'],
+    ['amazon-wireless-deals', 'Amazon Wireless Product Picks', 'Wireless tech, phones, earbuds, chargers, and accessories.', '📱'],
+    ['amazon-device-deals', 'Amazon Device Product Picks', 'Echo, Fire TV, Kindle, Ring, Blink, eero, and Alexa-enabled finds.', '🔊'],
+    ['amazon-deals-under-50', 'Amazon Product Picks Under $50', 'Budget-friendly product picks across popular Amazon categories.', '🏷️'],
+    ['amazon-household-essentials-deals', 'Amazon Household Essentials Product Picks', 'Cleaning supplies, laundry, paper goods, storage bags, and household basics.', '🧺']
   ];
 
   const EVENT_PAGE_SLUGS = new Set(['amazon-deal-event', ...CATEGORIES.map(([slug]) => slug)]);
@@ -48,20 +49,16 @@
     return Number(deal.price_amount ?? deal.current_price ?? deal.currentPrice ?? deal.price ?? 0) || 0;
   }
 
-  function pct(deal) {
-    return Number(deal.pct ?? deal.discount_percent ?? deal.discountPercent ?? deal.percent_off ?? 0) || 0;
-  }
-
   function updated(deal) {
-    return Date.parse(deal.updated_at || deal.updatedAt || deal.seen_at || 0) || 0;
+    return Date.parse(deal.price_fetched_at || deal.updated_at || deal.updatedAt || deal.seen_at || 0) || 0;
   }
 
-  function ago(timestamp) {
-    if (!timestamp) return '-';
-    const minutes = Math.floor(Math.max(0, Date.now() - timestamp) / 60000);
-    if (minutes < 60) return `${minutes}m ago`;
-    const hours = Math.floor(minutes / 60);
-    return hours < 24 ? `${hours}h ago` : `${Math.floor(hours / 24)}d ago`;
+  function stamp(timestamp) {
+    try {
+      return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', timeZoneName: 'short' }).format(new Date(timestamp || Date.now()));
+    } catch (error) {
+      return new Date(timestamp || Date.now()).toLocaleString();
+    }
   }
 
   function average(values) {
@@ -88,15 +85,15 @@
 
   function cardImage(deal, title) {
     const src = image(deal);
-    return src ? `<img src="${esc(src)}" alt="${esc(title)}" width="160" height="160" loading="lazy" decoding="async">` : '<div class="img-fallback">Deal image unavailable</div>';
+    return src ? `<img src="${esc(src)}" alt="${esc(title)}" width="160" height="160" loading="lazy" decoding="async">` : '<div class="img-fallback">Product image unavailable</div>';
   }
 
   function title(deal) {
-    return deal.title || deal.name || deal.product_title || 'Amazon Sales Event Deal';
+    return deal.title || deal.name || deal.product_title || 'Amazon product pick';
   }
 
   function category(deal) {
-    return deal.cat || deal.category || 'Amazon Deals';
+    return deal.cat || deal.category || 'Amazon Product Picks';
   }
 
   function addAffiliateTag(url) {
@@ -125,27 +122,18 @@
     return Boolean(deal.hasCoupon || deal.has_coupon || deal.couponDisplay || deal.coupon);
   }
 
-  function isHot(deal) {
-    return Boolean(deal.hot || pct(deal) >= 30);
-  }
-
   function score(deal) {
-    return (isHot(deal) ? 1000 : 0) + (hasCoupon(deal) ? 180 : 0) + pct(deal) * 12 + Math.max(0, 80 - price(deal)) + updated(deal) / 1000000000;
+    return (hasCoupon(deal) ? 180 : 0) + Math.max(0, 80 - price(deal)) + updated(deal) / 1000000000;
   }
 
-  function ribbonText(deal) {
-    const discount = pct(deal);
-    if (discount > 0) return `${Math.round(discount)}% OFF`;
-    if (hasCoupon(deal)) return 'COUPON';
-    return 'DEAL';
+  function badgeText(deal) {
+    if (hasCoupon(deal)) return 'Coupon may be available';
+    return 'Product Pick';
   }
 
-  function savingsText(deal) {
-    const discount = pct(deal);
-    if (discount > 0) return `Save ${Math.round(discount)}% today`;
-    if (hasCoupon(deal)) return deal.couponDisplay || 'Coupon available';
-    if (deal.was) return 'Limited-time deal price';
-    return 'Check current deal';
+  function noteText(deal) {
+    if (hasCoupon(deal)) return deal.couponDisplay || 'Coupon status must be confirmed on Amazon.';
+    return 'Confirm final price and availability on Amazon.';
   }
 
   function matchesSearch(deal, query) {
@@ -183,7 +171,6 @@
     deals = deals.filter(deal => matchesSearch(deal, searchQuery));
 
     deals.sort((a, b) => {
-      if (sortMode === 'discount-desc') return pct(b) - pct(a) || score(b) - score(a);
       if (sortMode === 'price-asc') return price(a) - price(b) || score(b) - score(a);
       if (sortMode === 'price-desc') return price(b) - price(a) || score(b) - score(a);
       if (sortMode === 'newest') return updated(b) - updated(a) || score(b) - score(a);
@@ -216,13 +203,13 @@
       controls = document.createElement('section');
       controls.className = 'event-controls';
       controls.id = 'event-controls';
-      controls.setAttribute('aria-label', 'Filter, search, and sort Amazon Sales Event deals');
+      controls.setAttribute('aria-label', 'Filter, search, and sort Amazon Sales Event product picks');
       if (hotStrip) hotStrip.insertAdjacentElement('beforebegin', controls);
       else if (sectionHead) sectionHead.insertAdjacentElement('afterend', controls);
     }
 
     const options = CATEGORIES.map(([catSlug, label]) => `<option value="${esc(catSlug)}">${esc(label.replace(/^Amazon\s+/i, ''))}</option>`).join('');
-    controls.innerHTML = `<div class="event-control"><label for="event-category-filter">Filter by category</label><select id="event-category-filter"><option value="all">All deal categories</option>${options}</select></div><div class="event-control event-search-control"><label for="event-search-input">Search deals</label><input id="event-search-input" type="search" placeholder="Search by product, brand, ASIN, or category" autocomplete="off" inputmode="search"></div><div class="event-control"><label for="event-sort-select">Sort deals</label><select id="event-sort-select"><option value="featured">Featured / best deals</option><option value="discount-desc">Biggest % drop</option><option value="price-asc">Price: low to high</option><option value="price-desc">Price: high to low</option><option value="newest">Newest updated</option></select></div>`;
+    controls.innerHTML = `<div class="event-control"><label for="event-category-filter">Filter by category</label><select id="event-category-filter"><option value="all">All product categories</option>${options}</select></div><div class="event-control event-search-control"><label for="event-search-input">Search product picks</label><input id="event-search-input" type="search" placeholder="Search by product, brand, ASIN, or category" autocomplete="off" inputmode="search"></div><div class="event-control"><label for="event-sort-select">Sort product picks</label><select id="event-sort-select"><option value="featured">Featured product picks</option><option value="price-asc">Price: low to high</option><option value="price-desc">Price: high to low</option><option value="newest">Newest updated</option></select></div>`;
 
     const filter = $('event-category-filter');
     if (filter) filter.value = defaultFilterForPage();
@@ -238,7 +225,7 @@
       wrap = document.createElement('div');
       wrap.id = 'amazon-sales-event-load-more-wrap';
       wrap.className = 'load-more-wrap hidden';
-      wrap.innerHTML = '<button id="amazon-sales-event-load-more-btn" class="load-more-btn" type="button">Load 50 More Deals</button>';
+      wrap.innerHTML = '<button id="amazon-sales-event-load-more-btn" class="load-more-btn" type="button">Load 50 More Product Picks</button>';
       grid.insertAdjacentElement('afterend', wrap);
       button = $('amazon-sales-event-load-more-btn');
       button.addEventListener('click', () => { visibleDealsCount += DEALS_PER_PAGE; render(); });
@@ -249,15 +236,13 @@
   function updateStats(deals) {
     const total = deals.length;
     const avgPrice = average(deals.map(price));
-    const avgDiscount = average(deals.map(pct));
     const newest = Math.max(...deals.map(updated), 0);
-    if ($('hero-pill')) $('hero-pill').textContent = `${total} Amazon Sales Event deals loaded`;
-    if ($('deal-count')) $('deal-count').textContent = `Showing ${Math.min(visibleDealsCount, total)} of ${total} deals`;
+    if ($('hero-pill')) $('hero-pill').textContent = total ? `${total} Amazon product picks loaded` : 'Amazon product picks loading';
     if ($('stat-active')) $('stat-active').textContent = total;
-    if ($('stat-hot')) $('stat-hot').textContent = deals.filter(isHot).length;
+    if ($('stat-hot')) $('stat-hot').textContent = deals.filter(hasCoupon).length;
     if ($('stat-price')) $('stat-price').textContent = avgPrice ? money(avgPrice) : '-';
-    if ($('stat-discount')) $('stat-discount').textContent = avgDiscount ? `${Math.round(avgDiscount)}% off` : '-';
-    if ($('stat-updated')) $('stat-updated').textContent = newest ? ago(newest) : '-';
+    if ($('stat-discount')) $('stat-discount').textContent = 'Product Picks';
+    if ($('stat-updated')) $('stat-updated').textContent = newest ? stamp(newest) : '-';
   }
 
   function render() {
@@ -267,10 +252,10 @@
     const deals = filteredDeals();
     const searchQuery = String($('event-search-input')?.value || '').trim();
     updateStats(deals);
-    if (status) status.textContent = searchQuery ? `Showing deals matching “${searchQuery}”.` : 'Showing preloaded Amazon Sales Event ASINs with live Amazon pricing.';
+    if (status) status.textContent = searchQuery ? `Showing product picks matching “${searchQuery}”.` : 'Showing preloaded Amazon Sales Event product picks with current Amazon product information.';
 
     if (!deals.length) {
-      grid.innerHTML = '<div class="empty-state">No Amazon Sales Event deals match this search or filter yet.</div>';
+      grid.innerHTML = '<div class="empty-state">No Amazon Sales Event product picks match this search or filter yet.</div>';
       const existingWrap = $('amazon-sales-event-load-more-wrap');
       if (existingWrap) existingWrap.hidden = true;
       return;
@@ -282,10 +267,9 @@
     grid.innerHTML = visibleDeals.map((deal, index) => {
       const dealTitle = title(deal);
       const amount = price(deal);
-      const discount = pct(deal);
       const destination = link(deal);
-      const primaryBadge = discount ? `${Math.round(discount)}% off` : isHot(deal) ? 'Hot Deal' : hasCoupon(deal) ? 'Coupon' : 'Deal';
-      return `<a class="best-seller-card deal-card-unified bld-clickable-card" href="${esc(destination)}" target="_blank" rel="nofollow sponsored noopener" data-asin="${esc(deal.asin || '')}" data-deal-title="${esc(dealTitle)}" data-deal-category="${esc(category(deal))}" data-deal-price="${esc(amount)}" data-deal-discount="${esc(discount)}" aria-label="View ${esc(dealTitle)} on Amazon"><span class="deal-ribbon">${esc(ribbonText(deal))}</span><div class="best-seller-img">${cardImage(deal, dealTitle)}</div><div class="best-seller-body"><div class="best-seller-badges"><span class="best-seller-badge">${esc(primaryBadge)}</span><span class="best-seller-badge rank">#${index + 1}</span></div><div class="best-seller-title">${esc(dealTitle)}</div><div class="best-seller-category">${esc(category(deal))}</div><div class="best-seller-price-row"><span class="best-seller-price">${amount ? money(amount) : esc(deal.price || 'See deal')}</span>${deal.was ? `<span class="best-seller-was">${esc(deal.was)}</span>` : ''}</div><div class="deal-savings-line">${esc(savingsText(deal))}</div>${deal.couponDisplay ? `<div class="best-seller-category">${esc(deal.couponDisplay)}</div>` : ''}<span class="best-seller-btn">View on Amazon</span></div></a>`;
+      const shownAt = updated(deal) || Date.now();
+      return `<a class="best-seller-card deal-card-unified bld-clickable-card" href="${esc(destination)}" target="_blank" rel="nofollow sponsored noopener" data-asin="${esc(deal.asin || '')}" data-deal-title="${esc(dealTitle)}" data-deal-category="${esc(category(deal))}" data-deal-price="${esc(amount)}" aria-label="View ${esc(dealTitle)} on Amazon"><span class="deal-ribbon">${esc(badgeText(deal))}</span><div class="best-seller-img">${cardImage(deal, dealTitle)}</div><div class="best-seller-body"><div class="best-seller-badges"><span class="best-seller-badge">${esc(badgeText(deal))}</span><span class="best-seller-badge rank">#${index + 1}</span></div><div class="best-seller-title">${esc(dealTitle)}</div><div class="best-seller-category">${esc(category(deal))}</div><div class="best-seller-price-row"><span class="best-seller-price">${amount ? money(amount) : esc(deal.price || 'Check price on Amazon')}</span></div><div class="bld-price-timestamp">Price shown as of ${esc(stamp(shownAt))}.</div><div class="deal-savings-line">${esc(noteText(deal))}</div><div class="bld-card-price-disclaimer">${PRICE_DISCLAIMER}</div><span class="best-seller-btn">View on Amazon</span></div></a>`;
     }).join('');
 
     const { wrap, button } = ensureLoadMoreButton(grid);
@@ -294,7 +278,7 @@
       wrap.hidden = false;
       wrap.classList.remove('hidden');
       button.disabled = false;
-      button.textContent = `Load ${Math.min(DEALS_PER_PAGE, remaining)} More Deals (${remaining} remaining)`;
+      button.textContent = `Load ${Math.min(DEALS_PER_PAGE, remaining)} More Product Picks (${remaining} remaining)`;
     } else {
       wrap.hidden = true;
       wrap.classList.add('hidden');
@@ -307,7 +291,7 @@
     ensureSharedNavigation();
     ensureControls();
     const status = $('status-line');
-    if (status) status.textContent = 'Loading Amazon Sales Event ASINs with live Amazon pricing.';
+    if (status) status.textContent = 'Loading Amazon Sales Event product picks with current Amazon product information.';
     try {
       const response = await fetch(`${EVENT_FEED_URL}?v=${Date.now()}`, { cache: 'no-store' });
       if (!response.ok) throw new Error(`Could not load ${EVENT_FEED_URL}`);
@@ -317,9 +301,9 @@
       render();
     } catch (error) {
       console.error(error);
-      if (status) status.textContent = 'Amazon Sales Event feed is not available yet.';
+      if (status) status.textContent = 'Amazon Sales Event product pick feed is not available yet.';
       const grid = $('hot-grid') || document.querySelector('.hot-grid,.deals-grid');
-      if (grid) grid.innerHTML = '<div class="empty-state">The Amazon Sales Event feed has not been generated yet. Add ASINs to the Google Sheet, then run the event feed script.</div>';
+      if (grid) grid.innerHTML = '<div class="empty-state">The Amazon Sales Event product pick feed has not been generated yet.</div>';
     }
   }
 
