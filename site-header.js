@@ -1,6 +1,35 @@
 /* Black Lab Deals clean shared header */
 (function(){
   function isHome(){return location.pathname==='/'||location.pathname==='/index.html'}
+  function addAnalytics(){
+    var gaId='G-ES3MC2ZTTM';
+    var metaPixelId='1642712089209011';
+    if(!window.__BLD_ANALYTICS_ADDED__){
+      window.__BLD_ANALYTICS_ADDED__=true;
+      if(!document.querySelector('script[src="https://www.googletagmanager.com/gtag/js?id='+gaId+'"]')){
+        var ga=document.createElement('script');
+        ga.async=true;
+        ga.src='https://www.googletagmanager.com/gtag/js?id='+gaId;
+        document.head.appendChild(ga);
+      }
+      window.dataLayer=window.dataLayer||[];
+      window.gtag=window.gtag||function(){window.dataLayer.push(arguments)};
+      window.gtag('js',new Date());
+      window.gtag('config',gaId);
+      if(!window.fbq){
+        var n=window.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+        if(!window._fbq)window._fbq=n;
+        n.push=n;n.loaded=true;n.version='2.0';n.queue=[];
+        var fb=document.createElement('script');
+        fb.async=true;
+        fb.src='https://connect.facebook.net/en_US/fbevents.js';
+        var firstScript=document.getElementsByTagName('script')[0];
+        firstScript.parentNode.insertBefore(fb,firstScript);
+      }
+      window.fbq('init',metaPixelId);
+      window.fbq('track','PageView');
+    }
+  }
   function normalizeSortLabels(){
     var select=document.getElementById('sort-select');
     if(!select) return;
@@ -27,6 +56,6 @@
     var alerts=isHome()?'#alerts-box':'/#alerts-box';
     return '<header class="bld-header-shell"><div class="bld-header-main"><a href="/" class="bld-brand"><img class="bld-brand-logo" src="/logo-128.jpg" alt="Black Lab Deals logo"><div><div class="bld-brand-title">Black Lab <span>Deals</span></div><div class="bld-brand-tagline">Fresh Amazon product picks updated daily</div></div></a><nav class="bld-nav"><a href="/categories/">Categories</a><a href="'+picks+'">All Product Picks</a><a href="/top-100-amazon-deals-today/">Top 100</a><a href="/best-amazon-tool-deals/">Tools</a><a href="/best-amazon-home-kitchen-deals/">Home &amp; Kitchen</a><a class="bld-alert-btn" href="'+alerts+'">Get Alerts</a></nav></div><div class="bld-search-row"><form class="bld-search" action="/search.html" method="get"><input type="search" name="q" placeholder="Search product picks"><button type="submit">Search</button></form></div></header>';
   }
-  function mount(){addStyles();var el=document.getElementById('site-header');if(el)el.innerHTML=headerHtml();normalizeSortLabels();addCompliance();}
+  function mount(){addAnalytics();addStyles();var el=document.getElementById('site-header');if(el)el.innerHTML=headerHtml();normalizeSortLabels();addCompliance();}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mount);else mount();
 })();
