@@ -23,6 +23,7 @@
   let visible = cfg.limit || PAGE_SIZE;
   let query = '';
   let sort = 'best';
+  let lastSearchTracked = '';
 
   const esc = value => String(value ?? '').replace(/[&<>"']/g, ch => ({
     '&': '&amp;',
@@ -31,6 +32,14 @@
     '"': '&quot;',
     "'": '&#39;'
   }[ch]));
+
+  const attr = value => esc(value).replace(/`/g, '&#96;');
+  const track = (name, params) => {
+    try {
+      if (typeof window.BLDTrack === 'function') window.BLDTrack(name, params || {});
+      else if (typeof window.gtag === 'function') window.gtag('event', name, params || {});
+    } catch (error) {}
+  };
 
   const safeValue = (item, key) => {
     if (!APPROVED_FIELDS.has(key)) return '';
@@ -81,6 +90,7 @@
         const updatedValue = safeValue(item, 'updated_at') || safeValue(item, 'seen_at');
 
         return {
+          asin,
           title,
           category,
           image,
@@ -131,7 +141,7 @@
       ? '<img src="' + esc(product.image) + '" alt="' + esc(product.title) + '" loading="lazy">'
       : '';
 
-    return '<article class="bld-product-card">'
+    return '<article class="bld-product-card" data-asin="' + attr(product.asin) + '" data-title="' + attr(product.title) + '" data-category="' + attr(product.category) + '">'
       + '<div class="bld-product-img">' + image + '</div>'
       + '<div class="bld-product-body">'
       + '<div class="bld-product-title">' + esc(product.title) + '</div>'
@@ -139,7 +149,7 @@
       + '<div class="bld-product-price">' + esc(product.price) + '</div>'
       + '<div class="bld-price-stamp">Product information shown as of ' + esc(stamp(product.updated)) + '. Confirm final price and availability on Amazon.</div>'
       + '<div class="bld-card-disclaimer">' + PRICE_DISCLAIMER + '</div>'
-      + '<a class="bld-view-btn" href="' + esc(product.link) + '" target="_blank" rel="nofollow sponsored noopener">View on Amazon</a>'
+      + '<a class="bld-view-btn" href="' + esc(product.link) + '" target="_blank" rel="nofollow sponsored noopener" data-asin="' + attr(product.asin) + '" data-title="' + attr(product.title) + '" data-category="' + attr(product.category) + '">View on Amazon</a>'
       + '</div>'
       + '</article>';
   }
@@ -176,8 +186,15 @@
       if (!response.ok) throw new Error('Feed unavailable');
       const data = await response.json();
       all = normalize(Array.isArray(data) ? data : (data.deals || []));
+      track('product_feed_loaded', {
+        feed_path: feedPath,
+        feed_count: all.length,
+        page_category: cfg.category || 'all',
+        page_limit: cfg.limit || ''
+      });
       render();
     } catch (error) {
+      track('product_feed_error', { page_category: cfg.category || 'all' });
       const gridEl = document.getElementById('products-grid');
       const countEl = document.getElementById('deal-count');
       if (gridEl) gridEl.innerHTML = '<div class="bld-empty">Product picks are temporarily unavailable. Please check back soon.</div>';
@@ -192,16 +209,27 @@
       query = event.target.value.trim();
       visible = cfg.limit || PAGE_SIZE;
       render();
+      if (query.length >= 3 && query !== lastSearchTracked) {
+        lastSearchTracked = query;
+        track('product_search', {
+          search_term: query.slice(0, 120),
+          search_length: query.length,
+          result_count: filtered().length,
+          page_category: cfg.category || 'all'
+        });
+      }
     });
 
     document.getElementById('sort-select')?.addEventListener('change', event => {
       sort = event.target.value;
       visible = cfg.limit || PAGE_SIZE;
+      track('product_sort_change', { sort_value: sort, page_category: cfg.category || 'all' });
       render();
     });
 
     document.getElementById('load-more')?.addEventListener('click', () => {
       visible += PAGE_SIZE;
+      track('product_load_more', { visible_count: visible, page_category: cfg.category || 'all' });
       render();
     });
 
