@@ -51,11 +51,24 @@
     sc.defer=true;
     document.body.appendChild(sc);
   }
+  function bindSearch(){
+    var form=document.querySelector('.bld-search');
+    var input=form&&form.querySelector('input[name="q"]');
+    if(!form||!input) return;
+    form.addEventListener('submit',function(event){
+      var q=(input.value||'').trim();
+      if(isHome()&&typeof window.BLDApplyProductSearch==='function'){
+        event.preventDefault();
+        window.BLDApplyProductSearch(q,true);
+      }
+    });
+  }
   function headerHtml(){
     var picks=isHome()?'#deals-section':'/#deals-section';
     var alerts=isHome()?'#alerts-box':'/#alerts-box';
-    return '<header class="bld-header-shell"><div class="bld-header-main"><a href="/" class="bld-brand"><img class="bld-brand-logo" src="/logo-128.jpg" alt="Black Lab Deals logo"><div><div class="bld-brand-title">Black Lab <span>Deals</span></div><div class="bld-brand-tagline">Fresh Amazon product picks updated daily</div></div></a><nav class="bld-nav"><a href="/categories/">Categories</a><a href="'+picks+'">All Product Picks</a><a href="/top-100-amazon-deals-today/">Top 100</a><a href="/best-amazon-tool-deals/">Tools</a><a href="/best-amazon-home-kitchen-deals/">Home &amp; Kitchen</a><a class="bld-alert-btn" href="'+alerts+'">Get Alerts</a></nav></div><div class="bld-search-row"><form class="bld-search" action="/search.html" method="get"><input type="search" name="q" placeholder="Search product picks"><button type="submit">Search</button></form></div></header>';
+    var action=isHome()?'/':'/';
+    return '<header class="bld-header-shell"><div class="bld-header-main"><a href="/" class="bld-brand"><img class="bld-brand-logo" src="/logo-128.jpg" alt="Black Lab Deals logo"><div><div class="bld-brand-title">Black Lab <span>Deals</span></div><div class="bld-brand-tagline">Fresh Amazon product picks updated daily</div></div></a><nav class="bld-nav"><a href="/categories/">Categories</a><a href="'+picks+'">All Product Picks</a><a href="/top-100-amazon-deals-today/">Top 100</a><a href="/best-amazon-tool-deals/">Tools</a><a href="/best-amazon-home-kitchen-deals/">Home &amp; Kitchen</a><a class="bld-alert-btn" href="'+alerts+'">Get Alerts</a></nav></div><div class="bld-search-row"><form class="bld-search" action="'+action+'" method="get"><input type="search" name="q" placeholder="Search product picks"><button type="submit">Search</button></form></div></header>';
   }
-  function mount(){addAnalytics();addStyles();var el=document.getElementById('site-header');if(el)el.innerHTML=headerHtml();normalizeSortLabels();addCompliance();}
+  function mount(){addAnalytics();addStyles();var el=document.getElementById('site-header');if(el)el.innerHTML=headerHtml();normalizeSortLabels();bindSearch();addCompliance();}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mount);else mount();
 })();
