@@ -21,7 +21,7 @@
   const cfg = window.BLD_PAGE_CONFIG || {};
   let all = [];
   let visible = cfg.limit || PAGE_SIZE;
-  let query = '';
+  let query = new URLSearchParams(window.location.search).get('q')?.trim() || '';
   let sort = 'best';
   let lastSearchTracked = '';
 
@@ -83,6 +83,7 @@
         const priceNum = safeNumber(safeValue(item, 'price_amount'));
         const asin = safeValue(item, 'asin');
         const title = safeValue(item, 'title') || 'Amazon product';
+        const brand = safeValue(item, 'brand');
         const category = safeValue(item, 'cat') || 'Everything Else';
         const image = safeValue(item, 'image') || asinImage(asin);
         const link = safeValue(item, 'link') || '#';
@@ -92,6 +93,7 @@
         return {
           asin,
           title,
+          brand,
           category,
           image,
           link,
@@ -124,7 +126,9 @@
 
     if (query) {
       const q = query.toLowerCase();
-      list = list.filter(product => (product.title + ' ' + product.category).toLowerCase().includes(q));
+      list = list.filter(product => (
+        product.title + ' ' + product.brand + ' ' + product.category + ' ' + product.asin
+      ).toLowerCase().includes(q));
     }
 
     if (sort === 'newest') {
@@ -179,6 +183,24 @@
     }
   }
 
+  function applySearch(value, shouldUpdateUrl) {
+    query = String(value || '').trim();
+    visible = cfg.limit || PAGE_SIZE;
+    const input = document.getElementById('search-input');
+    if (input) input.value = query;
+    if (shouldUpdateUrl) {
+      const url = new URL(window.location.href);
+      if (query) url.searchParams.set('q', query);
+      else url.searchParams.delete('q');
+      url.hash = 'deals-section';
+      history.replaceState(null, '', url);
+    }
+    render();
+    document.getElementById('deals-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  window.BLDApplyProductSearch = applySearch;
+
   async function load() {
     try {
       const feedPath = cfg.feedPath || '/deals.json';
@@ -193,6 +215,7 @@
         page_limit: cfg.limit || ''
       });
       render();
+      if (query) applySearch(query, false);
     } catch (error) {
       track('product_feed_error', { page_category: cfg.category || 'all' });
       const gridEl = document.getElementById('products-grid');
@@ -205,7 +228,10 @@
   document.addEventListener('DOMContentLoaded', () => {
     normalizeSortSelect();
 
-    document.getElementById('search-input')?.addEventListener('input', event => {
+    const input = document.getElementById('search-input');
+    if (input && query) input.value = query;
+
+    input?.addEventListener('input', event => {
       query = event.target.value.trim();
       visible = cfg.limit || PAGE_SIZE;
       render();
