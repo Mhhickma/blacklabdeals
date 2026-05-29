@@ -51,6 +51,13 @@
     sc.defer=true;
     document.body.appendChild(sc);
   }
+  function addAlertsPopup(){
+    if(document.querySelector('script[src^="/alerts-popup.js"]')) return;
+    var sc=document.createElement('script');
+    sc.src='/alerts-popup.js?v=1';
+    sc.defer=true;
+    document.body.appendChild(sc);
+  }
   function bindSearch(){
     var form=document.querySelector('.bld-nav-search');
     var input=form&&form.querySelector('input[name="q"]');
@@ -64,9 +71,8 @@
     });
   }
   function headerHtml(){
-    var alerts=isHome()?'#alerts-box':'/#alerts-box';
-    return '<header class="bld-header-shell"><div class="bld-header-main"><a href="/" class="bld-brand"><img class="bld-brand-logo" src="/logo-128.jpg" alt="Black Lab Deals logo"><div><div class="bld-brand-title">Black Lab <span>Deals</span></div><div class="bld-brand-tagline">Fresh Amazon product picks updated daily</div></div></a><nav class="bld-nav"><a href="/categories/">Categories</a><form class="bld-nav-search" action="/" method="get"><input type="search" name="q" placeholder="Search picks" aria-label="Search product picks"><button type="submit">Search</button></form><a class="bld-alert-btn" href="'+alerts+'">Get Alerts</a></nav></div></header>';
+    return '<header class="bld-header-shell"><div class="bld-header-main"><a href="/" class="bld-brand"><img class="bld-brand-logo" src="/logo-128.jpg" alt="Black Lab Deals logo"><div><div class="bld-brand-title">Black Lab <span>Deals</span></div><div class="bld-brand-tagline">Fresh Amazon product picks updated daily</div></div></a><nav class="bld-nav"><a href="/categories/">Categories</a><form class="bld-nav-search" action="/" method="get"><input type="search" name="q" placeholder="Search picks" aria-label="Search product picks"><button type="submit">Search</button></form><a class="bld-alert-btn" href="#" data-bld-alert-open>Get Alerts</a></nav></div></header>';
   }
-  function mount(){addAnalytics();addStyles();var el=document.getElementById('site-header');if(el)el.innerHTML=headerHtml();normalizeSortLabels();bindSearch();addCompliance();}
+  function mount(){addAnalytics();addStyles();var el=document.getElementById('site-header');if(el)el.innerHTML=headerHtml();normalizeSortLabels();bindSearch();addCompliance();addAlertsPopup();}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mount);else mount();
 })();
