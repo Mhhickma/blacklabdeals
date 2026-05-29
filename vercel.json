@@ -7,7 +7,7 @@
     { "src": "**/*", "use": "@vercel/static" }
   ],
   "routes": [
-    { "src": "/api/(.*)", "dest": "/api/$1" },
+    { "src": "/api/(.*)", "dest": "/api/$1.js" },
     { "src": "/deals.json", "dest": "https://raw.githubusercontent.com/Mhhickma/blacklabdeals/main/deals.json" },
     { "src": "/best_seller_deals.json", "dest": "https://raw.githubusercontent.com/Mhhickma/blacklabdeals/main/best_seller_deals.json" },
     { "src": "/amazon-sales-event-deals.json", "dest": "https://raw.githubusercontent.com/Mhhickma/blacklabdeals/main/amazon-sales-event-deals.json" },
