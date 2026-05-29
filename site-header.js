@@ -75,20 +75,15 @@
     var menu=document.querySelector('.bld-menu');
     if(!menu) return;
     var button=menu.querySelector('.bld-menu-btn');
-    var closeTimer=null;
     function openMenu(){
-      if(closeTimer) clearTimeout(closeTimer);
       menu.classList.add('is-open');
       if(button) button.setAttribute('aria-expanded','true');
     }
     function closeMenu(){
-      closeTimer=setTimeout(function(){
-        menu.classList.remove('is-open');
-        if(button) button.setAttribute('aria-expanded','false');
-      },450);
+      menu.classList.remove('is-open');
+      if(button) button.setAttribute('aria-expanded','false');
     }
     menu.addEventListener('mouseenter',openMenu);
-    menu.addEventListener('mouseleave',closeMenu);
     menu.addEventListener('focusin',openMenu);
     menu.addEventListener('focusout',function(event){
       if(!menu.contains(event.relatedTarget)) closeMenu();
@@ -105,10 +100,12 @@
         }
       });
     }
+    document.addEventListener('click',function(event){
+      if(!menu.contains(event.target)) closeMenu();
+    });
     document.addEventListener('keydown',function(event){
       if(event.key==='Escape'){
-        menu.classList.remove('is-open');
-        if(button) button.setAttribute('aria-expanded','false');
+        closeMenu();
       }
     });
   }
