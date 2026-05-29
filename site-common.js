@@ -14,7 +14,7 @@
     if(document.getElementById('bld-shared-style'))return;
     const style=document.createElement('style');
     style.id='bld-shared-style';
-    style.textContent='.bld-card-price-disclaimer{display:block;font-size:10px;line-height:1.35;color:#7a6a45;margin:6px 0 8px;background:#fffdf7;border:1px solid #f0e4bd;border-radius:8px;padding:6px}.bld-price-timestamp{display:block;font-size:11px;line-height:1.35;color:#6b6b65;margin-top:4px}';
+    style.textContent='.bld-card-price-disclaimer{display:block;font-size:10px;line-height:1.35;color:#7a6a45;margin:6px 0 8px;background:#fffdf7;border:1px solid #f0e4bd;border-radius:8px;padding:6px}.bld-price-timestamp{display:block;font-size:11px;line-height:1.35;color:#6b6b65;margin-top:4px}.bld-menu-panel{width:min(92vw,360px)!important;max-height:70vh!important;overflow-y:auto!important;overflow-x:hidden!important;box-sizing:border-box!important}.bld-menu:hover .bld-menu-panel,.bld-menu:focus-within .bld-menu-panel{display:flex!important;flex-direction:column!important;grid-template-columns:none!important;gap:4px!important}.bld-menu-panel a{white-space:normal!important;overflow-wrap:break-word!important;line-height:1.25!important}.bld-menu-featured{grid-column:auto!important;background:#f8f1db!important}.bld-menu-panel a:nth-of-type(4){border-top:1px solid #ece8da;margin-top:5px;padding-top:12px}@media(max-width:820px){.bld-menu-panel{position:static!important;width:100%!important;max-height:62vh!important;margin-top:8px!important}}';
     document.head.appendChild(style);
   }
   function stamp(){
