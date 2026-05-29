@@ -41,7 +41,7 @@
     if(document.getElementById('bld-header-style')) return;
     var s=document.createElement('style');
     s.id='bld-header-style';
-    s.textContent='.bld-header-shell{background:#fff;border-bottom:1px solid #e8e6e1;position:sticky;top:0;z-index:300;box-shadow:0 8px 22px rgba(26,58,92,.06)}.bld-header-main{max-width:1180px;margin:0 auto;padding:12px 24px;display:flex;align-items:center;justify-content:space-between;gap:18px}.bld-brand{display:flex;align-items:center;gap:12px;text-decoration:none;color:#1a1a18;min-width:250px}.bld-brand-logo{width:64px;height:64px;border-radius:50%;object-fit:cover;border:3px solid #c9a84c}.bld-brand-title{font-family:Georgia,serif;font-size:30px;line-height:1}.bld-brand-title span{color:#c9a84c}.bld-brand-tagline{font-size:12px;color:#777;margin-top:5px}.bld-nav{display:flex;align-items:center;justify-content:flex-end;gap:13px;flex-wrap:wrap}.bld-nav a{font-weight:900;text-decoration:none;color:#1a1a18;font-size:14px;white-space:nowrap}.bld-nav a:hover{color:#1a3a5c}@media(max-width:820px){.bld-header-main{align-items:flex-start;flex-direction:column}.bld-nav{justify-content:flex-start;width:100%}.bld-brand-logo{width:54px;height:54px}.bld-brand-title{font-size:24px}.bld-brand-tagline{display:none}}';
+    s.textContent='.bld-header-shell{background:#fff;border-bottom:1px solid #e8e6e1;position:sticky;top:0;z-index:300;box-shadow:0 8px 22px rgba(26,58,92,.06)}.bld-header-main{max-width:1180px;margin:0 auto;padding:12px 24px;display:flex;align-items:center;justify-content:space-between;gap:18px}.bld-brand{display:flex;align-items:center;gap:12px;text-decoration:none;color:#1a1a18;min-width:250px}.bld-brand-logo{width:64px;height:64px;border-radius:50%;object-fit:cover;border:3px solid #c9a84c}.bld-brand-title{font-family:Georgia,serif;font-size:30px;line-height:1}.bld-brand-title span{color:#c9a84c}.bld-brand-tagline{font-size:12px;color:#777;margin-top:5px}.bld-nav{display:flex;align-items:center;justify-content:flex-end;gap:13px;flex-wrap:wrap}.bld-nav a{font-weight:900;text-decoration:none;color:#1a1a18;font-size:14px;white-space:nowrap}.bld-nav a:hover{color:#1a3a5c}.bld-nav-search{display:flex;align-items:center;gap:6px}.bld-nav-search input{width:190px;height:36px;border:1px solid #e8e6e1;border-radius:999px;padding:0 12px;font-size:13px;font-weight:800;outline:none}.bld-nav-search input:focus{border-color:#9db5ca;box-shadow:0 0 0 3px rgba(26,58,92,.08)}.bld-nav-search button{height:36px;border:0;border-radius:999px;background:#1a3a5c;color:#fff;font-size:13px;font-weight:900;padding:0 13px;cursor:pointer}.bld-alert-btn{background:#1a3a5c;color:#fff!important;border-radius:999px;padding:9px 14px}.bld-alert-btn:hover{background:#244f7a}@media(max-width:820px){.bld-header-main{align-items:flex-start;flex-direction:column}.bld-nav{justify-content:flex-start;width:100%}.bld-nav-search{width:100%}.bld-nav-search input{width:100%;flex:1}.bld-brand-logo{width:54px;height:54px}.bld-brand-title{font-size:24px}.bld-brand-tagline{display:none}}';
     document.head.appendChild(s);
   }
   function addCompliance(){
@@ -51,9 +51,22 @@
     sc.defer=true;
     document.body.appendChild(sc);
   }
-  function headerHtml(){
-    return '<header class="bld-header-shell"><div class="bld-header-main"><a href="/" class="bld-brand"><img class="bld-brand-logo" src="/logo-128.jpg" alt="Black Lab Deals logo"><div><div class="bld-brand-title">Black Lab <span>Deals</span></div><div class="bld-brand-tagline">Fresh Amazon product picks updated daily</div></div></a><nav class="bld-nav"><a href="/categories/">Categories</a></nav></div></header>';
+  function bindSearch(){
+    var form=document.querySelector('.bld-nav-search');
+    var input=form&&form.querySelector('input[name="q"]');
+    if(!form||!input) return;
+    form.addEventListener('submit',function(event){
+      var q=(input.value||'').trim();
+      if(isHome()&&typeof window.BLDApplyProductSearch==='function'){
+        event.preventDefault();
+        window.BLDApplyProductSearch(q,true);
+      }
+    });
   }
-  function mount(){addAnalytics();addStyles();var el=document.getElementById('site-header');if(el)el.innerHTML=headerHtml();normalizeSortLabels();addCompliance();}
+  function headerHtml(){
+    var alerts=isHome()?'#alerts-box':'/#alerts-box';
+    return '<header class="bld-header-shell"><div class="bld-header-main"><a href="/" class="bld-brand"><img class="bld-brand-logo" src="/logo-128.jpg" alt="Black Lab Deals logo"><div><div class="bld-brand-title">Black Lab <span>Deals</span></div><div class="bld-brand-tagline">Fresh Amazon product picks updated daily</div></div></a><nav class="bld-nav"><a href="/categories/">Categories</a><form class="bld-nav-search" action="/" method="get"><input type="search" name="q" placeholder="Search picks" aria-label="Search product picks"><button type="submit">Search</button></form><a class="bld-alert-btn" href="'+alerts+'">Get Alerts</a></nav></div></header>';
+  }
+  function mount(){addAnalytics();addStyles();var el=document.getElementById('site-header');if(el)el.innerHTML=headerHtml();normalizeSortLabels();bindSearch();addCompliance();}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mount);else mount();
 })();
