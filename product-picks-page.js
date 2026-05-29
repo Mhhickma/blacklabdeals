@@ -2,6 +2,7 @@
 (function () {
   const PRICE_DISCLAIMER = 'Product prices and availability are accurate as of the date/time indicated and are subject to change. Any price and availability information displayed on Amazon at the time of purchase will apply to the purchase of this product.';
   const PAGE_SIZE = 50;
+  const SORT_OPTIONS = new Set(['best', 'price-asc', 'price-desc', 'newest']);
   const APPROVED_FIELDS = new Set([
     'asin',
     'title',
@@ -19,10 +20,11 @@
   ]);
 
   const cfg = window.BLD_PAGE_CONFIG || {};
+  const params = new URLSearchParams(window.location.search);
   let all = [];
   let visible = cfg.limit || PAGE_SIZE;
-  let query = new URLSearchParams(window.location.search).get('q')?.trim() || '';
-  let sort = 'best';
+  let query = params.get('q')?.trim() || '';
+  let sort = SORT_OPTIONS.has(params.get('sort')) ? params.get('sort') : 'best';
   let lastSearchTracked = '';
 
   const esc = value => String(value ?? '').replace(/[&<>"']/g, ch => ({
@@ -110,11 +112,50 @@
     return product.category.toLowerCase() === String(cfg.category).toLowerCase();
   }
 
+  function ensureSortUi() {
+    const section = document.getElementById('deals-section');
+    if (!section) return;
+
+    let bar = document.querySelector('.bld-sort-toolbar');
+    let select = document.getElementById('sort-select');
+
+    if (!bar) {
+      bar = document.createElement('div');
+      bar.className = 'bld-sort-toolbar';
+      const header = section.querySelector('.section-header');
+      section.insertBefore(bar, header || section.firstChild);
+    }
+
+    if (!select) {
+      select = document.createElement('select');
+      select.id = 'sort-select';
+      select.className = 'sort-select';
+      select.setAttribute('aria-label', 'Sort product picks');
+    }
+
+    if (!bar.contains(select)) {
+      const oldParent = select.parentElement;
+      if (oldParent && oldParent.classList.contains('toolbar')) oldParent.remove();
+      bar.appendChild(select);
+    }
+  }
+
   function normalizeSortSelect() {
+    ensureSortUi();
     const select = document.getElementById('sort-select');
     if (!select) return;
-    select.innerHTML = '<option value="best">Product Picks</option><option value="newest">Newest First</option><option value="featured">Featured Picks</option>';
-    select.value = sort;
+    select.innerHTML = '<option value="best">Product Picks</option><option value="price-asc">Price: Low to High</option><option value="price-desc">Price: High to Low</option><option value="newest">Newest First</option>';
+    select.value = SORT_OPTIONS.has(sort) ? sort : 'best';
+  }
+
+  function sortByPriceAsc(a, b) {
+    const ap = a.priceNum || Number.MAX_SAFE_INTEGER;
+    const bp = b.priceNum || Number.MAX_SAFE_INTEGER;
+    return ap - bp || a.title.localeCompare(b.title);
+  }
+
+  function sortByPriceDesc(a, b) {
+    return (b.priceNum || 0) - (a.priceNum || 0) || a.title.localeCompare(b.title);
   }
 
   function filtered() {
@@ -131,7 +172,11 @@
       ).toLowerCase().includes(q));
     }
 
-    if (sort === 'newest') {
+    if (sort === 'price-asc') {
+      list.sort(sortByPriceAsc);
+    } else if (sort === 'price-desc') {
+      list.sort(sortByPriceDesc);
+    } else if (sort === 'newest') {
       list.sort((a, b) => b.updated - a.updated);
     } else {
       list.sort((a, b) => a.category.localeCompare(b.category) || a.title.localeCompare(b.title));
@@ -192,6 +237,8 @@
       const url = new URL(window.location.href);
       if (query) url.searchParams.set('q', query);
       else url.searchParams.delete('q');
+      if (sort && sort !== 'best') url.searchParams.set('sort', sort);
+      else url.searchParams.delete('sort');
       url.hash = 'deals-section';
       history.replaceState(null, '', url);
     }
@@ -247,8 +294,12 @@
     });
 
     document.getElementById('sort-select')?.addEventListener('change', event => {
-      sort = event.target.value;
+      sort = SORT_OPTIONS.has(event.target.value) ? event.target.value : 'best';
       visible = cfg.limit || PAGE_SIZE;
+      const url = new URL(window.location.href);
+      if (sort && sort !== 'best') url.searchParams.set('sort', sort);
+      else url.searchParams.delete('sort');
+      history.replaceState(null, '', url);
       track('product_sort_change', { sort_value: sort, page_category: cfg.category || 'all' });
       render();
     });
