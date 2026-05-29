@@ -2,8 +2,12 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "version": 2,
   "git": { "deploymentEnabled": false },
-  "builds": [{ "src": "**/*", "use": "@vercel/static" }],
+  "builds": [
+    { "src": "api/**/*.js", "use": "@vercel/node" },
+    { "src": "**/*", "use": "@vercel/static" }
+  ],
   "routes": [
+    { "src": "/api/(.*)", "dest": "/api/$1" },
     { "src": "/deals.json", "dest": "https://raw.githubusercontent.com/Mhhickma/blacklabdeals/main/deals.json" },
     { "src": "/best_seller_deals.json", "dest": "https://raw.githubusercontent.com/Mhhickma/blacklabdeals/main/best_seller_deals.json" },
     { "src": "/amazon-sales-event-deals.json", "dest": "https://raw.githubusercontent.com/Mhhickma/blacklabdeals/main/amazon-sales-event-deals.json" },
