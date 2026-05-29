@@ -1,25 +1,8 @@
-const crypto = require('crypto');
-
-const DEFAULT_SPREADSHEET_ID = '1egThCqGYkEoAGF7JEVHlvn6ks1Fus3vrq1R1WxKakr4';
-const DEFAULT_RANGE = 'A:C';
-
 function json(res, status, payload) {
   res.statusCode = status;
   res.setHeader('Content-Type', 'application/json');
   res.setHeader('Cache-Control', 'no-store');
   res.end(JSON.stringify(payload));
-}
-
-function b64url(input) {
-  return Buffer.from(input)
-    .toString('base64')
-    .replace(/=/g, '')
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_');
-}
-
-function normalizePrivateKey(key) {
-  return String(key || '').replace(/\\n/g, '\n');
 }
 
 function clean(value, maxLength) {
@@ -37,74 +20,31 @@ function isValidPhone(value) {
   return digits.length >= 7 && digits.length <= 15;
 }
 
-async function getAccessToken() {
-  const clientEmail = process.env.GOOGLE_CLIENT_EMAIL;
-  const privateKey = normalizePrivateKey(process.env.GOOGLE_PRIVATE_KEY);
+async function sendToAppsScript(email, phone) {
+  const endpoint = process.env.GOOGLE_APPS_SCRIPT_URL || process.env.SUBSCRIBER_SCRIPT_URL;
 
-  if (!clientEmail || !privateKey) {
-    throw new Error('Missing Google service account environment variables');
+  if (!endpoint) {
+    throw new Error('Missing GOOGLE_APPS_SCRIPT_URL environment variable');
   }
 
-  const now = Math.floor(Date.now() / 1000);
-  const header = { alg: 'RS256', typ: 'JWT' };
-  const claim = {
-    iss: clientEmail,
-    scope: 'https://www.googleapis.com/auth/spreadsheets',
-    aud: 'https://oauth2.googleapis.com/token',
-    exp: now + 3600,
-    iat: now
-  };
-
-  const unsigned = b64url(JSON.stringify(header)) + '.' + b64url(JSON.stringify(claim));
-  const signature = crypto
-    .createSign('RSA-SHA256')
-    .update(unsigned)
-    .sign(privateKey, 'base64')
-    .replace(/=/g, '')
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_');
-
-  const assertion = unsigned + '.' + signature;
-  const response = await fetch('https://oauth2.googleapis.com/token', {
+  const response = await fetch(endpoint, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({
-      grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
-      assertion
-    }).toString()
+    body: new URLSearchParams({ email, phone }).toString()
   });
 
-  const data = await response.json();
-  if (!response.ok || !data.access_token) {
-    throw new Error(data.error_description || data.error || 'Unable to get Google access token');
+  const text = await response.text();
+  let data = {};
+  try {
+    data = JSON.parse(text);
+  } catch (error) {
+    throw new Error('Apps Script did not return JSON');
   }
 
-  return data.access_token;
-}
-
-async function appendToSheet(row) {
-  const spreadsheetId = process.env.GOOGLE_SHEET_ID || DEFAULT_SPREADSHEET_ID;
-  const range = process.env.GOOGLE_SHEET_RANGE || DEFAULT_RANGE;
-  const token = await getAccessToken();
-  const url = 'https://sheets.googleapis.com/v4/spreadsheets/'
-    + encodeURIComponent(spreadsheetId)
-    + '/values/'
-    + encodeURIComponent(range)
-    + ':append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS';
-
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      Authorization: 'Bearer ' + token,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ values: [row] })
-  });
-
-  const data = await response.json();
-  if (!response.ok) {
-    throw new Error(data.error && data.error.message ? data.error.message : 'Unable to append to sheet');
+  if (!response.ok || data.success !== true) {
+    throw new Error(data.error || 'Unable to save signup');
   }
+
   return data;
 }
 
@@ -143,11 +83,10 @@ module.exports = async function handler(req, res) {
       return;
     }
 
-    const timestamp = new Date().toLocaleString('en-US', { timeZone: 'America/New_York' });
-    await appendToSheet([timestamp, email, phone]);
+    await sendToAppsScript(email, phone);
     json(res, 200, { ok: true });
   } catch (error) {
     console.error('Subscribe error:', error && error.message ? error.message : error);
-    json(res, 500, { ok: false, error: 'Unable to save signup' });
+    json(res, 500, { ok: false, error: error && error.message ? error.message : 'Unable to save signup' });
   }
 };
