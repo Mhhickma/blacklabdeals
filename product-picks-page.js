@@ -2,6 +2,7 @@
 (function () {
   const PRICE_DISCLAIMER = 'Product prices and availability are accurate as of the date/time indicated and are subject to change. Any price and availability information displayed on Amazon at the time of purchase will apply to the purchase of this product.';
   const PAGE_SIZE = 50;
+  const HOMEPAGE_CATEGORY_SAMPLE_SIZE = 5;
   const SORT_OPTIONS = new Set(['best', 'price-asc', 'price-desc', 'newest']);
   const APPROVED_FIELDS = new Set([
     'asin',
@@ -18,6 +19,20 @@
     'seen_at',
     'updated_at'
   ]);
+  const HOMEPAGE_CATEGORY_ORDER = [
+    'Tools & Home Improvement',
+    'Home & Kitchen',
+    'Electronics',
+    'Patio, Lawn & Garden',
+    'Pet Supplies',
+    'Toys & Games',
+    'Office Products',
+    'Health & Household',
+    'Baby Products',
+    'Sports & Outdoors',
+    'Musical Instruments',
+    'Automotive'
+  ];
 
   const cfg = window.BLD_PAGE_CONFIG || {};
   const params = new URLSearchParams(window.location.search);
@@ -112,6 +127,47 @@
     return product.category.toLowerCase() === String(cfg.category).toLowerCase();
   }
 
+  function isHomepageAllProducts() {
+    return (!cfg.category || cfg.category === 'all')
+      && (document.body?.dataset?.bldHomepage === 'true' || location.pathname === '/' || location.pathname === '/index.html');
+  }
+
+  function byTitle(a, b) {
+    return a.title.localeCompare(b.title);
+  }
+
+  function categoryRank(category) {
+    const index = HOMEPAGE_CATEGORY_ORDER.indexOf(category);
+    return index === -1 ? HOMEPAGE_CATEGORY_ORDER.length + 1 : index;
+  }
+
+  function balancedHomepageOrder(list) {
+    const source = [...list].sort((a, b) => categoryRank(a.category) - categoryRank(b.category) || a.category.localeCompare(b.category) || byTitle(a, b));
+    const used = new Set();
+    const balanced = [];
+
+    HOMEPAGE_CATEGORY_ORDER.forEach(category => {
+      let taken = 0;
+      for (const product of source) {
+        if (taken >= HOMEPAGE_CATEGORY_SAMPLE_SIZE) break;
+        if (product.category !== category || used.has(product.asin || product.link || product.title)) continue;
+        used.add(product.asin || product.link || product.title);
+        balanced.push(product);
+        taken += 1;
+      }
+    });
+
+    source.forEach(product => {
+      const key = product.asin || product.link || product.title;
+      if (!used.has(key)) {
+        used.add(key);
+        balanced.push(product);
+      }
+    });
+
+    return balanced;
+  }
+
   function ensureSortUi() {
     const section = document.getElementById('deals-section');
     if (!section) return;
@@ -178,6 +234,8 @@
       list.sort(sortByPriceDesc);
     } else if (sort === 'newest') {
       list.sort((a, b) => b.updated - a.updated);
+    } else if (isHomepageAllProducts()) {
+      list = balancedHomepageOrder(list);
     } else {
       list.sort((a, b) => a.category.localeCompare(b.category) || a.title.localeCompare(b.title));
     }
