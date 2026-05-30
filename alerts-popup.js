@@ -1,5 +1,9 @@
 /* Black Lab Deals alert signup popup */
 (function(){
+  var AUTO_POPUP_DELAY_MS=5000;
+  var DISMISSED_KEY='bld_alert_popup_dismissed_at';
+  var SIGNED_UP_KEY='bld_alert_popup_signed_up';
+  var DISMISS_COOLDOWN_DAYS=7;
   function q(sel,root){return (root||document).querySelector(sel)}
   function addStyles(){
     if(q('#bld-alert-popup-style')) return;
@@ -11,15 +15,35 @@
   function html(){
     return '<div class="bld-alert-overlay" id="bld-alert-overlay" role="dialog" aria-modal="true" aria-labelledby="bld-alert-title"><div class="bld-alert-modal"><button class="bld-alert-close" type="button" aria-label="Close">&times;</button><div class="bld-alert-content"><div class="bld-alert-kicker">Get Alerts</div><h2 id="bld-alert-title">Get Black Lab Deals alerts</h2><p>Enter your email or phone number to get updates when new product picks are posted.</p><form id="bld-alert-form"><div class="bld-alert-field"><label for="bld-alert-email">Email address</label><input id="bld-alert-email" name="email" type="email" placeholder="you@example.com" autocomplete="email"></div><div class="bld-alert-field"><label for="bld-alert-phone">Phone number</label><input id="bld-alert-phone" name="phone" type="tel" placeholder="555-555-5555" autocomplete="tel"></div><button class="bld-alert-submit" type="submit">Sign Up for Alerts</button><p class="bld-alert-note">You can use email, phone, or both. You can opt out anytime.</p><div class="bld-alert-status" aria-live="polite"></div></form></div></div></div>';
   }
+  function storageGet(key){try{return localStorage.getItem(key)}catch(e){return null}}
+  function storageSet(key,value){try{localStorage.setItem(key,value)}catch(e){}}
+  function recentlyDismissed(){
+    var value=Number(storageGet(DISMISSED_KEY)||0);
+    if(!value) return false;
+    return Date.now()-value < DISMISS_COOLDOWN_DAYS*24*60*60*1000;
+  }
+  function shouldAutoOpen(){
+    if(storageGet(SIGNED_UP_KEY)==='1') return false;
+    if(recentlyDismissed()) return false;
+    if(q('#bld-alert-overlay.open')) return false;
+    return true;
+  }
   function open(){var o=q('#bld-alert-overlay');if(o){o.classList.add('open');setTimeout(function(){var e=q('#bld-alert-email');if(e)e.focus();},50)}}
-  function close(){var o=q('#bld-alert-overlay');if(o)o.classList.remove('open')}
+  function close(markDismissed){
+    var o=q('#bld-alert-overlay');
+    if(o)o.classList.remove('open');
+    if(markDismissed) storageSet(DISMISSED_KEY,String(Date.now()));
+  }
+  function scheduleAutoOpen(){
+    setTimeout(function(){if(shouldAutoOpen()) open()},AUTO_POPUP_DELAY_MS);
+  }
   function bind(){
     document.addEventListener('click',function(e){
       var trigger=e.target.closest&&e.target.closest('.bld-alert-btn,[data-bld-alert-open]');
       if(trigger){e.preventDefault();open();return}
-      if(e.target.matches&&e.target.matches('.bld-alert-overlay,.bld-alert-close')) close();
+      if(e.target.matches&&e.target.matches('.bld-alert-overlay,.bld-alert-close')) close(true);
     });
-    document.addEventListener('keydown',function(e){if(e.key==='Escape') close()});
+    document.addEventListener('keydown',function(e){if(e.key==='Escape') close(true)});
     var form=q('#bld-alert-form');
     if(!form) return;
     form.addEventListener('submit',async function(e){
@@ -34,12 +58,13 @@
         var res=await fetch('/api/subscribe',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email,phone:phone,source:location.pathname,createdAt:new Date().toISOString()})});
         var data={};try{data=await res.json()}catch(_e){}
         if(!res.ok||!data.ok) throw new Error('save failed');
+        storageSet(SIGNED_UP_KEY,'1');
         form.reset();status.textContent='You are signed up!';status.className='bld-alert-status ok';
-        setTimeout(close,650);
+        setTimeout(function(){close(false)},650);
       }catch(err){status.textContent='Could not save yet. Try again soon.';status.className='bld-alert-status err'}
       btn.disabled=false;
     });
   }
-  function init(){addStyles();if(!q('#bld-alert-overlay'))document.body.insertAdjacentHTML('beforeend',html());bind()}
+  function init(){addStyles();if(!q('#bld-alert-overlay'))document.body.insertAdjacentHTML('beforeend',html());bind();scheduleAutoOpen()}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
