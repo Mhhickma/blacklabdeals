@@ -54,7 +54,7 @@
   function addAlertsPopup(){
     if(document.querySelector('script[src^="/alerts-popup.js"]')) return;
     var sc=document.createElement('script');
-    sc.src='/alerts-popup.js?v=1';
+    sc.src='/alerts-popup.js?v=2';
     sc.defer=true;
     document.body.appendChild(sc);
   }
