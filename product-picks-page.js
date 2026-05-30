@@ -254,7 +254,7 @@
       ? '<img src="' + esc(product.image) + '" alt="' + esc(product.title) + '" loading="lazy" decoding="async">'
       : '';
 
-    return '<article class="bld-product-card" data-asin="' + attr(product.asin) + '" data-title="' + attr(product.title) + '" data-category="' + attr(product.category) + '">'
+    return '<article class="bld-product-card" role="link" tabindex="0" aria-label="View ' + attr(product.title) + ' on Amazon" data-link="' + attr(product.link) + '" data-asin="' + attr(product.asin) + '" data-title="' + attr(product.title) + '" data-category="' + attr(product.category) + '">'
       + '<div class="bld-product-img">' + image + '</div>'
       + '<div class="bld-product-body">'
       + '<div class="bld-product-title">' + esc(product.title) + '</div>'
@@ -265,6 +265,19 @@
       + '<a class="bld-view-btn" href="' + esc(product.link) + '" target="_blank" rel="nofollow sponsored noopener" data-asin="' + attr(product.asin) + '" data-title="' + attr(product.title) + '" data-category="' + attr(product.category) + '">View on Amazon</a>'
       + '</div>'
       + '</article>';
+  }
+
+  function openProductCard(cardEl) {
+    if (!cardEl) return;
+    const link = cardEl.getAttribute('data-link');
+    if (!link) return;
+    track('product_card_click', {
+      asin: cardEl.getAttribute('data-asin') || '',
+      product_title: (cardEl.getAttribute('data-title') || '').slice(0, 120),
+      product_category: cardEl.getAttribute('data-category') || '',
+      page_category: cfg.category || 'all'
+    });
+    window.open(link, '_blank', 'noopener');
   }
 
   function render() {
@@ -355,6 +368,20 @@
           page_category: cfg.category || 'all'
         });
       }
+    });
+
+    const grid = document.getElementById('products-grid');
+    grid?.addEventListener('click', event => {
+      if (event.target.closest('a,button,input,select,textarea')) return;
+      const cardEl = event.target.closest('.bld-product-card[data-link]');
+      openProductCard(cardEl);
+    });
+    grid?.addEventListener('keydown', event => {
+      if (event.key !== 'Enter' && event.key !== ' ') return;
+      const cardEl = event.target.closest('.bld-product-card[data-link]');
+      if (!cardEl) return;
+      event.preventDefault();
+      openProductCard(cardEl);
     });
 
     document.getElementById('sort-select')?.addEventListener('change', event => {
