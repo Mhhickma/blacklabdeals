@@ -2,6 +2,7 @@
 (function () {
   const PRICE_DISCLAIMER = 'Product prices and availability are accurate as of the date/time indicated and are subject to change. Any price and availability information displayed on Amazon at the time of purchase will apply to the purchase of this product.';
   const PAGE_SIZE = 50;
+  const MOBILE_INITIAL_SIZE = 24;
   const HOMEPAGE_CATEGORY_SAMPLE_SIZE = 5;
   const SORT_OPTIONS = new Set(['best', 'price-asc', 'price-desc', 'newest']);
   const APPROVED_FIELDS = new Set([
@@ -37,10 +38,15 @@
   const cfg = window.BLD_PAGE_CONFIG || {};
   const params = new URLSearchParams(window.location.search);
   let all = [];
-  let visible = cfg.limit || PAGE_SIZE;
+  let visible = initialVisibleCount();
   let query = params.get('q')?.trim() || '';
   let sort = SORT_OPTIONS.has(params.get('sort')) ? params.get('sort') : 'best';
   let lastSearchTracked = '';
+
+  function initialVisibleCount() {
+    if (cfg.limit) return cfg.limit;
+    return window.matchMedia && window.matchMedia('(max-width: 700px)').matches ? MOBILE_INITIAL_SIZE : PAGE_SIZE;
+  }
 
   const esc = value => String(value ?? '').replace(/[&<>"']/g, ch => ({
     '&': '&amp;',
@@ -243,9 +249,9 @@
     return cfg.limit ? list.slice(0, cfg.limit) : list;
   }
 
-  function card(product) {
+  function card(product, index) {
     const image = product.image
-      ? '<img src="' + esc(product.image) + '" alt="' + esc(product.title) + '" loading="lazy">'
+      ? '<img src="' + esc(product.image) + '" alt="' + esc(product.title) + '" loading="lazy" decoding="async">'
       : '';
 
     return '<article class="bld-product-card" data-asin="' + attr(product.asin) + '" data-title="' + attr(product.title) + '" data-category="' + attr(product.category) + '">'
@@ -309,7 +315,7 @@
   async function load() {
     try {
       const feedPath = cfg.feedPath || '/deals.json';
-      const response = await fetch(feedPath + '?pp=' + Date.now(), { cache: 'no-store' });
+      const response = await fetch(feedPath, { cache: 'force-cache' });
       if (!response.ok) throw new Error('Feed unavailable');
       const data = await response.json();
       all = normalize(Array.isArray(data) ? data : (data.deals || []));
