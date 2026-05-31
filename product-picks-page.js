@@ -34,6 +34,17 @@
     'Musical Instruments',
     'Automotive'
   ];
+  const CATEGORY_SCROLLER_LINKS = [
+    ['Top 100', '/top-100-amazon-deals-today/'],
+    ['Under $50', '/best-amazon-deals-under-50/'],
+    ['Tools', '/best-amazon-tool-deals/'],
+    ['Home & Kitchen', '/best-amazon-home-kitchen-deals/'],
+    ['Electronics', '/best-amazon-electronics-deals/'],
+    ['Patio & Garden', '/best-amazon-patio-lawn-garden-deals/'],
+    ['Pet Supplies', '/best-amazon-pet-supplies-deals/'],
+    ['Toys & Games', '/best-amazon-toys-games-deals/'],
+    ['All Categories', '/categories/']
+  ];
 
   const cfg = window.BLD_PAGE_CONFIG || {};
   const params = new URLSearchParams(window.location.search);
@@ -97,6 +108,14 @@
     return /^[A-Z0-9]{10}$/.test(value)
       ? 'https://images-na.ssl-images-amazon.com/images/P/' + value + '.01._SL160_.jpg'
       : '';
+  }
+
+  function addCategoryScrollerStyles() {
+    if (document.getElementById('bld-category-scroller-style')) return;
+    const style = document.createElement('style');
+    style.id = 'bld-category-scroller-style';
+    style.textContent = '.bld-category-scroll-card{grid-column:1/-1;background:linear-gradient(135deg,#102942,#1a3a5c);color:#fff;border-radius:22px;padding:24px;box-shadow:0 16px 38px rgba(26,58,92,.22);display:grid;gap:16px;align-items:center;margin:6px 0}.bld-category-scroll-kicker{font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.14em;color:#f1d88b}.bld-category-scroll-title{font-family:Georgia,serif;font-size:clamp(26px,4vw,38px);line-height:1.05;margin:0}.bld-category-scroll-copy{margin:0;color:#dbe8f3;font-size:15px;max-width:720px}.bld-category-scroll-links{display:flex;flex-wrap:wrap;gap:9px}.bld-category-scroll-link{display:inline-flex;align-items:center;justify-content:center;background:#fff;color:#12304d!important;border:1px solid rgba(255,255,255,.8);border-radius:999px;padding:10px 13px;font-size:13px;font-weight:900;text-decoration:none;box-shadow:0 6px 18px rgba(0,0,0,.08)}.bld-category-scroll-link:hover,.bld-category-scroll-link:focus{background:#f8f1db;color:#102942!important;outline:2px solid rgba(255,255,255,.75);outline-offset:2px}@media(max-width:620px){.bld-category-scroll-card{padding:20px 16px}.bld-category-scroll-links{display:grid;grid-template-columns:1fr 1fr}.bld-category-scroll-link{width:100%;padding:11px 9px}}';
+    document.head.appendChild(style);
   }
 
   function normalize(rawItems) {
@@ -267,6 +286,31 @@
       + '</article>';
   }
 
+  function categoryScrollerCard() {
+    const links = CATEGORY_SCROLLER_LINKS.map(([label, href]) => '<a class="bld-category-scroll-link" href="' + esc(href) + '" data-category-scroll-choice="' + attr(label) + '">' + esc(label) + '</a>').join('');
+    return '<section class="bld-category-scroll-card" aria-label="Shop by category">'
+      + '<div>'
+      + '<div class="bld-category-scroll-kicker">Still browsing?</div>'
+      + '<h2 class="bld-category-scroll-title">Shop by Category</h2>'
+      + '<p class="bld-category-scroll-copy">Jump to a category and find product picks faster.</p>'
+      + '</div>'
+      + '<div class="bld-category-scroll-links">' + links + '</div>'
+      + '</section>';
+  }
+
+  function shouldShowCategoryScroller(shown) {
+    if (cfg.limit || query || shown.length < 8) return false;
+    return true;
+  }
+
+  function productGridHtml(shown) {
+    if (!shouldShowCategoryScroller(shown)) return shown.map(card).join('');
+    const insertAt = window.matchMedia && window.matchMedia('(max-width: 700px)').matches ? 6 : 8;
+    const html = shown.map(card);
+    html.splice(Math.min(insertAt, html.length), 0, categoryScrollerCard());
+    return html.join('');
+  }
+
   function openProductCard(cardEl) {
     if (!cardEl) return;
     const link = cardEl.getAttribute('data-link');
@@ -295,7 +339,7 @@
 
     if (gridEl) {
       gridEl.innerHTML = shown.length
-        ? shown.map(card).join('')
+        ? productGridHtml(shown)
         : '<div class="bld-empty">No matching product picks found right now.</div>';
     }
 
@@ -350,6 +394,7 @@
   }
 
   document.addEventListener('DOMContentLoaded', () => {
+    addCategoryScrollerStyles();
     normalizeSortSelect();
 
     const input = document.getElementById('search-input');
@@ -372,6 +417,15 @@
 
     const grid = document.getElementById('products-grid');
     grid?.addEventListener('click', event => {
+      const categoryChoice = event.target.closest('[data-category-scroll-choice]');
+      if (categoryChoice) {
+        track('category_scroll_choice', {
+          choice: categoryChoice.getAttribute('data-category-scroll-choice') || '',
+          page_category: cfg.category || 'all',
+          source: location.pathname
+        });
+        return;
+      }
       if (event.target.closest('a,button,input,select,textarea')) return;
       const cardEl = event.target.closest('.bld-product-card[data-link]');
       openProductCard(cardEl);
