@@ -1,6 +1,6 @@
 /* Black Lab Deals alert signup popup */
 (function(){
-  var AUTO_POPUP_DELAY_MS=5000;
+  var AUTO_POPUP_DELAY_MS=9000;
   var DISMISSED_KEY='bld_alert_popup_dismissed_at';
   var SIGNED_UP_KEY='bld_alert_popup_signed_up';
   var DISMISS_COOLDOWN_DAYS=7;
