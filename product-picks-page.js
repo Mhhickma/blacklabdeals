@@ -34,9 +34,13 @@
   let sort = SORT_OPTIONS.has(params.get('sort')) ? params.get('sort') : 'best';
   let lastSearchTracked = '';
 
+  function isMobile() {
+    return window.matchMedia && window.matchMedia('(max-width: 700px)').matches;
+  }
+
   function initialVisibleCount() {
     if (cfg.limit) return cfg.limit;
-    return window.matchMedia && window.matchMedia('(max-width: 700px)').matches ? MOBILE_INITIAL_SIZE : PAGE_SIZE;
+    return isMobile() ? MOBILE_INITIAL_SIZE : PAGE_SIZE;
   }
 
   const esc = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
@@ -178,10 +182,14 @@
     return '<section class="bld-category-scroll-card" aria-label="Shop by category"><div><div class="bld-category-scroll-kicker">Still browsing?</div><h2 class="bld-category-scroll-title">Shop by Category</h2><p class="bld-category-scroll-copy">Jump to any product-pick category and find what you are looking for faster.</p></div><div class="bld-category-scroll-links">' + links + '</div></section>';
   }
 
-  function shouldShowCategoryScroller(shown) { return !(cfg.limit || query || shown.length < 8); }
+  function shouldShowCategoryScroller(shown) {
+    const minimumItems = isMobile() ? 20 : 8;
+    return !(cfg.limit || query || shown.length < minimumItems);
+  }
+
   function productGridHtml(shown) {
     if (!shouldShowCategoryScroller(shown)) return shown.map(card).join('');
-    const insertAt = window.matchMedia && window.matchMedia('(max-width: 700px)').matches ? 6 : 8;
+    const insertAt = isMobile() ? 18 : 8;
     const html = shown.map(card);
     html.splice(Math.min(insertAt, html.length), 0, categoryScrollerCard());
     return html.join('');
