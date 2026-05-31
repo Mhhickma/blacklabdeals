@@ -211,7 +211,7 @@
     const moreEl = document.getElementById('load-more');
     if (countEl) countEl.textContent = list.length ? 'Showing ' + Math.min(visible, list.length) + ' of ' + list.length + ' Product Picks' : '0 Product Picks';
     if (gridEl) gridEl.innerHTML = shown.length ? productGridHtml(shown) : '<div class="bld-empty">No matching product picks found right now.</div>';
-    if (moreEl) { moreEl.hidden = !!cfg.limit || visible >= list.length; moreEl.textContent = 'Show 50 More Product Picks'; }
+    if (moreEl) { moreEl.hidden = !!cfg.limit || visible >= list.length; moreEl.textContent = 'Keep Browsing Product Picks'; }
   }
 
   function applySearch(value, shouldUpdateUrl) {
