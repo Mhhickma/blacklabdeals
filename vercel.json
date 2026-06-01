@@ -34,7 +34,9 @@
     {
       "source": "/(deals|best_seller_deals|amazon-sales-event-deals).json",
       "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=300, s-maxage=300, stale-while-revalidate=600" }
+        { "key": "Cache-Control", "value": "no-store, no-cache, max-age=0, must-revalidate" },
+        { "key": "Pragma", "value": "no-cache" },
+        { "key": "Expires", "value": "0" }
       ]
     }
   ],
@@ -112,12 +114,6 @@
     { "src": "/amazon-device-deals/index.html", "dest": "/amazon-deal-event/index.html" },
     { "src": "/amazon-household-essentials-deals", "dest": "/amazon-deal-event/index.html" },
     { "src": "/amazon-household-essentials-deals/", "dest": "/amazon-deal-event/index.html" },
-    { "src": "/amazon-household-essentials-deals/index.html", "dest": "/amazon-deal-event/index.html" },
-    { "src": "/best-amazon-toys-games-deals/best-toys-games-deals-found-on-amazon-right-now-black-lab-deals.png", "dest": "/black-lab-deals-social-preview.png" },
-    { "src": "/images/pages/top-100-amazon-deals-today.png", "dest": "/top100amazondealstoday.png" },
-    { "src": "/images/pages/best-amazon-home-kitchen-deals.png", "dest": "/home-kitchen-deals-banner.png" },
-    { "src": "/images/pages/best-amazon-deals-under-50.png", "dest": "/under50image.png" },
-    { "src": "/", "dest": "/index.html" },
-    { "src": "/(.*)", "dest": "/$1" }
+    { "src": "/amazon-household-essentials-deals/index.html", "dest": "/amazon-deal-event/index.html" }
   ]
 }
