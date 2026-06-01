@@ -36,7 +36,10 @@ jobs:
           MAILCHIMP_SERVER:           ${{ secrets.MAILCHIMP_SERVER }}
           MAILCHIMP_LIST_ID:          ${{ secrets.MAILCHIMP_LIST_ID }}
           INTERNAL_SECRET:            ${{ secrets.INTERNAL_SECRET }}
+          PRODUCT_TTL_HOURS:          23
         run: python fetch_deals.py
+      - name: Purge expired product picks
+        run: python purge_expired_products.py deals.json deals_memory.json --ttl-hours 23
       - name: Render static deal cards
         run: python render_homepage_static_deals.py
       - name: Apply Amazon compliance copy updates
