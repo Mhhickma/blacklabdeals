@@ -42,7 +42,11 @@ jobs:
           CREATORS_CREDENTIAL_SECRET: ${{ secrets.CREATORS_CREDENTIAL_SECRET }}
           BEST_SELLER_ASINS_PER_RUN:  125
           BEST_SELLER_REFRESH_WATCHLIST: false
+          BEST_SELLER_PRODUCT_TTL_HOURS: 23
         run: python fetch_best_seller_deals.py
+
+      - name: Purge expired best seller product picks
+        run: python purge_expired_products.py best_seller_deals.json --ttl-hours 23
 
       - name: Patch homepage navigation
         run: python patch_homepage_nav.py
@@ -50,9 +54,7 @@ jobs:
       - name: Patch best seller page navigation to shared nav
         run: python patch_best_seller_shared_nav.py
 
-      - name: Commit, push, and deploy updated best seller deal files
-        env:
-          VERCEL_DEPLOY_HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
+      - name: Commit and push updated best seller deal files
         run: |
           git config user.name "DealDrop Bot"
           git config user.email "bot@dealdrop.com"
@@ -90,10 +92,4 @@ jobs:
             exit 1
           fi
 
-          if [ -z "$VERCEL_DEPLOY_HOOK_URL" ]; then
-            echo "VERCEL_DEPLOY_HOOK_URL is not set; skipping Vercel deploy hook"
-            exit 0
-          fi
-
-          curl -fsS -X POST "$VERCEL_DEPLOY_HOOK_URL"
-          echo "Triggered Vercel deploy hook"
+          echo "Pushed updated best seller product data. Vercel auto-deploys are disabled in vercel.json, so this does not trigger a site rebuild."
