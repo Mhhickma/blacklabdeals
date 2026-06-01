@@ -4,6 +4,8 @@
   const PAGE_SIZE = 50;
   const MOBILE_INITIAL_SIZE = 24;
   const HOMEPAGE_CATEGORY_SAMPLE_SIZE = 5;
+  const PRODUCT_TTL_HOURS = 23;
+  const PRODUCT_TTL_MS = PRODUCT_TTL_HOURS * 60 * 60 * 1000;
   const SORT_OPTIONS = new Set(['best', 'price-asc', 'price-desc', 'newest']);
   const APPROVED_FIELDS = new Set(['asin','title','brand','cat','image','price','price_amount','currency','availability','link','desc','seen_at','updated_at']);
   const HOMEPAGE_CATEGORY_ORDER = ['Tools & Home Improvement','Home & Kitchen','Electronics','Patio, Lawn & Garden','Pet Supplies','Toys & Games','Office Products','Health & Household','Baby Products','Sports & Outdoors','Musical Instruments','Automotive'];
@@ -50,10 +52,18 @@
   const safeNumber = value => { const n = Number(String(value ?? '').replace(/[^0-9.]/g, '')); return Number.isFinite(n) ? n : 0; };
   const money = value => value ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value) : '';
 
+  function productTimestamp(item) {
+    const raw = safeValue(item, 'seen_at') || safeValue(item, 'updated_at');
+    const parsed = Date.parse(raw || '');
+    if (!Number.isFinite(parsed)) return 0;
+    const now = Date.now();
+    if (parsed > now + 5 * 60 * 1000) return 0;
+    if (now - parsed >= PRODUCT_TTL_MS) return 0;
+    return parsed;
+  }
+
   function stamp(value) {
-    const parsed = Date.parse(value || '');
-    const date = Number.isFinite(parsed) ? new Date(parsed) : new Date();
-    return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', timeZoneName: 'short' }).format(date);
+    return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', timeZoneName: 'short' }).format(new Date(value));
   }
 
   function asinImage(asin) {
@@ -71,6 +81,8 @@
 
   function normalize(rawItems) {
     return rawItems.filter(item => item && typeof item === 'object').map(item => {
+      const updated = productTimestamp(item);
+      if (!updated) return null;
       const priceNum = safeNumber(safeValue(item, 'price_amount'));
       const asin = safeValue(item, 'asin');
       const title = safeValue(item, 'title') || 'Amazon product';
@@ -78,9 +90,8 @@
       const image = safeValue(item, 'image') || asinImage(asin);
       const link = safeValue(item, 'link') || '#';
       const price = safeValue(item, 'price') || money(priceNum) || 'Check current price on Amazon';
-      const updatedValue = safeValue(item, 'updated_at') || safeValue(item, 'seen_at');
-      return { asin, title, brand: safeValue(item, 'brand'), category, image, link, price, priceNum, updated: Date.parse(updatedValue || '') || Date.now() };
-    }).filter(product => product.title && product.link && product.link !== '#');
+      return { asin, title, brand: safeValue(item, 'brand'), category, image, link, price, priceNum, updated };
+    }).filter(product => product && product.title && product.link && product.link !== '#');
   }
 
   function matchesCategory(product) {
@@ -210,7 +221,7 @@
     const gridEl = document.getElementById('products-grid');
     const moreEl = document.getElementById('load-more');
     if (countEl) countEl.textContent = list.length ? 'Showing ' + Math.min(visible, list.length) + ' of ' + list.length + ' Product Picks' : '0 Product Picks';
-    if (gridEl) gridEl.innerHTML = shown.length ? productGridHtml(shown) : '<div class="bld-empty">No matching product picks found right now.</div>';
+    if (gridEl) gridEl.innerHTML = shown.length ? productGridHtml(shown) : '<div class="bld-empty">No current product picks found. Product picks expire after 23 hours and will return after the feed refreshes.</div>';
     if (moreEl) { moreEl.hidden = !!cfg.limit || visible >= list.length; moreEl.textContent = 'Keep Browsing Product Picks'; }
   }
 
@@ -235,11 +246,12 @@
   async function load() {
     try {
       const feedPath = cfg.feedPath || '/deals.json';
-      const response = await fetch(feedPath, { cache: 'force-cache' });
+      const cacheBustedFeedPath = feedPath + (feedPath.includes('?') ? '&' : '?') + 'v=' + Date.now();
+      const response = await fetch(cacheBustedFeedPath, { cache: 'no-store', headers: { 'Cache-Control': 'no-cache' } });
       if (!response.ok) throw new Error('Feed unavailable');
       const data = await response.json();
       all = normalize(Array.isArray(data) ? data : (data.deals || []));
-      track('product_feed_loaded', { feed_path: feedPath, feed_count: all.length, page_category: cfg.category || 'all', page_limit: cfg.limit || '' });
+      track('product_feed_loaded', { feed_path: feedPath, feed_count: all.length, page_category: cfg.category || 'all', page_limit: cfg.limit || '', ttl_hours: PRODUCT_TTL_HOURS });
       render();
       if (query) applySearch(query, false);
     } catch (error) {
