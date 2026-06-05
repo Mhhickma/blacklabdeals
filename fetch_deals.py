@@ -1,9 +1,10 @@
 """Compliant Black Lab Deals product-picks generator.
 
-Keepa is used only to discover candidate ASINs. Public pricing, images,
-titles, availability, and links are fetched from Amazon Creators API. The
-public JSON intentionally excludes old/was pricing, savings, percentage-off,
-price-drop labels, hot-deal flags, Keepa stats, and coupon fields.
+Keepa is used only to discover and internally rank candidate ASINs. Public
+pricing, images, titles, availability, and links are fetched from Amazon
+Creators API. The public JSON intentionally excludes old/was pricing, savings,
+percentage-off, price-drop labels, hot-deal flags, Keepa stats, and coupon
+fields.
 """
 
 import json
@@ -158,6 +159,14 @@ def purge_expired(memory):
     return kept
 
 
+def timestamp_value(item):
+    raw = item.get("updated_at") or item.get("seen_at") or ""
+    try:
+        return datetime.fromisoformat(raw).timestamp()
+    except Exception:
+        return 0
+
+
 def get_keepa_candidates(cached_asins):
     if not KEEPA_API_KEY:
         raise RuntimeError("Missing KEEPA_API_KEY")
@@ -185,16 +194,21 @@ def get_keepa_candidates(cached_asins):
             time.sleep(DEAL_REQUEST_DELAY_SECONDS)
 
     seen = set(BLACKLISTED_ASINS)
-    asins = []
+    ordered_asins = []
     for item in candidates:
         asin = item.get("asin")
-        if not asin or asin in seen or asin in cached_asins:
+        if not asin or asin in seen:
             continue
         if is_bad_title(decode_title(item.get("title", ""))):
             continue
         seen.add(asin)
-        asins.append(asin)
-    return asins[:MAX_NEW_ASINS_PER_RUN] if MAX_NEW_ASINS_PER_RUN > 0 else asins
+        ordered_asins.append(asin)
+
+    candidate_rank = {asin: index for index, asin in enumerate(ordered_asins)}
+    new_asins = [asin for asin in ordered_asins if asin not in cached_asins]
+    if MAX_NEW_ASINS_PER_RUN > 0:
+        new_asins = new_asins[:MAX_NEW_ASINS_PER_RUN]
+    return candidate_rank, new_asins
 
 
 def amazon_resources():
@@ -306,7 +320,7 @@ def item_to_product(asin, item, existing):
 def main():
     memory = purge_expired(load_memory())
     cached_asins = set(memory.keys())
-    asins = get_keepa_candidates(cached_asins)
+    candidate_rank, asins = get_keepa_candidates(cached_asins)
     if asins:
         amazon_items = get_amazon_items(asins)
         for asin in asins:
@@ -314,7 +328,16 @@ def main():
             if product:
                 memory[asin] = product
     save_memory(memory)
-    products = sorted(memory.values(), key=lambda item: item.get("updated_at", ""), reverse=True)[:MAX_DISPLAY]
+
+    fallback_rank = len(candidate_rank) + 1
+    products = sorted(
+        memory.values(),
+        key=lambda item: (
+            candidate_rank.get(item.get("asin", ""), fallback_rank),
+            -timestamp_value(item),
+            str(item.get("title") or "").lower(),
+        ),
+    )[:MAX_DISPLAY]
     output = {
         "source": "Amazon current product information feed",
         "count": len(products),
