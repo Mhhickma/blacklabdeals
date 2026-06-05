@@ -174,15 +174,21 @@
     return cfg.limit ? list.slice(0, cfg.limit) : list;
   }
 
-  function card(product) {
+  function isPremiumCard(index) {
+    return index % 4 === 0;
+  }
+
+  function card(product, index) {
     const image = product.image ? '<img src="' + esc(product.image) + '" alt="' + esc(product.title) + '" loading="lazy" decoding="async">' : '';
-    return '<article class="bld-product-card" role="link" tabindex="0" aria-label="View ' + attr(product.title) + ' on Amazon" data-link="' + attr(product.link) + '" data-asin="' + attr(product.asin) + '" data-title="' + attr(product.title) + '" data-category="' + attr(product.category) + '">'
+    const brand = product.brand ? '<div class="bld-product-brand">' + esc(product.brand) + '</div>' : '';
+    const premiumClass = isPremiumCard(index || 0) ? ' bld-product-card-premium' : '';
+    return '<article class="bld-product-card' + premiumClass + '" role="link" tabindex="0" aria-label="View ' + attr(product.title) + ' on Amazon" data-link="' + attr(product.link) + '" data-asin="' + attr(product.asin) + '" data-title="' + attr(product.title) + '" data-category="' + attr(product.category) + '">'
       + '<div class="bld-product-img">' + image + '</div>'
       + '<div class="bld-product-body">'
+      + '<div class="bld-product-meta">' + brand + '<div class="bld-product-category">' + esc(product.category) + '</div></div>'
       + '<div class="bld-product-title">' + esc(product.title) + '</div>'
-      + '<div class="bld-product-category">' + esc(product.category) + '</div>'
-      + '<div class="bld-product-price">' + esc(product.price) + '</div>'
-      + '<div class="bld-price-stamp">Price information loaded from Amazon at ' + esc(stamp(product.updated)) + '. Confirm final price and availability on Amazon.</div>'
+      + '<div class="bld-product-price-wrap"><div class="bld-product-price-label">Current Amazon price</div><div class="bld-product-price">' + esc(product.price) + '</div></div>'
+      + '<div class="bld-price-stamp">Product information shown as of ' + esc(stamp(product.updated)) + '. Confirm final price and availability on Amazon.</div>'
       + '<div class="bld-card-disclaimer">' + PRICE_DISCLAIMER + '</div>'
       + '<a class="bld-view-btn" href="' + esc(product.link) + '" target="_blank" rel="nofollow sponsored noopener" data-asin="' + attr(product.asin) + '" data-title="' + attr(product.title) + '" data-category="' + attr(product.category) + '">View on Amazon</a>'
       + '</div></article>';
@@ -199,9 +205,9 @@
   }
 
   function productGridHtml(shown) {
-    if (!shouldShowCategoryScroller(shown)) return shown.map(card).join('');
+    if (!shouldShowCategoryScroller(shown)) return shown.map((product, index) => card(product, index)).join('');
     const insertAt = isMobile() ? 18 : 8;
-    const html = shown.map(card);
+    const html = shown.map((product, index) => card(product, index));
     html.splice(Math.min(insertAt, html.length), 0, categoryScrollerCard());
     return html.join('');
   }
