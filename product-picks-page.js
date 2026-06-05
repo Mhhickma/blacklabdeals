@@ -182,7 +182,7 @@
       + '<div class="bld-product-title">' + esc(product.title) + '</div>'
       + '<div class="bld-product-category">' + esc(product.category) + '</div>'
       + '<div class="bld-product-price">' + esc(product.price) + '</div>'
-      + '<div class="bld-price-stamp">Product information shown as of ' + esc(stamp(product.updated)) + '. Confirm final price and availability on Amazon.</div>'
+      + '<div class="bld-price-stamp">Price information loaded from Amazon at ' + esc(stamp(product.updated)) + '. Confirm final price and availability on Amazon.</div>'
       + '<div class="bld-card-disclaimer">' + PRICE_DISCLAIMER + '</div>'
       + '<a class="bld-view-btn" href="' + esc(product.link) + '" target="_blank" rel="nofollow sponsored noopener" data-asin="' + attr(product.asin) + '" data-title="' + attr(product.title) + '" data-category="' + attr(product.category) + '">View on Amazon</a>'
       + '</div></article>';
