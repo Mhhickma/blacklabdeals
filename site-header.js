@@ -45,11 +45,18 @@
     document.head.appendChild(s);
   }
   function addCompliance(){
-    if(document.querySelector('script[src^="/site-common.js"]')) return;
-    var sc=document.createElement('script');
-    sc.src='/site-common.js?v=15';
-    sc.defer=true;
-    document.body.appendChild(sc);
+    if(!document.querySelector('script[src^="/site-common.js"]')){
+      var sc=document.createElement('script');
+      sc.src='/site-common.js?v=15';
+      sc.defer=true;
+      document.body.appendChild(sc);
+    }
+    if(!document.querySelector('script[src^="/seo-enhancements.js"]')){
+      var seo=document.createElement('script');
+      seo.src='/seo-enhancements.js?v=1';
+      seo.defer=true;
+      document.body.appendChild(seo);
+    }
   }
   function addAlertsPopup(){
     if(document.querySelector('script[src^="/alerts-popup.js"]')) return;
@@ -78,33 +85,18 @@
     var menu=document.querySelector('.bld-menu');
     if(!menu) return;
     var button=menu.querySelector('.bld-menu-btn');
-    function openMenu(){
-      menu.classList.add('is-open');
-      if(button) button.setAttribute('aria-expanded','true');
-    }
-    function closeMenu(){
-      menu.classList.remove('is-open');
-      if(button) button.setAttribute('aria-expanded','false');
-    }
+    function openMenu(){menu.classList.add('is-open');if(button) button.setAttribute('aria-expanded','true')}
+    function closeMenu(){menu.classList.remove('is-open');if(button) button.setAttribute('aria-expanded','false')}
     if(button){
       button.setAttribute('aria-expanded','false');
-      button.addEventListener('click',function(event){
-        event.preventDefault();
-        event.stopPropagation();
-        if(menu.classList.contains('is-open')) closeMenu();
-        else openMenu();
-      });
+      button.addEventListener('click',function(event){event.preventDefault();event.stopPropagation();if(menu.classList.contains('is-open')) closeMenu();else openMenu()});
     }
-    document.addEventListener('click',function(event){
-      if(!menu.contains(event.target)) closeMenu();
-    });
-    document.addEventListener('keydown',function(event){
-      if(event.key==='Escape') closeMenu();
-    });
+    document.addEventListener('click',function(event){if(!menu.contains(event.target)) closeMenu()});
+    document.addEventListener('keydown',function(event){if(event.key==='Escape') closeMenu()});
   }
   function headerHtml(){
-    return '<header class="bld-header-shell"><div class="bld-header-main"><a href="/" class="bld-brand"><img class="bld-brand-logo" src="/logo-128.jpg" alt="Black Lab Deals logo"><div><div class="bld-brand-title">Black Lab <span>Deals</span></div><div class="bld-brand-tagline">Fresh Amazon product picks updated daily</div></div></a><nav class="bld-nav"><a href="/about/">About</a><div class="bld-menu"><button class="bld-menu-btn" type="button" aria-haspopup="true">Categories <span class="bld-menu-chevron">▼</span></button><div class="bld-menu-panel"><a class="bld-menu-featured" href="/top-100-amazon-deals-today/">Top 100 Product Picks</a><a class="bld-menu-featured" href="/best-seller-deals.html">Best Seller Product Picks</a><a class="bld-menu-featured" href="/best-amazon-deals-under-50/">Product Picks Under $50</a><a href="/categories/">All Categories</a><a href="/best-amazon-tool-deals/">Tool Product Picks</a><a href="/best-amazon-home-kitchen-deals/">Home & Kitchen Product Picks</a><a href="/best-amazon-electronics-deals/">Electronics Product Picks</a><a href="/best-amazon-automotive-deals/">Automotive Product Picks</a><a href="/best-amazon-patio-lawn-garden-deals/">Patio, Lawn & Garden Product Picks</a><a href="/best-amazon-sports-outdoors-deals/">Sports & Outdoors Product Picks</a><a href="/best-amazon-pet-supplies-deals/">Pet Supplies Product Picks</a><a href="/best-amazon-toys-games-deals/">Toys & Games Product Picks</a><a href="/best-amazon-office-products-deals/">Office Product Picks</a><a href="/best-amazon-health-household-deals/">Health & Household Product Picks</a><a href="/best-amazon-baby-products-deals/">Baby Product Picks</a><a href="/best-amazon-musical-instruments-deals/">Musical Instruments Product Picks</a></div></div><form class="bld-nav-search" action="/" method="get"><input type="search" name="q" placeholder="Search picks" aria-label="Search product picks" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"><button type="submit">Search</button></form><a class="bld-alert-btn" href="#" data-bld-alert-open>Get Alerts</a></nav></div></header>';
+    return '<header class="bld-header-shell"><div class="bld-header-main"><a href="/" class="bld-brand"><img class="bld-brand-logo" src="/logo-128.jpg" alt="Black Lab Deals logo"><div><div class="bld-brand-title">Black Lab <span>Deals</span></div><div class="bld-brand-tagline">Fresh Amazon product picks updated daily</div></div></a><nav class="bld-nav"><a href="/about/">About</a><div class="bld-menu"><button class="bld-menu-btn" type="button" aria-haspopup="true">Categories <span class="bld-menu-chevron">▼</span></button><div class="bld-menu-panel"><a class="bld-menu-featured" href="/best-amazon-deals-under-50/">Product Picks Under $50</a><a href="/categories/">All Categories</a><a href="/best-amazon-tool-deals/">Tool Product Picks</a><a href="/best-amazon-home-kitchen-deals/">Home & Kitchen Product Picks</a><a href="/best-amazon-electronics-deals/">Electronics Product Picks</a><a href="/best-amazon-automotive-deals/">Automotive Product Picks</a><a href="/best-amazon-patio-lawn-garden-deals/">Patio, Lawn & Garden Product Picks</a><a href="/best-amazon-sports-outdoors-deals/">Sports & Outdoors Product Picks</a><a href="/best-amazon-pet-supplies-deals/">Pet Supplies Product Picks</a><a href="/best-amazon-toys-games-deals/">Toys & Games Product Picks</a><a href="/best-amazon-office-products-deals/">Office Product Picks</a><a href="/best-amazon-health-household-deals/">Health & Household Product Picks</a><a href="/best-amazon-baby-products-deals/">Baby Product Picks</a><a href="/best-amazon-musical-instruments-deals/">Musical Instruments Product Picks</a></div></div><form class="bld-nav-search" action="/" method="get"><input type="search" name="q" placeholder="Search picks" aria-label="Search product picks" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"><button type="submit">Search</button></form><a class="bld-alert-btn" href="#" data-bld-alert-open>Get Alerts</a></nav></div></header>';
   }
-  function mount(){addAnalytics();addStyles();var el=document.getElementById('site-header');if(el)el.innerHTML=headerHtml();normalizeSortLabels();bindSearch();bindMenu();addCompliance();addAlertsPopup();}
+  function mount(){addAnalytics();addStyles();var el=document.getElementById('site-header');if(el)el.innerHTML=headerHtml();normalizeSortLabels();bindSearch();bindMenu();addCompliance();addAlertsPopup()}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mount);else mount();
 })();
