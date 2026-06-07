@@ -68,6 +68,8 @@ jobs:
                   path.write_text(text, encoding='utf-8')
                   print(f'Updated compliance copy in {path}')
           PY
+      - name: Run safe wording scan
+        run: python scripts/safe_wording_scan.py
       - name: Commit and push updated product files
         run: |
           git config user.name "DealDrop Bot"
