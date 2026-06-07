@@ -8,6 +8,18 @@
   ],
   "headers": [
     {
+      "source": "/(.*)\\.html",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }
+      ]
+    },
+    {
+      "source": "/(best-amazon-home-kitchen-deals|best-amazon-electronics-deals|best-amazon-deals-under-50)/(.*)?",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }
+      ]
+    },
+    {
       "source": "/(.*)\\.js",
       "headers": [
         { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }
@@ -49,10 +61,15 @@
     { "src": "/top-100-amazon-deals-today/", "dest": "/top-100-amazon-deals-today/index.html" },
     { "src": "/best-amazon-home-kitchen-deals", "dest": "/best-amazon-home-kitchen-deals/index.html" },
     { "src": "/best-amazon-home-kitchen-deals/", "dest": "/best-amazon-home-kitchen-deals/index.html" },
+    { "src": "/best-amazon-home-kitchen-deals/index.html", "dest": "/best-amazon-home-kitchen-deals/index.html" },
+    { "src": "/best-amazon-electronics-deals", "dest": "/best-amazon-electronics-deals/index.html" },
+    { "src": "/best-amazon-electronics-deals/", "dest": "/best-amazon-electronics-deals/index.html" },
+    { "src": "/best-amazon-electronics-deals/index.html", "dest": "/best-amazon-electronics-deals/index.html" },
     { "src": "/best-amazon-tool-deals", "dest": "/best-amazon-tool-deals/index.html" },
     { "src": "/best-amazon-tool-deals/", "dest": "/best-amazon-tool-deals/index.html" },
     { "src": "/best-amazon-deals-under-50", "dest": "/best-amazon-deals-under-50/index.html" },
     { "src": "/best-amazon-deals-under-50/", "dest": "/best-amazon-deals-under-50/index.html" },
+    { "src": "/best-amazon-deals-under-50/index.html", "dest": "/best-amazon-deals-under-50/index.html" },
     { "src": "/amazon-deal-event", "dest": "/amazon-deal-event/index.html" },
     { "src": "/amazon-deal-event/", "dest": "/amazon-deal-event/index.html" },
     { "src": "/amazon-electronics-deals", "dest": "/amazon-deal-event/index.html" },
