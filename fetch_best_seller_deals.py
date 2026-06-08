@@ -1,17 +1,17 @@
-"""Compliant Black Lab Deals best-seller product-picks generator.
-
-Keepa is used only to maintain a best-seller ASIN watchlist. Public pricing,
-images, titles, availability, and links are fetched from Amazon Creators API.
-The public JSON intentionally excludes old/was pricing, savings, percentage-off,
-price-drop labels, hot-deal flags, Keepa stats, ranks, and qualification reasons.
+"""
+Best Seller Deals Fetcher
+-------------------------
+Weekly: builds a watchlist from the top 200 Keepa best sellers in each configured category.
+Hourly: checks the next saved ASINs with Amazon Creators API for live price, and uses
+Keepa-style price-drop rules to decide what appears on the Best Seller Deals page.
 """
 
 import json
 import os
 import re
 import time
-from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone, timedelta
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import keepa
 from amazon_creatorsapi import AmazonCreatorsApi, Country
@@ -25,25 +25,19 @@ PARTNER_TAG = os.getenv("AFFILIATE_TAG", "sawdustsavings-20")
 CONFIG_FILE = "best_seller_categories.json"
 WATCHLIST_FILE = "best_seller_watchlist.json"
 STATE_FILE = "best_seller_state.json"
-PRODUCTS_FILE = "best_seller_deals.json"
+DEALS_FILE = "best_seller_deals.json"
 
 AMAZON_BATCH_SIZE = 10
 AMAZON_CONCURRENT_BATCHES = int(os.getenv("BEST_SELLER_AMAZON_CONCURRENT_BATCHES", "3"))
 AMAZON_REQUEST_DELAY_SECONDS = float(os.getenv("BEST_SELLER_AMAZON_REQUEST_DELAY_SECONDS", "1"))
-PRODUCT_TTL_HOURS = int(os.getenv("BEST_SELLER_PRODUCT_TTL_HOURS", "23"))
-
-PUBLIC_KEYS = [
-    "asin", "title", "brand", "cat", "image", "price", "price_amount",
-    "currency", "availability", "link", "desc", "seen_at", "updated_at",
-]
 
 BAD_KEYWORDS = [
     "sex", "doll", "erotic", "fetish", "penis", "vagina", "dildo", "vibrator",
-    "nude", "naked", "porn", "xxx", "bdsm", "bondage",
+    "nude", "naked", "porn", "xxx", "bdsm", "bondage"
 ]
 
 BLACKLISTED_ASINS = {
-    "B0CNSFQ988", "B0CNSDDJ1C", "B0CNSDNT27", "B0CNSCN4KW", "B0CNSCZQ1W", "B0CNSBX4ZK",
+    "B0CNSFQ988", "B0CNSDDJ1C", "B0CNSDNT27", "B0CNSCN4KW", "B0CNSCZQ1W", "B0CNSBX4ZK"
 }
 
 
@@ -78,12 +72,20 @@ def save_json(path, data):
         json.dump(data, f, indent=2)
 
 
-def clean_product(product):
-    return {key: product.get(key) for key in PUBLIC_KEYS}
+PUBLIC_PRODUCT_FIELDS = (
+    "asin", "title", "brand", "cat", "image", "price", "price_amount",
+    "currency", "availability", "link", "desc", "seen_at", "updated_at",
+)
+
+
+def public_product(product):
+    return {key: product.get(key) for key in PUBLIC_PRODUCT_FIELDS if product.get(key) is not None}
 
 
 def compact_image_url(url, size=160):
-    return re.sub(r"\._SL\d+_\.", f"._SL{size}_.", str(url)) if url else None
+    if not url:
+        return None
+    return re.sub(r"\._SL\d+_\.", f"._SL{size}_.", str(url))
 
 
 def parse_time(value):
@@ -117,15 +119,13 @@ def refresh_needed(watchlist, refresh_hours):
 
 
 def build_watchlist(config):
-    print("Building best-seller ASIN watchlist from Keepa...")
-    if not KEEPA_API_KEY:
-        raise RuntimeError("Missing KEEPA_API_KEY")
+    print("Building weekly best-seller ASIN watchlist from Keepa...")
     api = keepa.Keepa(KEEPA_API_KEY)
     top_per_category = int(config.get("topPerCategory", 200))
-    domain = "US"
+    domain = "US" if int(config.get("domainId", 1)) == 1 else "US"
 
     items_by_asin = {}
-    categories = [category for category in config.get("categories", []) if category.get("enabled", True)]
+    categories = [c for c in config.get("categories", []) if c.get("enabled", True)]
 
     for category in categories:
         category_id = str(category["categoryId"])
@@ -139,27 +139,28 @@ def build_watchlist(config):
             print(f"  Failed to fetch {category_name} ({category_id}): {exc}")
             top_asins = []
 
-        for position, asin in enumerate(top_asins, start=1):
+        for rank, asin in enumerate(top_asins, start=1):
             if asin in BLACKLISTED_ASINS:
                 continue
             if asin not in items_by_asin:
                 items_by_asin[asin] = {
                     "asin": asin,
                     "categories": [],
-                    "bestRank": position,
+                    "bestRank": rank,
                 }
             items_by_asin[asin]["categories"].append({
                 "categoryId": int(category_id),
                 "name": category_name,
                 "slug": category_slug,
+                "rank": rank,
             })
-            items_by_asin[asin]["bestRank"] = min(items_by_asin[asin]["bestRank"], position)
+            items_by_asin[asin]["bestRank"] = min(items_by_asin[asin]["bestRank"], rank)
         time.sleep(1)
 
-    items = sorted(items_by_asin.values(), key=lambda item: (item.get("bestRank", 999999), item.get("asin", "")))
+    items = sorted(items_by_asin.values(), key=lambda x: (x.get("bestRank", 999999), x.get("asin", "")))
     watchlist = {
         "generatedAt": iso_now(),
-        "source": "Best-seller ASIN watchlist",
+        "source": "Keepa best_sellers_query",
         "topPerCategory": top_per_category,
         "count": len(items),
         "items": items,
@@ -169,7 +170,7 @@ def build_watchlist(config):
     return watchlist
 
 
-def amazon_resources():
+def get_amazon_resources():
     return [
         GetItemsResource.ITEM_INFO_DOT_TITLE,
         GetItemsResource.ITEM_INFO_DOT_BY_LINE_INFO,
@@ -178,10 +179,13 @@ def amazon_resources():
         GetItemsResource.OFFERS_V2_DOT_LISTINGS_DOT_PRICE,
         GetItemsResource.OFFERS_V2_DOT_LISTINGS_DOT_AVAILABILITY,
         GetItemsResource.OFFERS_V2_DOT_LISTINGS_DOT_CONDITION,
+        GetItemsResource.OFFERS_V2_DOT_LISTINGS_DOT_IS_BUY_BOX_WINNER,
+        GetItemsResource.OFFERS_V2_DOT_LISTINGS_DOT_DEAL_DETAILS,
     ]
 
 
-def fetch_amazon_batch(batch):
+def fetch_amazon_batch(batch, batch_num, total_batches):
+    print(f"  Amazon batch {batch_num}/{total_batches} ({len(batch)} ASINs)")
     amazon = AmazonCreatorsApi(
         credential_id=CREDENTIAL_ID,
         credential_secret=CREDENTIAL_SECRET,
@@ -189,54 +193,70 @@ def fetch_amazon_batch(batch):
         tag=PARTNER_TAG,
         country=Country.US,
     )
-    return amazon.get_items(batch, resources=amazon_resources())
+    return amazon.get_items(batch, resources=get_amazon_resources())
 
 
 def get_amazon_items(asins):
-    if not CREDENTIAL_ID or not CREDENTIAL_SECRET:
-        raise RuntimeError("Missing CREATORS_CREDENTIAL_ID or CREATORS_CREDENTIAL_SECRET")
     batches = [asins[i:i + AMAZON_BATCH_SIZE] for i in range(0, len(asins), AMAZON_BATCH_SIZE)]
-    worker_count = max(1, min(AMAZON_CONCURRENT_BATCHES, len(batches) or 1))
+    total_batches = len(batches)
+    worker_count = max(1, min(AMAZON_CONCURRENT_BATCHES, total_batches))
     all_items = {}
 
     with ThreadPoolExecutor(max_workers=worker_count) as executor:
         futures = []
-        for batch in batches:
-            futures.append(executor.submit(fetch_amazon_batch, batch))
+        for idx, batch in enumerate(batches, start=1):
+            futures.append(executor.submit(fetch_amazon_batch, batch, idx, total_batches))
             if AMAZON_REQUEST_DELAY_SECONDS > 0:
                 time.sleep(AMAZON_REQUEST_DELAY_SECONDS)
+
         for future in as_completed(futures):
             try:
-                for item in future.result():
+                items = future.result()
+                for item in items:
                     all_items[item.asin] = item
             except Exception as exc:
-                print(f"Warning: Amazon batch failed: {exc}")
+                print(f"  Warning: Amazon batch failed: {exc}")
     return all_items
 
 
-def load_existing_products():
-    existing_output = load_json(PRODUCTS_FILE, {"deals": []})
-    products = {}
-    cutoff = utc_now() - timedelta(hours=PRODUCT_TTL_HOURS)
-    for product in existing_output.get("deals", []):
-        if not isinstance(product, dict):
-            continue
-        asin = product.get("asin")
-        if not asin:
-            continue
-        updated = parse_time(product.get("updated_at") or product.get("seen_at"))
-        if updated and updated >= cutoff:
-            products[asin] = clean_product(product)
-    return products
+def get_keepa_stats(asins):
+    print("Fetching Keepa stats for same deal-style qualification...")
+    try:
+        api = keepa.Keepa(KEEPA_API_KEY)
+        products = api.query(asins, domain="US", stats=30, history=False, wait=True)
+    except Exception as exc:
+        print(f"Warning: Keepa stats query failed: {exc}")
+        return {}
+    return {p.get("asin"): p for p in products if p and p.get("asin")}
 
 
-def amazon_item_to_product(asin, item, watch_meta, existing):
+def cents_to_dollars(value):
+    if value is None or value in (-1, 0):
+        return None
+    try:
+        return round(float(value) / 100.0, 2)
+    except Exception:
+        return None
+
+
+def stat_price(product, stat_name, price_index=0):
+    try:
+        stats = product.get("stats", {})
+        value = stats.get(stat_name)
+        if isinstance(value, list) and len(value) > price_index:
+            return cents_to_dollars(value[price_index])
+    except Exception:
+        pass
+    return None
+
+
+def amazon_item_to_deal(asin, item, watch_meta, state_entry, keepa_product, min_drop_percent):
     try:
         title = item.item_info.title.display_value
     except Exception:
-        return None
+        title = None
     if is_bad_title(title):
-        return None
+        return None, state_entry
 
     try:
         listing = item.offers_v2.listings[0]
@@ -244,14 +264,12 @@ def amazon_item_to_product(asin, item, watch_meta, existing):
         price_display = listing.price.money.display_amount
         currency = listing.price.money.currency
     except Exception:
-        return None
-    if not price_amount:
-        return None
+        return None, state_entry
 
     try:
         condition = listing.condition.value
         if condition and condition.lower() != "new":
-            return None
+            return None, state_entry
     except Exception:
         pass
 
@@ -271,37 +289,98 @@ def amazon_item_to_product(asin, item, watch_meta, existing):
         image = None
 
     try:
-        availability = listing.availability.type
-    except Exception:
-        availability = None
-
-    try:
         url = item.detail_page_url
     except Exception:
         url = f"https://www.amazon.com/dp/{asin}?tag={PARTNER_TAG}"
 
-    primary_category = (watch_meta.get("categories") or [{}])[0]
-    category = primary_category.get("name") or raw_category or "Best Sellers"
-    now = iso_now()
-    product = {
+    try:
+        availability = listing.availability.type
+    except Exception:
+        availability = None
+    if str(availability or "").upper() == "UNAVAILABLE":
+        return None, state_entry
+
+    previous_price = state_entry.get("lastPrice")
+    avg30 = stat_price(keepa_product, "avg30") if keepa_product else None
+    min30 = stat_price(keepa_product, "min") if keepa_product else None
+    current_keepa = stat_price(keepa_product, "current") if keepa_product else None
+
+    drops = []
+    pct_from_previous = 0
+    pct_from_avg30 = 0
+
+    if previous_price and previous_price > price_amount:
+        pct_from_previous = round(((previous_price - price_amount) / previous_price) * 100)
+        if pct_from_previous >= min_drop_percent:
+            drops.append("saved_price_drop")
+
+    if avg30 and avg30 > price_amount:
+        pct_from_avg30 = round(((avg30 - price_amount) / avg30) * 100)
+        if pct_from_avg30 >= min_drop_percent:
+            drops.append("keepa_30_day_avg_drop")
+
+    savings_pct = 0
+    was_display = None
+    try:
+        savings = listing.price.savings
+        if savings:
+            savings_pct = int(round(savings.percentage or 0))
+            was_display = f"${round(price_amount + float(savings.money.amount), 2)}"
+            if savings_pct >= min_drop_percent:
+                drops.append("amazon_savings_drop")
+    except Exception:
+        pass
+
+    qualifies = bool(drops)
+    pct_off = max(pct_from_previous, pct_from_avg30, savings_pct)
+
+    new_state = dict(state_entry or {})
+    if not new_state.get("firstSeenAt"):
+        new_state["firstSeenAt"] = iso_now()
+    new_state["lastCheckedAt"] = iso_now()
+    new_state["lastPrice"] = price_amount
+    new_state["lastPriceDisplay"] = price_display
+    new_state["lowestSeenPrice"] = min(price_amount, new_state.get("lowestSeenPrice", price_amount) or price_amount)
+    new_state["highestSeenPrice"] = max(price_amount, new_state.get("highestSeenPrice", price_amount) or price_amount)
+    new_state["title"] = title
+
+    if not qualifies:
+        return None, new_state
+
+    primary_category = watch_meta.get("categories", [{}])[0]
+    deal = {
         "asin": asin,
         "title": title,
         "brand": brand,
-        "cat": category,
+        "cat": primary_category.get("name") or raw_category or "Best Sellers",
         "image": image,
         "price": price_display,
         "price_amount": price_amount,
         "currency": currency,
         "availability": availability,
         "link": url,
-        "desc": brand or "",
-        "seen_at": (existing or {}).get("seen_at", now),
-        "updated_at": now,
+        "desc": brand or "Amazon best seller product pick",
+        "seen_at": new_state.get("dealSeenAt", iso_now()),
+        "updated_at": iso_now(),
     }
-    return clean_product(product)
+    new_state["dealSeenAt"] = new_state.get("dealSeenAt", iso_now())
+    return deal, new_state
+
+
+def purge_old_deals(deals, ttl_hours):
+    cutoff = utc_now() - timedelta(hours=ttl_hours)
+    kept = []
+    for deal in deals:
+        updated = parse_time(deal.get("updated_at") or deal.get("seen_at"))
+        if updated and updated >= cutoff:
+            kept.append(deal)
+    return kept
 
 
 def main():
+    if not KEEPA_API_KEY:
+        raise RuntimeError("Missing KEEPA_API_KEY")
+
     config = load_config()
     refresh_hours = int(config.get("refreshBestSellerListHours", 168))
     refresh_watchlist = env_bool("BEST_SELLER_REFRESH_WATCHLIST", False)
@@ -314,34 +393,43 @@ def main():
     if not has_saved_watchlist or should_refresh:
         watchlist = build_watchlist(config)
     elif refresh_needed(watchlist, refresh_hours):
-        print("Saved best-seller watchlist is stale; using saved ASIN list for this run.")
+        print("Saved best-seller watchlist is stale, but this run is configured to use the saved list.")
+        print("Run the weekly refresh workflow to rebuild best_seller_watchlist.json.")
 
     if watchlist_only:
-        print("Watchlist-only mode complete; skipping product checks.")
+        print("Watchlist-only mode complete; skipping deal checks.")
         return
+
+    if not CREDENTIAL_ID or not CREDENTIAL_SECRET:
+        raise RuntimeError("Missing CREATORS_CREDENTIAL_ID or CREATORS_CREDENTIAL_SECRET")
+
+    asins_per_run = int(os.getenv("BEST_SELLER_ASINS_PER_RUN", config.get("asinsPerRun", 125)))
+    min_drop_percent = int(config.get("minDropPercent", 10))
+    deal_ttl_hours = min(int(config.get("dealTtlHours", 23)), 23)
 
     items = watchlist.get("items", [])
     if not items:
-        save_json(PRODUCTS_FILE, {
-            "pageTitle": "Amazon Best Seller Product Picks",
-            "pageDescription": "Current product picks from popular Amazon categories.",
-            "source": "Amazon current product information feed",
-            "count": 0,
-            "totalProducts": 0,
-            "updatedAt": iso_now(),
-            "deals": [],
-        })
+        print("No watchlist items available yet.")
+        save_json(DEALS_FILE, {"deals": [], "count": 0, "updatedAt": iso_now()})
         return
 
-    asins_per_run = int(os.getenv("BEST_SELLER_ASINS_PER_RUN", config.get("asinsPerRun", 125)))
     state = load_json(STATE_FILE, {"cursor": 0, "asins": {}})
     cursor = int(state.get("cursor", 0))
-    batch_meta = [items[(cursor + i) % len(items)] for i in range(asins_per_run)]
+    batch_meta = []
+    for i in range(asins_per_run):
+        idx = (cursor + i) % len(items)
+        batch_meta.append(items[idx])
     next_cursor = (cursor + asins_per_run) % len(items)
-    batch_asins = [meta["asin"] for meta in batch_meta]
+    batch_asins = [item["asin"] for item in batch_meta]
+
+    print(f"Checking {len(batch_asins)} ASINs. Cursor {cursor} -> {next_cursor} of {len(items)}.")
 
     amazon_items = get_amazon_items(batch_asins)
-    products_by_asin = load_existing_products()
+    keepa_stats = get_keepa_stats(batch_asins)
+
+    existing_output = load_json(DEALS_FILE, {"deals": []})
+    deals_by_asin = {d.get("asin"): d for d in purge_old_deals(existing_output.get("deals", []), deal_ttl_hours)}
+
     state_asins = state.setdefault("asins", {})
 
     for meta in batch_meta:
@@ -349,32 +437,38 @@ def main():
         item = amazon_items.get(asin)
         if not item:
             continue
-        product = amazon_item_to_product(asin, item, meta, products_by_asin.get(asin))
-        if product:
-            products_by_asin[asin] = product
-        state_asins[asin] = {
-            "lastCheckedAt": iso_now(),
-            "lastPrice": product.get("price_amount") if product else state_asins.get(asin, {}).get("lastPrice"),
-            "title": product.get("title") if product else state_asins.get(asin, {}).get("title"),
-        }
+        deal, new_state = amazon_item_to_deal(
+            asin=asin,
+            item=item,
+            watch_meta=meta,
+            state_entry=state_asins.get(asin, {}),
+            keepa_product=keepa_stats.get(asin),
+            min_drop_percent=min_drop_percent,
+        )
+        state_asins[asin] = new_state
+        if deal:
+            deals_by_asin[asin] = deal
 
     state["cursor"] = next_cursor
     state["lastRunAt"] = iso_now()
     state["watchlistCount"] = len(items)
     save_json(STATE_FILE, state)
 
-    products = sorted(products_by_asin.values(), key=lambda item: item.get("updated_at", ""), reverse=True)
+    all_deals = [
+        public_product(deal)
+        for deal in sorted(deals_by_asin.values(), key=lambda d: d.get("updated_at", ""), reverse=True)
+    ]
     output = {
         "pageTitle": "Amazon Best Seller Product Picks",
         "pageDescription": "Current product picks from popular Amazon categories.",
-        "source": "Amazon current product information feed",
-        "count": len(products),
-        "totalProducts": len(products),
+        "source": "Amazon Creators API",
+        "count": len(all_deals),
+        "totalProducts": len(all_deals),
         "updatedAt": iso_now(),
-        "deals": [clean_product(product) for product in products],
+        "deals": all_deals,
     }
-    save_json(PRODUCTS_FILE, output)
-    print(f"Saved {len(products)} best-seller product picks to {PRODUCTS_FILE}")
+    save_json(DEALS_FILE, output)
+    print(f"Saved {len(all_deals)} best-seller deals to {DEALS_FILE}")
 
 
 if __name__ == "__main__":

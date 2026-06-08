@@ -1,199 +1,107 @@
-﻿// Best Seller Deals page logic
-// Isolated from site-common.js to avoid global variable conflicts.
+// Best Seller Product Picks page logic.
 (function () {
   const DATA_URL = '/best_seller_deals.json';
   const PAGE_SIZE = 25;
-  let bestSellerDeals = [];
-  let visibleDealsCount = PAGE_SIZE;
-
-  function getEl(id) {
-    return document.getElementById(id);
-  }
-
-  function money(value) {
-    if (value === null || value === undefined || value === '') return '';
-    if (typeof value === 'string') return value;
-    return `$${Number(value).toFixed(2)}`;
-  }
-
-  function fmtDate(value) {
-    if (!value) return '-';
-    const d = new Date(value);
-    if (Number.isNaN(d.getTime())) return '-';
-    return d.toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
-  }
-
-  function cleanText(value) {
-    return String(value || '').replace(/[&<>'"]/g, c => ({
-      '&': '&amp;',
-      '<': '&lt;',
-      '>': '&gt;',
-      "'": '&#39;',
-      '"': '&quot;'
-    }[c]));
-  }
-
-  function optimizeDealImage(src) {
-    return String(src || '').replace(/\._SL\d+_\./, '._SL160_.');
-  }
+  let products = [];
+  let visibleCount = PAGE_SIZE;
+  const getEl = id => document.getElementById(id);
+  const clean = value => String(value || '').replace(/[&<>'"]/g, c => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+  }[c]));
+  const money = value => value ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value) : '';
 
   function renderFilters() {
-    const categoryFilter = getEl('categoryFilter');
-    if (!categoryFilter) return;
-    const selected = categoryFilter.value;
-    categoryFilter.innerHTML = '<option value="all">All categories</option>';
-    const cats = [...new Set(bestSellerDeals.map(d => d.cat).filter(Boolean))].sort();
-    cats.forEach(cat => {
-      const opt = document.createElement('option');
-      opt.value = cat;
-      opt.textContent = cat;
-      categoryFilter.appendChild(opt);
+    const filter = getEl('categoryFilter');
+    if (!filter) return;
+    const selected = filter.value;
+    filter.innerHTML = '<option value="all">All categories</option>';
+    [...new Set(products.map(product => product.cat).filter(Boolean))].sort().forEach(category => {
+      const option = document.createElement('option');
+      option.value = category;
+      option.textContent = category;
+      filter.appendChild(option);
     });
-    categoryFilter.value = selected || 'all';
+    filter.value = selected || 'all';
   }
 
-  function dealCard(deal) {
-    const image = deal.image
-      ? `<img src="${cleanText(optimizeDealImage(deal.image))}" alt="${cleanText(deal.title)}" loading="lazy" decoding="async">`
-      : '<div class="img-fallback">Deal image unavailable</div>';
-
-    return `<article class="best-seller-card">
-      <div class="best-seller-img">${image}</div>
-      <div class="best-seller-body">
-        <div class="best-seller-title">${cleanText(deal.title)}</div>
-        <div class="best-seller-category">${cleanText(deal.cat || 'Amazon Deals')}</div>
-        <div class="best-seller-price-row"><span class="best-seller-price">${cleanText(deal.price || money(deal.price_amount))}</span></div>
-        <a class="best-seller-btn" href="${cleanText(deal.link)}" target="_blank" rel="nofollow sponsored noopener">View on Amazon</a>
-      </div>
-    </article>`;
+  function filteredProducts() {
+    const query = (getEl('searchBox')?.value || '').trim().toLowerCase();
+    const category = getEl('categoryFilter')?.value || 'all';
+    const sort = getEl('sortFilter')?.value || 'newest';
+    const result = products.filter(product => {
+      const matchesQuery = !query || `${product.title || ''} ${product.brand || ''} ${product.cat || ''}`.toLowerCase().includes(query);
+      return matchesQuery && (category === 'all' || product.cat === category);
+    });
+    if (sort === 'price-low') result.sort((a, b) => (a.price_amount || 999999) - (b.price_amount || 999999));
+    else if (sort === 'price-high') result.sort((a, b) => (b.price_amount || 0) - (a.price_amount || 0));
+    else result.sort((a, b) => Date.parse(b.updated_at || b.seen_at || 0) - Date.parse(a.updated_at || a.seen_at || 0));
+    return result;
   }
 
-  function ensureLoadMoreButton() {
+  function render(reset = false) {
+    if (reset) visibleCount = PAGE_SIZE;
     const grid = getEl('dealsGrid');
-    if (!grid) return null;
-
-    let wrap = getEl('best-seller-load-more-wrap');
-    if (!wrap) {
-      wrap = document.createElement('div');
+    if (!grid) return;
+    const filtered = filteredProducts();
+    const visible = filtered.slice(0, visibleCount);
+    const featured = visible.slice(0, 8);
+    const additional = visible.slice(8);
+    const renderCard = window.bldProductCard || (product => `<article class="product-card"><a class="product-card-link" href="${clean(product.link)}" target="_blank" rel="nofollow sponsored noopener"><div class="product-card-body"><div class="product-card-meta">${clean(product.brand || product.cat || 'Amazon product')}</div><h3 class="product-card-title">${clean(product.title)}</h3><div class="product-card-price"><span>Current Amazon price</span><strong>${clean(product.price || money(product.price_amount) || 'See current price on Amazon')}</strong></div><span class="product-card-button">View on Amazon</span></div></a></article>`);
+    grid.classList.add('product-grid', 'product-grid-featured');
+    grid.innerHTML = featured.map(renderCard).join('');
+    if (window.bldEnsureProductPageOrder) window.bldEnsureProductPageOrder(grid, additional, filtered.length);
+    const count = getEl('deal-count');
+    if (count) count.textContent = filtered.length ? `${Math.min(visibleCount, filtered.length)} of ${filtered.length} product picks` : '0 product picks';
+    const status = getEl('status');
+    if (status) {
+      status.textContent = filtered.length ? '' : 'No matching best seller product picks are showing yet.';
+      status.className = filtered.length ? 'best-seller-status hidden' : 'best-seller-status';
+    }
+    const existing = getEl('best-seller-load-more-wrap');
+    if (existing) existing.remove();
+    if (visibleCount < filtered.length) {
+      const wrap = document.createElement('div');
       wrap.id = 'best-seller-load-more-wrap';
-      wrap.className = 'load-more-wrap hidden';
-      wrap.innerHTML = '<button id="best-seller-load-more-btn" class="load-more-btn" type="button">Load 25 More Deals</button>';
+      wrap.className = 'load-more-wrap';
+      wrap.innerHTML = `<button class="load-more-btn" type="button">Keep Browsing Product Picks (${filtered.length - visibleCount} remaining)</button>`;
       grid.insertAdjacentElement('afterend', wrap);
-      wrap.querySelector('button').addEventListener('click', function () {
-        visibleDealsCount += PAGE_SIZE;
-        renderDeals(false);
+      wrap.querySelector('button').addEventListener('click', () => {
+        visibleCount += PAGE_SIZE;
+        render();
       });
     }
-    return wrap;
   }
 
-  function renderLoadMore(total) {
-    const wrap = ensureLoadMoreButton();
-    if (!wrap) return;
-    const button = getEl('best-seller-load-more-btn');
-    const remaining = Math.max(0, total - visibleDealsCount);
-
-    if (remaining > 0) {
-      wrap.classList.remove('hidden');
-      wrap.hidden = false;
-      button.hidden = false;
-      button.disabled = false;
-      button.textContent = `Load ${Math.min(PAGE_SIZE, remaining)} More Deals (${remaining} remaining)`;
-    } else {
-      wrap.classList.add('hidden');
-      wrap.hidden = true;
-    }
-  }
-
-  function filteredSortedDeals() {
-    const searchBox = getEl('searchBox');
-    const categoryFilter = getEl('categoryFilter');
-    const sortFilter = getEl('sortFilter');
-    const q = searchBox ? searchBox.value.trim().toLowerCase() : '';
-    const cat = categoryFilter ? categoryFilter.value : 'all';
-
-    let deals = bestSellerDeals.filter(d => {
-      const matchesSearch = !q || `${d.title || ''} ${d.brand || ''} ${d.cat || ''}`.toLowerCase().includes(q);
-      const matchesCat = cat === 'all' || d.cat === cat;
-      return matchesSearch && matchesCat;
-    });
-
-    const sort = sortFilter ? sortFilter.value : 'newest';
-    if (sort === 'price-low') deals.sort((a, b) => (a.price_amount || 999999) - (b.price_amount || 999999));
-    else if (sort === 'rank') deals.sort((a, b) => (a.bestSellerRank || 999999) - (b.bestSellerRank || 999999));
-    else deals.sort((a, b) => new Date(b.updatedAt || b.updated_at || 0) - new Date(a.updatedAt || a.updated_at || 0));
-
-    return deals;
-  }
-
-  function renderDeals(shouldReset = false) {
-    const grid = getEl('dealsGrid');
-    const statusEl = getEl('status');
-    if (!grid || !statusEl) return;
-
-    if (shouldReset) visibleDealsCount = PAGE_SIZE;
-
-    const deals = filteredSortedDeals();
-    const visibleDeals = deals.slice(0, visibleDealsCount);
-
-    grid.innerHTML = visibleDeals.map(dealCard).join('');
-    const dealCount = getEl('deal-count');
-    if (dealCount) dealCount.textContent = deals.length ? `${Math.min(visibleDealsCount, deals.length)} of ${deals.length} deals` : '0 deals';
-    statusEl.textContent = deals.length ? '' : 'No matching deals are showing yet. Check back after the next hourly update.';
-    statusEl.className = deals.length ? 'best-seller-status hidden' : 'best-seller-status';
-    renderLoadMore(deals.length);
-  }
-
-  async function loadDeals() {
-    const statusEl = getEl('status');
+  async function loadProducts() {
     try {
-      const res = await fetch(DATA_URL, { cache: 'default' });
-      if (!res.ok) throw new Error('Missing best_seller_deals.json');
-      const data = await res.json();
-      bestSellerDeals = Array.isArray(data.deals) ? data.deals : [];
-      visibleDealsCount = PAGE_SIZE;
-
-      const sortFilter = getEl('sortFilter');
-      if (sortFilter) sortFilter.value = 'newest';
-
-      const dealCount = getEl('dealCount');
-      const watchCount = getEl('watchCount');
-      const checkedCount = getEl('checkedCount');
-      const hotCount = getEl('hotCount');
-      const updatedAt = getEl('updatedAt');
-      const heroPill = getEl('hero-pill');
-
-      if (dealCount) dealCount.textContent = data.count ?? bestSellerDeals.length;
-      if (watchCount) watchCount.textContent = data.watchlistCount ?? '-';
-      if (checkedCount) checkedCount.textContent = data.asinsCheckedThisRun ?? '-';
-      if (hotCount) hotCount.textContent = data.hotDeals ?? bestSellerDeals.filter(d => d.hot).length;
-      if (updatedAt) updatedAt.textContent = fmtDate(data.updatedAt);
-      if (heroPill) heroPill.textContent = `${data.count ?? bestSellerDeals.length} deals found`;
-
+      const response = await fetch(DATA_URL, { cache: 'default' });
+      if (!response.ok) throw new Error('Missing best_seller_deals.json');
+      const data = await response.json();
+      products = Array.isArray(data.deals) ? data.deals : [];
+      const sort = getEl('sortFilter');
+      if (sort) sort.value = 'newest';
+      if (getEl('dealCount')) getEl('dealCount').textContent = data.count ?? products.length;
+      if (getEl('hotCount')) getEl('hotCount').textContent = data.totalProducts ?? products.length;
+      if (getEl('hero-pill')) getEl('hero-pill').textContent = `${data.count ?? products.length} best seller product picks`;
       renderFilters();
-      renderDeals(true);
-    } catch (err) {
-      if (statusEl) {
-        statusEl.textContent = 'Deals are not loaded yet. Try refreshing in a few minutes.';
-        statusEl.className = 'best-seller-status';
-      }
-      console.error('Best Seller Deals load failed:', err);
+      render(true);
+    } catch (error) {
+      const status = getEl('status');
+      if (status) status.textContent = 'Best seller product picks are not loaded yet. Try refreshing in a few minutes.';
+      console.error('Best Seller Product Picks load failed:', error);
     }
   }
 
   function init() {
-    const searchBox = getEl('searchBox');
-    const categoryFilter = getEl('categoryFilter');
-    const sortFilter = getEl('sortFilter');
-    if (searchBox) searchBox.addEventListener('input', () => renderDeals(true));
-    if (categoryFilter) categoryFilter.addEventListener('change', () => renderDeals(true));
-    if (sortFilter) sortFilter.addEventListener('change', () => renderDeals(true));
-    loadDeals();
+    if (window.bldSimplifyPageCopy) window.bldSimplifyPageCopy();
+    if (window.bldNormalizeProductPageLayout) window.bldNormalizeProductPageLayout();
+    ['searchBox', 'categoryFilter', 'sortFilter'].forEach(id => {
+      const element = getEl(id);
+      if (element) element.addEventListener(element.tagName === 'INPUT' ? 'input' : 'change', () => render(true));
+    });
+    loadProducts();
   }
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
-  } else {
-    init();
-  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
 })();

@@ -1,136 +1,185 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "version": 2,
-  "git": { "deploymentEnabled": false },
+  "git": {
+    "deploymentEnabled": false
+  },
   "builds": [
-    { "src": "api/**/*.js", "use": "@vercel/node" },
-    { "src": "**/*", "use": "@vercel/static" }
+    {
+      "src": "**/*",
+      "use": "@vercel/static"
+    }
   ],
   "headers": [
     {
-      "source": "/(.*)\\.html",
+      "source": "/(.*).css",
       "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=3600, stale-while-revalidate=86400"
+        }
       ]
     },
     {
-      "source": "/(best-amazon-home-kitchen-deals|best-amazon-electronics-deals|best-amazon-deals-under-50)/(.*)?",
+      "source": "/(.*).js",
       "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=3600, stale-while-revalidate=86400"
+        }
       ]
     },
     {
-      "source": "/(.*)\\.js",
+      "source": "/(.*).jpg",
       "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
       ]
     },
     {
-      "source": "/(.*)\\.css",
+      "source": "/(.*).jpeg",
       "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=86400, stale-while-revalidate=604800" }
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
       ]
     },
     {
-      "source": "/(.*)\\.(png|jpg|jpeg|webp|gif|svg|ico)",
+      "source": "/(.*).png",
       "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    },
+    {
+      "source": "/(.*).webp",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    },
+    {
+      "source": "/(.*).gif",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    },
+    {
+      "source": "/(.*).ico",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    },
+    {
+      "source": "/(.*).svg",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
       ]
     },
     {
       "source": "/manifest.json",
       "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=86400, stale-while-revalidate=604800" }
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=86400"
+        }
       ]
     },
     {
-      "source": "/(deals|best_seller_deals|amazon-sales-event-deals).json",
+      "source": "/(deals|best_seller_deals).json",
       "headers": [
-        { "key": "Cache-Control", "value": "no-store, no-cache, max-age=0, must-revalidate" },
-        { "key": "Pragma", "value": "no-cache" },
-        { "key": "Expires", "value": "0" }
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=300, s-maxage=300, stale-while-revalidate=600"
+        }
+      ]
+    },
+    {
+      "source": "/(.*).html",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, must-revalidate"
+        }
       ]
     }
   ],
   "routes": [
-    { "src": "/api/(.*)", "dest": "/api/$1.js" },
-    { "src": "/deals.json", "dest": "https://raw.githubusercontent.com/Mhhickma/blacklabdeals/main/deals.json" },
-    { "src": "/best_seller_deals.json", "dest": "https://raw.githubusercontent.com/Mhhickma/blacklabdeals/main/best_seller_deals.json" },
-    { "src": "/amazon-sales-event-deals.json", "dest": "https://raw.githubusercontent.com/Mhhickma/blacklabdeals/main/amazon-sales-event-deals.json" },
-    { "src": "/top-100-amazon-deals-today", "dest": "/top-100-amazon-deals-today/index.html" },
-    { "src": "/top-100-amazon-deals-today/", "dest": "/top-100-amazon-deals-today/index.html" },
-    { "src": "/best-amazon-home-kitchen-deals", "dest": "/best-amazon-home-kitchen-deals/index.html" },
-    { "src": "/best-amazon-home-kitchen-deals/", "dest": "/best-amazon-home-kitchen-deals/index.html" },
-    { "src": "/best-amazon-home-kitchen-deals/index.html", "dest": "/best-amazon-home-kitchen-deals/index.html" },
-    { "src": "/best-amazon-electronics-deals", "dest": "/best-amazon-electronics-deals/index.html" },
-    { "src": "/best-amazon-electronics-deals/", "dest": "/best-amazon-electronics-deals/index.html" },
-    { "src": "/best-amazon-electronics-deals/index.html", "dest": "/best-amazon-electronics-deals/index.html" },
-    { "src": "/best-amazon-tool-deals", "dest": "/best-amazon-tool-deals/index.html" },
-    { "src": "/best-amazon-tool-deals/", "dest": "/best-amazon-tool-deals/index.html" },
-    { "src": "/best-amazon-deals-under-50", "dest": "/best-amazon-deals-under-50/index.html" },
-    { "src": "/best-amazon-deals-under-50/", "dest": "/best-amazon-deals-under-50/index.html" },
-    { "src": "/best-amazon-deals-under-50/index.html", "dest": "/best-amazon-deals-under-50/index.html" },
-    { "src": "/amazon-deal-event", "dest": "/amazon-deal-event/index.html" },
-    { "src": "/amazon-deal-event/", "dest": "/amazon-deal-event/index.html" },
-    { "src": "/amazon-electronics-deals", "dest": "/amazon-deal-event/index.html" },
-    { "src": "/amazon-electronics-deals/", "dest": "/amazon-deal-event/index.html" },
-    { "src": "/amazon-electronics-deals/index.html", "dest": "/amazon-deal-event/index.html" },
-    { "src": "/amazon-furniture-deals", "dest": "/amazon-deal-event/index.html" },
-    { "src": "/amazon-furniture-deals/", "dest": "/amazon-deal-event/index.html" },
-    { "src": "/amazon-furniture-deals/index.html", "dest": "/amazon-deal-event/index.html" },
-    { "src": "/amazon-health-personal-care-deals", "dest": "/amazon-deal-event/index.html" },
-    { "src": "/amazon-health-personal-care-deals/", "dest": "/amazon-deal-event/index.html" },
-    { "src": "/amazon-health-personal-care-deals/index.html", "dest": "/amazon-deal-event/index.html" },
-    { "src": "/amazon-home-deals", "dest": "/amazon-deal-event/index.html" },
-    { "src": "/amazon-home-deals/", "dest": "/amazon-deal-event/index.html" },
-    { "src": "/amazon-home-deals/index.html", "dest": "/amazon-deal-event/index.html" },
-    { "src": "/amazon-home-improvement-deals", "dest": "/amazon-deal-event/index.html" },
-    { "src": "/amazon-home-improvement-deals/", "dest": "/amazon-deal-event/index.html" },
-    { "src": "/amazon-home-improvement-deals/index.html", "dest": "/amazon-deal-event/index.html" },
-    { "src": "/amazon-home-entertainment-deals", "dest": "/amazon-deal-event/index.html" },
-    { "src": "/amazon-home-entertainment-deals/", "dest": "/amazon-deal-event/index.html" },
-    { "src": "/amazon-home-entertainment-deals/index.html", "dest": "/amazon-deal-event/index.html" },
-    { "src": "/amazon-lawn-garden-deals", "dest": "/amazon-deal-event/index.html" },
-    { "src": "/amazon-lawn-garden-deals/", "dest": "/amazon-deal-event/index.html" },
-    { "src": "/amazon-lawn-garden-deals/index.html", "dest": "/amazon-deal-event/index.html" },
-    { "src": "/amazon-office-products-deals", "dest": "/amazon-deal-event/index.html" },
-    { "src": "/amazon-office-products-deals/", "dest": "/amazon-deal-event/index.html" },
-    { "src": "/amazon-office-products-deals/index.html", "dest": "/amazon-deal-event/index.html" },
-    { "src": "/amazon-outdoors-deals", "dest": "/amazon-deal-event/index.html" },
-    { "src": "/amazon-outdoors-deals/", "dest": "/amazon-deal-event/index.html" },
-    { "src": "/amazon-outdoors-deals/index.html", "dest": "/amazon-deal-event/index.html" },
-    { "src": "/amazon-pc-deals", "dest": "/amazon-deal-event/index.html" },
-    { "src": "/amazon-pc-deals/", "dest": "/amazon-deal-event/index.html" },
-    { "src": "/amazon-pc-deals/index.html", "dest": "/amazon-deal-event/index.html" },
-    { "src": "/amazon-kitchen-deals", "dest": "/amazon-deal-event/index.html" },
-    { "src": "/amazon-kitchen-deals/", "dest": "/amazon-deal-event/index.html" },
-    { "src": "/amazon-kitchen-deals/index.html", "dest": "/amazon-deal-event/index.html" },
-    { "src": "/amazon-pet-products-deals", "dest": "/amazon-deal-event/index.html" },
-    { "src": "/amazon-pet-products-deals/", "dest": "/amazon-deal-event/index.html" },
-    { "src": "/amazon-pet-products-deals/index.html", "dest": "/amazon-deal-event/index.html" },
-    { "src": "/amazon-sports-deals", "dest": "/amazon-deal-event/index.html" },
-    { "src": "/amazon-sports-deals/", "dest": "/amazon-deal-event/index.html" },
-    { "src": "/amazon-sports-deals/index.html", "dest": "/amazon-deal-event/index.html" },
-    { "src": "/amazon-tool-deals", "dest": "/amazon-deal-event/index.html" },
-    { "src": "/amazon-tool-deals/", "dest": "/amazon-deal-event/index.html" },
-    { "src": "/amazon-tool-deals/index.html", "dest": "/amazon-deal-event/index.html" },
-    { "src": "/amazon-toys-deals", "dest": "/amazon-deal-event/index.html" },
-    { "src": "/amazon-toys-deals/", "dest": "/amazon-deal-event/index.html" },
-    { "src": "/amazon-toys-deals/index.html", "dest": "/amazon-deal-event/index.html" },
-    { "src": "/amazon-video-devices-deals", "dest": "/amazon-deal-event/index.html" },
-    { "src": "/amazon-video-devices-deals/", "dest": "/amazon-deal-event/index.html" },
-    { "src": "/amazon-video-devices-deals/index.html", "dest": "/amazon-deal-event/index.html" },
-    { "src": "/amazon-wireless-deals", "dest": "/amazon-deal-event/index.html" },
-    { "src": "/amazon-wireless-deals/", "dest": "/amazon-deal-event/index.html" },
-    { "src": "/amazon-wireless-deals/index.html", "dest": "/amazon-deal-event/index.html" },
-    { "src": "/amazon-deals-under-50", "dest": "/amazon-deal-event/index.html" },
-    { "src": "/amazon-deals-under-50/", "dest": "/amazon-deal-event/index.html" },
-    { "src": "/amazon-deals-under-50/index.html", "dest": "/amazon-deal-event/index.html" },
-    { "src": "/amazon-device-deals", "dest": "/amazon-deal-event/index.html" },
-    { "src": "/amazon-device-deals/", "dest": "/amazon-deal-event/index.html" },
-    { "src": "/amazon-device-deals/index.html", "dest": "/amazon-deal-event/index.html" },
-    { "src": "/amazon-household-essentials-deals", "dest": "/amazon-deal-event/index.html" },
-    { "src": "/amazon-household-essentials-deals/", "dest": "/amazon-deal-event/index.html" },
-    { "src": "/amazon-household-essentials-deals/index.html", "dest": "/amazon-deal-event/index.html" }
+    {
+      "src": "/deals.json",
+      "dest": "https://raw.githubusercontent.com/Mhhickma/blacklabdeals/main/deals.json"
+    },
+    {
+      "src": "/best_seller_deals.json",
+      "dest": "https://raw.githubusercontent.com/Mhhickma/blacklabdeals/main/best_seller_deals.json"
+    },
+    {
+      "src": "/top-100-amazon-deals-today",
+      "dest": "/top-100-amazon-deals-today/index.html"
+    },
+    {
+      "src": "/top-100-amazon-deals-today/",
+      "dest": "/top-100-amazon-deals-today/index.html"
+    },
+    {
+      "src": "/best-amazon-home-kitchen-deals",
+      "dest": "/best-amazon-home-kitchen-deals/index.html"
+    },
+    {
+      "src": "/best-amazon-home-kitchen-deals/",
+      "dest": "/best-amazon-home-kitchen-deals/index.html"
+    },
+    {
+      "src": "/best-amazon-tool-deals",
+      "dest": "/best-amazon-tool-deals/index.html"
+    },
+    {
+      "src": "/best-amazon-tool-deals/",
+      "dest": "/best-amazon-tool-deals/index.html"
+    },
+    {
+      "src": "/best-amazon-deals-under-50",
+      "dest": "/best-amazon-deals-under-50/index.html"
+    },
+    {
+      "src": "/best-amazon-deals-under-50/",
+      "dest": "/best-amazon-deals-under-50/index.html"
+    },
+    {
+      "src": "/images/pages/top-100-amazon-deals-today.png",
+      "dest": "/top-100-amazon-deals-today/top-100-deals-found-on-amazon-right-now-black-lab-deals.jpg"
+    },
+    {
+      "src": "/images/pages/best-amazon-home-kitchen-deals.png",
+      "dest": "/home-kitchen-deals-banner.jpg"
+    },
+    {
+      "src": "/images/pages/best-amazon-deals-under-50.png",
+      "dest": "/under50image.jpg"
+    },
+    {
+      "src": "/",
+      "dest": "/index.html"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/$1"
+    }
   ]
 }

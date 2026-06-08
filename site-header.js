@@ -1,102 +1,302 @@
-/* Black Lab Deals clean shared header */
-(function(){
-  function isHome(){return location.pathname==='/'||location.pathname==='/index.html'}
-  function addAnalytics(){
-    var gaId='G-ES3MC2ZTTM';
-    var metaPixelId='1642712089209011';
-    if(!window.__BLD_ANALYTICS_ADDED__){
-      window.__BLD_ANALYTICS_ADDED__=true;
-      if(!document.querySelector('script[src="https://www.googletagmanager.com/gtag/js?id='+gaId+'"]')){
-        var ga=document.createElement('script');
-        ga.async=true;
-        ga.src='https://www.googletagmanager.com/gtag/js?id='+gaId;
-        document.head.appendChild(ga);
-      }
-      window.dataLayer=window.dataLayer||[];
-      window.gtag=window.gtag||function(){window.dataLayer.push(arguments)};
-      window.gtag('js',new Date());
-      window.gtag('config',gaId);
-      if(!window.fbq){
-        var n=window.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-        if(!window._fbq)window._fbq=n;
-        n.push=n;n.loaded=true;n.version='2.0';n.queue=[];
-        var fb=document.createElement('script');
-        fb.async=true;
-        fb.src='https://connect.facebook.net/en_US/fbevents.js';
-        var firstScript=document.getElementsByTagName('script')[0];
-        firstScript.parentNode.insertBefore(fb,firstScript);
-      }
-      window.fbq('init',metaPixelId);
-      window.fbq('track','PageView');
-    }
+/* Black Lab Deals uniform header navigation.
+   Shared header used by pages that include /site-header.js. */
+
+(function () {
+  const NAV_LINKS = [
+    { title: 'Product Picks', href: '/#deals-section', icon: '&#9889;', group: 'Featured' },
+    { title: 'Categories', href: '/categories/', icon: '&#8594;', group: 'Featured' },
+    { title: 'Best Seller Picks', href: '/best-seller-deals.html', icon: '&#9733;', group: 'Featured' },
+    { title: 'Top 100 Picks', href: '/top-100-amazon-deals-today/', icon: '#', group: 'Featured' },
+    { title: 'Picks Under $50', href: '/best-amazon-deals-under-50/', icon: '$', group: 'Featured' },
+    { title: 'Tool Picks', href: '/best-amazon-tool-deals/', icon: '&#128295;', group: 'Popular Categories' },
+    { title: 'Home & Kitchen', href: '/best-amazon-home-kitchen-deals/', icon: '&#8962;', group: 'Popular Categories' },
+    { title: 'Electronics', href: '/best-amazon-electronics-deals/', icon: '&#9632;', group: 'Popular Categories' },
+    { title: 'Automotive', href: '/best-amazon-automotive-deals/', icon: '&#9679;', group: 'Popular Categories' },
+    { title: 'Patio & Garden', href: '/best-amazon-patio-lawn-garden-deals/', icon: '&#9827;', group: 'Popular Categories' },
+    { title: 'Sports & Outdoors', href: '/best-amazon-sports-outdoors-deals/', icon: '&#9670;', group: 'More' },
+    { title: 'Pet Supplies', href: '/best-amazon-pet-supplies-deals/', icon: '&#9675;', group: 'More' },
+    { title: 'Toys & Games', href: '/best-amazon-toys-games-deals/', icon: '&#9734;', group: 'More' },
+    { title: 'Office Products', href: '/best-amazon-office-products-deals/', icon: '&#9633;', group: 'More' },
+    { title: 'Health & Household', href: '/best-amazon-health-household-deals/', icon: '+', group: 'More' }
+  ];
+
+  function getHomeAwareHref(anchor) {
+    return window.location.pathname === '/' || window.location.pathname === '/index.html' ? anchor : '/' + anchor;
   }
-  function normalizeSortLabels(){
-    var select=document.getElementById('sort-select');
-    if(!select) return;
-    var current=select.value;
-    select.innerHTML='<option value="best">Product Picks</option><option value="newest">Newest First</option><option value="featured">Featured Picks</option>';
-    select.value=(current==='newest')?'newest':(current==='featured'?'featured':'best');
+
+  function groupedLinks(group) {
+    return NAV_LINKS
+      .filter(link => link.group === group)
+      .map(link => `<a class="bld-mega-link" href="${link.href}"><span class="bld-mega-icon">${link.icon}</span>${link.title}</a>`)
+      .join('');
   }
-  function addStyles(){
-    if(document.getElementById('bld-header-style')) return;
-    var s=document.createElement('style');
-    s.id='bld-header-style';
-    s.textContent='.bld-header-shell{background:#fff;border-bottom:1px solid #e8e6e1;position:sticky;top:0;z-index:300;box-shadow:0 8px 22px rgba(26,58,92,.06)}.bld-header-main{max-width:1180px;margin:0 auto;padding:12px 24px;display:flex;align-items:center;justify-content:space-between;gap:18px}.bld-brand{display:flex;align-items:center;gap:12px;text-decoration:none;color:#1a1a18;min-width:250px}.bld-brand-logo{width:64px;height:64px;border-radius:50%;object-fit:cover;border:3px solid #c9a84c}.bld-brand-title{font-family:Georgia,serif;font-size:30px;line-height:1}.bld-brand-title span{color:#c9a84c}.bld-brand-tagline{font-size:12px;color:#777;margin-top:5px}.bld-nav{display:flex;align-items:center;justify-content:flex-end;gap:13px;flex-wrap:wrap}.bld-nav a{font-weight:900;text-decoration:none;color:#1a1a18;font-size:14px;white-space:nowrap}.bld-nav a:hover{color:#1a3a5c}.bld-menu{position:relative}.bld-menu-btn{display:flex;align-items:center;gap:6px;height:38px;border:1px solid #e8e6e1;border-radius:999px;background:#fff;color:#1a1a18;font-size:14px;font-weight:900;padding:0 15px;cursor:pointer}.bld-menu-btn:hover,.bld-menu.is-open .bld-menu-btn{border-color:#9db5ca;color:#1a3a5c;box-shadow:0 0 0 3px rgba(26,58,92,.08)}.bld-menu-chevron{font-size:11px;line-height:1}.bld-menu-panel{position:absolute;top:calc(100% + 8px);right:0;width:min(88vw,390px);max-height:70vh;overflow:auto;background:#fff;border:1px solid #e8e6e1;border-radius:18px;box-shadow:0 22px 55px rgba(26,58,92,.18);padding:10px;z-index:500}.bld-menu:not(.is-open) .bld-menu-panel,.bld-menu:hover:not(.is-open) .bld-menu-panel,.bld-menu:focus-within:not(.is-open) .bld-menu-panel{display:none!important}.bld-menu.is-open .bld-menu-panel{display:block!important}.bld-menu-panel a{display:block;border-radius:12px;padding:10px 11px;font-size:13px;line-height:1.2;color:#1a1a18}.bld-menu-panel a:hover,.bld-menu-panel a:focus{background:#f6f4ee;color:#1a3a5c;outline:none}.bld-menu-featured{background:#f8f1db}.bld-nav-search{display:flex;align-items:center;gap:6px}.bld-nav-search input{width:190px;height:36px;border:1px solid #e8e6e1;border-radius:999px;padding:0 12px;font-size:13px;font-weight:800;outline:none}.bld-nav-search input:focus{border-color:#9db5ca;box-shadow:0 0 0 3px rgba(26,58,92,.08)}.bld-nav-search button{height:36px;border:0;border-radius:999px;background:#1a3a5c;color:#fff;font-size:13px;font-weight:900;padding:0 13px;cursor:pointer}.bld-alert-btn{background:#1a3a5c;color:#fff!important;border-radius:999px;padding:9px 14px}.bld-alert-btn:hover{background:#244f7a}@media(max-width:820px){.bld-header-shell{z-index:700}.bld-header-main{align-items:flex-start;flex-direction:column;padding:10px 68px 10px 16px}.bld-nav{justify-content:flex-start;width:100%}.bld-nav>a:not(.bld-alert-btn){display:none}.bld-menu{position:fixed;top:12px;right:12px;width:auto;z-index:1000}.bld-menu-btn{width:48px;height:48px;justify-content:center;border-radius:50%;padding:0;font-size:0;background:#1a3a5c;color:#fff;border-color:#1a3a5c;box-shadow:0 10px 24px rgba(26,58,92,.28)}.bld-menu-btn:before{content:"☰";font-size:24px;line-height:1}.bld-menu.is-open .bld-menu-btn:before{content:"×";font-size:30px}.bld-menu.is-open .bld-menu-btn{background:#fff;color:#1a3a5c;border-color:#9db5ca}.bld-menu-chevron{display:none}.bld-menu-panel{position:fixed;top:70px;left:12px;right:12px;width:auto;max-height:calc(100vh - 86px);margin-top:0;overflow:auto;border-radius:20px;padding:12px;z-index:999}.bld-menu-panel a{font-size:15px;padding:14px 13px}.bld-nav-search{width:100%}.bld-nav-search input{width:100%;flex:1}.bld-brand{min-width:0}.bld-brand-logo{width:52px;height:52px}.bld-brand-title{font-size:23px}.bld-brand-tagline{display:none}.bld-alert-btn{padding:10px 14px}}';
-    document.head.appendChild(s);
+
+  function drawerLinks(group) {
+    return NAV_LINKS
+      .filter(link => link.group === group)
+      .map(link => `<a class="bld-mobile-drawer-link" href="${link.href}"><span>${link.icon}</span>${link.title}</a>`)
+      .join('');
   }
-  function addCompliance(){
-    if(!document.querySelector('script[src^="/site-common.js"]')){
-      var sc=document.createElement('script');
-      sc.src='/site-common.js?v=15';
-      sc.defer=true;
-      document.body.appendChild(sc);
-    }
-    if(!document.querySelector('script[src^="/seo-enhancements.js"]')){
-      var seo=document.createElement('script');
-      seo.src='/seo-enhancements.js?v=1';
-      seo.defer=true;
-      document.body.appendChild(seo);
-    }
+
+  const MEGA_MENU_HTML = `
+    <div class="bld-mega-header">
+      <div>
+        <div class="bld-mega-title">Shop by Category</div>
+        <div class="bld-mega-subtitle">Find the Amazon deal page that matches what you want.</div>
+      </div>
+      <div class="bld-mega-pill">Updated Daily</div>
+    </div>
+    <div class="bld-mega-grid">
+      <div class="bld-mega-column"><h3>Featured</h3>${groupedLinks('Featured')}</div>
+      <div class="bld-mega-column"><h3>Popular Categories</h3>${groupedLinks('Popular Categories')}</div>
+      <div class="bld-mega-column"><h3>More</h3>${groupedLinks('More')}</div>
+    </div>
+    <a class="bld-mega-footer" href="/categories/"><span>View All Categories</span><span>&rarr;</span></a>
+  `;
+
+  const MOBILE_DRAWER_HTML = `
+    <div class="bld-mobile-drawer-overlay" data-bld-mobile-close hidden></div>
+    <aside class="bld-mobile-drawer" id="bld-mobile-drawer" aria-label="Mobile navigation" aria-hidden="true">
+      <div class="bld-mobile-drawer-header">
+        <a href="/" class="bld-mobile-drawer-brand" aria-label="Black Lab Deals home">
+          <img src="/logo-128.jpg" alt="Black Lab Deals logo" width="58" height="58" decoding="async">
+          <div>
+            <div class="bld-mobile-drawer-title">Black Lab <span>Deals</span></div>
+            <div class="bld-mobile-drawer-subtitle">Fresh Amazon product picks</div>
+          </div>
+        </a>
+        <button class="bld-mobile-drawer-close" type="button" aria-label="Close menu" data-bld-mobile-close>&times;</button>
+      </div>
+      <div class="bld-mobile-drawer-content">
+        <form class="bld-mobile-drawer-search" action="/search.html" method="get" role="search">
+          <input type="search" name="q" placeholder="Search product picks" aria-label="Search product picks">
+          <button type="submit">Search</button>
+        </form>
+        <a class="bld-mobile-drawer-alert" href="/#alerts-box"><span>&bull;</span> Get Product Alerts</a>
+        <div class="bld-mobile-drawer-section"><h3>Featured Product Pages</h3>${drawerLinks('Featured')}</div>
+        <div class="bld-mobile-drawer-section"><h3>Popular Categories</h3>${drawerLinks('Popular Categories')}</div>
+        <div class="bld-mobile-drawer-section"><h3>More Categories</h3>${drawerLinks('More')}<a class="bld-mobile-drawer-link bld-mobile-drawer-all" href="/categories/"><span>&rarr;</span>View All Categories</a></div>
+      </div>
+    </aside>
+  `;
+
+  const MOBILE_DRAWER_CSS = `
+    .bld-header-search-row{background:var(--surface,#fff);border-top:1px solid var(--border,#e8e6e1);border-bottom:1px solid var(--border,#e8e6e1);padding:12px 24px 14px;}
+    .bld-header-search{max-width:760px;margin:0 auto;display:flex;align-items:center;gap:10px;}
+    .bld-header-search input{width:100%;height:44px;border:1px solid var(--border,#e8e6e1);border-radius:999px;background:var(--bg,#f9f8f5);color:var(--text-primary,#1a1a18);font-family:Arial, sans-serif;font-size:15px;font-weight:700;padding:0 18px;outline:none;box-shadow:0 1px 3px rgba(0,0,0,.04);}
+    .bld-header-search input:focus{border-color:var(--accent,#1a3a5c);box-shadow:0 0 0 3px rgba(26,58,92,.12);}
+    .bld-header-search input::placeholder{color:var(--text-muted,#9e9e97);}
+    .bld-header-search button{height:44px;border:0;border-radius:999px;background:var(--accent,#1a3a5c);color:#fff;font-family:Arial, sans-serif;font-size:14px;font-weight:900;padding:0 18px;cursor:pointer;white-space:nowrap;}
+    .bld-header-search button:hover{background:var(--accent-mid,#2a5a8c);}
+    .bld-mobile-drawer-search{display:flex;gap:8px;margin-bottom:2px;}
+    .bld-mobile-drawer-search input{min-width:0;flex:1;height:42px;border:1px solid var(--border,#e8e6e1);border-radius:999px;background:var(--bg,#f9f8f5);padding:0 14px;font-size:15px;font-weight:800;color:var(--text-primary,#1a1a18);outline:none;}
+    .bld-mobile-drawer-search button{height:42px;border:0;border-radius:999px;background:var(--accent,#1a3a5c);color:#fff;font-size:13px;font-weight:900;padding:0 14px;}
+    .bld-mobile-menu-btn{width:44px;height:44px;border:1px solid var(--border,#e8e6e1);border-radius:14px;background:var(--surface,#fff);color:var(--text-primary,#1a1a18);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:var(--shadow,0 1px 3px rgba(0,0,0,.06));}
+    .bld-mobile-menu-btn svg{width:22px;height:22px;}
+    .bld-mobile-drawer-overlay{position:fixed;inset:0;background:rgba(0,0,0,.42);z-index:998;opacity:0;pointer-events:none;transition:opacity .22s ease;}
+    .bld-mobile-drawer-overlay.show{opacity:1;pointer-events:auto;}
+    .bld-mobile-drawer{position:fixed;top:0;right:0;width:min(88vw,390px);height:100vh;background:var(--surface,#fff);z-index:999;box-shadow:-18px 0 42px rgba(0,0,0,.2);transform:translateX(100%);transition:transform .24s ease;display:flex;flex-direction:column;}
+    .bld-mobile-drawer.show{transform:translateX(0);}
+    .bld-mobile-drawer-header{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:16px;border-bottom:1px solid var(--border,#e8e6e1);}
+    .bld-mobile-drawer-brand{display:flex;align-items:center;gap:12px;color:var(--text-primary,#1a1a18);text-decoration:none;min-width:0;}
+    .bld-mobile-drawer-brand img{width:58px;height:58px;border-radius:50%;object-fit:cover;border:2px solid var(--gold,#c9a84c);background:#fff;}
+    .bld-mobile-drawer-title{font-family:Georgia, serif;font-size:23px;line-height:1;color:var(--text-primary,#1a1a18);white-space:nowrap;}
+    .bld-mobile-drawer-title span{color:var(--gold,#c9a84c);}
+    .bld-mobile-drawer-subtitle{font-size:12px;color:var(--text-muted,#9e9e97);margin-top:4px;font-weight:700;}
+    .bld-mobile-drawer-close{width:42px;height:42px;border:1px solid var(--border,#e8e6e1);border-radius:13px;background:var(--bg,#f9f8f5);font-size:30px;line-height:1;color:var(--text-primary,#1a1a18);cursor:pointer;}
+    .bld-mobile-drawer-content{padding:16px;overflow-y:auto;display:flex;flex-direction:column;gap:16px;}
+    .bld-mobile-drawer-alert{display:flex;align-items:center;justify-content:center;gap:10px;background:var(--accent,#1a3a5c);color:#fff!important;border-radius:999px;padding:13px 16px;font-size:15px;font-weight:900;text-decoration:none;box-shadow:0 8px 18px rgba(26,58,92,.22);}
+    .bld-mobile-drawer-alert span{color:var(--gold,#c9a84c);}
+    .bld-mobile-drawer-section{border:1px solid var(--border,#e8e6e1);border-radius:18px;background:var(--bg,#f9f8f5);padding:12px;}
+    .bld-mobile-drawer-section h3{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted,#9e9e97);font-family:Arial, sans-serif;font-weight:900;margin:0 0 8px;}
+    .bld-mobile-drawer-link{display:flex;align-items:center;gap:10px;padding:12px 10px;border-radius:13px;background:#fff;color:var(--text-primary,#1a1a18)!important;text-decoration:none;font-size:15px;font-weight:900;margin-top:8px;border:1px solid var(--border,#e8e6e1);}
+    .bld-mobile-drawer-link span{width:26px;height:26px;border-radius:9px;background:var(--accent-light,#e8eef5);display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;}
+    .bld-mobile-drawer-all{background:var(--accent-light,#e8eef5);color:var(--accent,#1a3a5c)!important;}
+    body.bld-mobile-menu-open{overflow:hidden;}
+    @media (min-width:901px){.bld-mobile-drawer,.bld-mobile-drawer-overlay{display:none!important;}.bld-mega-menu.show{position:fixed!important;top:var(--bld-menu-top,150px)!important;left:50%!important;right:auto!important;transform:translateX(-50%) translateY(0)!important;z-index:10050!important;}}
+    @media (max-width:700px){.bld-header-search-row{padding:10px 14px 12px;}.bld-header-search{gap:8px;}.bld-header-search input{height:42px;font-size:15px;}.bld-header-search button{height:42px;padding:0 14px;font-size:13px;}}
+    @media (max-width:520px){.bld-mobile-actions .bld-alert-btn{display:none;}.bld-mobile-drawer{width:92vw;}.bld-mobile-drawer-title{font-size:21px;}html,body{max-width:100%;overflow-x:hidden;}body:not(.bld-alerts-requested) .bld-alert-overlay,body:not(.bld-alerts-requested) .bld-alert-modal{display:none!important;}}
+  `;
+
+  function injectMobileDrawerStyles() {
+    if (document.getElementById('bld-mobile-drawer-styles')) return;
+    const style = document.createElement('style');
+    style.id = 'bld-mobile-drawer-styles';
+    style.textContent = MOBILE_DRAWER_CSS;
+    document.head.appendChild(style);
   }
-  function addAlertsPopup(){
-    if(document.querySelector('script[src^="/alerts-popup.js"]')) return;
-    var sc=document.createElement('script');
-    sc.src='/alerts-popup.js?v=2';
-    sc.defer=true;
-    document.body.appendChild(sc);
+
+  function injectMobileDealFixes() {
+    if (document.body.dataset.mobileFixes !== 'true') return;
+    if (document.querySelector('script[src^="/mobile-deal-fixes.js"]')) return;
+    const script = document.createElement('script');
+    script.src = '/mobile-deal-fixes.js?v=1';
+    script.defer = true;
+    document.body.appendChild(script);
   }
-  function bindSearch(){
-    var form=document.querySelector('.bld-nav-search');
-    var input=form&&form.querySelector('input[name="q"]');
-    if(!form||!input) return;
-    input.setAttribute('autocomplete','off');
-    input.setAttribute('autocorrect','off');
-    input.setAttribute('autocapitalize','off');
-    input.setAttribute('spellcheck','false');
-    form.addEventListener('submit',function(event){
-      var q=(input.value||'').trim();
-      if(isHome()&&typeof window.BLDApplyProductSearch==='function'){
-        event.preventDefault();
-        window.BLDApplyProductSearch(q,true);
-      }
+
+  function initMobileUxCleanup() {
+    document.querySelectorAll('.bld-alert-btn,.bld-mobile-drawer-alert,a[href="#alerts-box"],a[href="/#alerts-box"]').forEach(link => {
+      link.addEventListener('click', () => document.body.classList.add('bld-alerts-requested'));
     });
+
+    const disclaimerText = 'Product prices and availability are accurate as of the date/time indicated';
+    const cleanCards = () => {
+      document.querySelectorAll('article,.product-card,.deal-card,.hot-card,.best-seller-card').forEach(card => {
+        const matches = Array.from(card.querySelectorAll('p,div,small')).filter(node => node.textContent.includes(disclaimerText));
+        matches.slice(1).forEach(node => node.remove());
+      });
+    };
+    cleanCards();
+    new MutationObserver(cleanCards).observe(document.body, { childList: true, subtree: true });
   }
-  function bindMenu(){
-    var menu=document.querySelector('.bld-menu');
-    if(!menu) return;
-    var button=menu.querySelector('.bld-menu-btn');
-    function openMenu(){menu.classList.add('is-open');if(button) button.setAttribute('aria-expanded','true')}
-    function closeMenu(){menu.classList.remove('is-open');if(button) button.setAttribute('aria-expanded','false')}
-    if(button){
-      button.setAttribute('aria-expanded','false');
-      button.addEventListener('click',function(event){event.preventDefault();event.stopPropagation();if(menu.classList.contains('is-open')) closeMenu();else openMenu()});
+
+  function buildHeader() {
+    return `
+      <header class="bld-header-shell">
+        <div class="bld-header-main">
+          <a href="/" class="bld-brand" aria-label="Black Lab Deals home">
+            <img class="bld-brand-logo" src="/logo-128.jpg" alt="Black Lab Deals logo" width="118" height="118" decoding="async" fetchpriority="high">
+            <div>
+              <div class="bld-brand-title">Black Lab <span>Deals</span></div>
+              <div class="bld-brand-rule"></div>
+              <div class="bld-brand-tagline">Fresh Amazon product picks updated daily</div>
+            </div>
+          </a>
+
+          <div class="bld-header-actions">
+            <nav class="bld-desktop-nav" aria-label="Main navigation">
+              <a class="bld-hot-link" href="${getHomeAwareHref('#deals-section')}">Product Picks</a>
+              <span class="bld-nav-divider" aria-hidden="true"></span>
+              <div class="bld-category-wrap">
+                <button class="bld-category-trigger" type="button" aria-expanded="false">Categories <span aria-hidden="true">&#9662;</span></button>
+                <div class="dropdown-menu bld-mega-menu" id="menu-categories">${MEGA_MENU_HTML}</div>
+              </div>
+              <span class="bld-nav-divider" aria-hidden="true"></span>
+              <a class="bld-all-link" href="${getHomeAwareHref('#deals-section')}">All Picks</a>
+            </nav>
+            <a class="bld-alert-btn" href="${getHomeAwareHref('#alerts-box')}"><span class="bld-alert-icon">&bull;</span> Get Alerts</a>
+          </div>
+
+          <div class="bld-mobile-actions">
+            <a class="bld-alert-btn" href="${getHomeAwareHref('#alerts-box')}"><span class="bld-alert-icon">&bull;</span> Get Alerts</a>
+            <button class="bld-mobile-menu-btn" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="bld-mobile-drawer">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16"></path><path d="M4 12h16"></path><path d="M4 18h16"></path></svg>
+            </button>
+          </div>
+        </div>
+        <div class="bld-header-search-row">
+          <form class="bld-header-search" action="/search.html" method="get" role="search">
+            <input type="search" name="q" placeholder="Search Here" aria-label="Search all Black Lab Deals">
+            <button type="submit">Search</button>
+          </form>
+        </div>
+        ${MOBILE_DRAWER_HTML}
+      </header>
+    `;
+  }
+
+  function wireHomepageScrollLinks(root) {
+    const isHome = window.location.pathname === '/' || window.location.pathname === '/index.html';
+    if (!isHome) return;
+    const hotLink = root.querySelector('.bld-hot-link');
+    const allLink = root.querySelector('.bld-all-link');
+    if (hotLink && typeof window.scrollToHotDeals === 'function') {
+      hotLink.addEventListener('click', function (event) { event.preventDefault(); window.scrollToHotDeals(); });
     }
-    document.addEventListener('click',function(event){if(!menu.contains(event.target)) closeMenu()});
-    document.addEventListener('keydown',function(event){if(event.key==='Escape') closeMenu()});
+    if (allLink && typeof window.scrollToAllDeals === 'function') {
+      allLink.addEventListener('click', function (event) { event.preventDefault(); window.scrollToAllDeals(); });
+    }
   }
-  function headerHtml(){
-    return '<header class="bld-header-shell"><div class="bld-header-main"><a href="/" class="bld-brand"><img class="bld-brand-logo" src="/logo-128.jpg" alt="Black Lab Deals logo"><div><div class="bld-brand-title">Black Lab <span>Deals</span></div><div class="bld-brand-tagline">Fresh Amazon product picks updated daily</div></div></a><nav class="bld-nav"><a href="/about/">About</a><div class="bld-menu"><button class="bld-menu-btn" type="button" aria-haspopup="true" aria-label="Open categories menu">Categories <span class="bld-menu-chevron">▼</span></button><div class="bld-menu-panel"><a class="bld-menu-featured" href="/best-amazon-deals-under-50/">Product Picks Under $50</a><a href="/categories/">All Categories</a><a href="/best-amazon-tool-deals/">Tool Product Picks</a><a href="/best-amazon-home-kitchen-deals/">Home & Kitchen Product Picks</a><a href="/best-amazon-electronics-deals/">Electronics Product Picks</a><a href="/best-amazon-automotive-deals/">Automotive Product Picks</a><a href="/best-amazon-patio-lawn-garden-deals/">Patio, Lawn & Garden Product Picks</a><a href="/best-amazon-sports-outdoors-deals/">Sports & Outdoors Product Picks</a><a href="/best-amazon-pet-supplies-deals/">Pet Supplies Product Picks</a><a href="/best-amazon-toys-games-deals/">Toys & Games Product Picks</a><a href="/best-amazon-office-products-deals/">Office Product Picks</a><a href="/best-amazon-health-household-deals/">Health & Household Product Picks</a><a href="/best-amazon-baby-products-deals/">Baby Product Picks</a><a href="/best-amazon-musical-instruments-deals/">Musical Instruments Product Picks</a></div></div><form class="bld-nav-search" action="/" method="get"><input type="search" name="q" placeholder="Search picks" aria-label="Search product picks" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"><button type="submit">Search</button></form><a class="bld-alert-btn" href="#" data-bld-alert-open>Get Alerts</a></nav></div></header>';
+
+  function wireMobileMenu(root) {
+    const btn = root.querySelector('.bld-mobile-menu-btn');
+    const drawer = root.querySelector('.bld-mobile-drawer');
+    const overlay = root.querySelector('.bld-mobile-drawer-overlay');
+    if (!btn || !drawer || !overlay) return;
+
+    function openMenu() {
+      overlay.hidden = false;
+      window.requestAnimationFrame(function () {
+        drawer.classList.add('show');
+        overlay.classList.add('show');
+      });
+      drawer.setAttribute('aria-hidden', 'false');
+      btn.setAttribute('aria-expanded', 'true');
+      document.body.classList.add('bld-mobile-menu-open');
+    }
+
+    function closeMenu() {
+      drawer.classList.remove('show');
+      overlay.classList.remove('show');
+      drawer.setAttribute('aria-hidden', 'true');
+      btn.setAttribute('aria-expanded', 'false');
+      document.body.classList.remove('bld-mobile-menu-open');
+      setTimeout(function () { overlay.hidden = true; }, 240);
+    }
+
+    btn.addEventListener('click', openMenu);
+    root.querySelectorAll('[data-bld-mobile-close]').forEach(el => el.addEventListener('click', closeMenu));
+    root.querySelectorAll('.bld-mobile-drawer a').forEach(link => link.addEventListener('click', closeMenu));
+    document.addEventListener('keydown', function (event) { if (event.key === 'Escape') closeMenu(); });
+    window.openMobileMenu = openMenu;
+    window.closeMobileMenu = closeMenu;
   }
-  function mount(){addAnalytics();addStyles();var el=document.getElementById('site-header');if(el)el.innerHTML=headerHtml();normalizeSortLabels();bindSearch();bindMenu();addCompliance();addAlertsPopup()}
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mount);else mount();
+
+  function initMegaMenu(root) {
+    const trigger = root.querySelector('.bld-category-trigger');
+    const menu = root.querySelector('.bld-mega-menu');
+    const header = root.querySelector('.bld-header-shell');
+    if (!trigger || !menu) return;
+
+    function setMenuPosition() {
+      if (!header) return;
+      const rect = header.getBoundingClientRect();
+      document.documentElement.style.setProperty('--bld-menu-top', Math.max(0, rect.bottom + 8) + 'px');
+    }
+
+    function closeMegaMenu() {
+      menu.classList.remove('show');
+      trigger.setAttribute('aria-expanded', 'false');
+      document.body.classList.remove('bld-mega-menu-open');
+    }
+
+    function openMegaMenu() {
+      setMenuPosition();
+      menu.classList.add('show');
+      trigger.setAttribute('aria-expanded', 'true');
+      document.body.classList.add('bld-mega-menu-open');
+    }
+
+    trigger.addEventListener('click', function (event) {
+      event.preventDefault();
+      event.stopPropagation();
+      if (menu.classList.contains('show')) closeMegaMenu();
+      else openMegaMenu();
+    });
+
+    menu.addEventListener('click', function (event) { event.stopPropagation(); });
+    window.addEventListener('scroll', function () { if (menu.classList.contains('show')) setMenuPosition(); }, { passive: true });
+    window.addEventListener('resize', function () { if (menu.classList.contains('show')) setMenuPosition(); });
+    document.addEventListener('click', function (event) { if (!root.contains(event.target) && !menu.contains(event.target)) closeMegaMenu(); });
+    document.addEventListener('keydown', function (event) { if (event.key === 'Escape') closeMegaMenu(); });
+  }
+
+  function mountHeader() {
+    const mount = document.getElementById('site-header');
+    if (!mount) return;
+    injectMobileDrawerStyles();
+    mount.innerHTML = buildHeader();
+    wireHomepageScrollLinks(mount);
+    wireMobileMenu(mount);
+    initMegaMenu(mount);
+    injectMobileDealFixes();
+    initMobileUxCleanup();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', mountHeader);
+  } else {
+    mountHeader();
+  }
 })();

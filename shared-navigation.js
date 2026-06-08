@@ -12,7 +12,7 @@
       font-size: 11px;
       color: #8a6a20;
       letter-spacing: 0.02em;
-      font-family: 'DM Sans', sans-serif;
+      font-family: Arial, sans-serif;
     }
     .bld-disclosure-bar span { max-width: 900px; display: inline-block; }
     .bld-nav {
@@ -21,7 +21,7 @@
       position: sticky;
       top: 0;
       z-index: 300;
-      font-family: 'DM Sans', sans-serif;
+      font-family: Arial, sans-serif;
     }
     .bld-nav-inner {
       max-width: 1100px;
@@ -48,7 +48,7 @@
       border: 2px solid #c9a84c;
     }
     .bld-logo-text {
-      font-family: 'Playfair Display', serif;
+      font-family: Georgia, serif;
       font-size: 20px;
       color: #1a1a18;
       letter-spacing: -0.5px;
@@ -118,18 +118,18 @@
     <nav class="bld-nav">
       <div class="bld-nav-inner">
         <a class="bld-logo-wrap" href="/">
-          <img class="bld-logo-img" src="/logo.png" alt="Black Lab Deals logo">
+          <img class="bld-logo-img" src="/logo-192.png" alt="Black Lab Deals logo">
           <div>
             <div class="bld-logo-text">Black Lab <span>Deals</span></div>
-            <div class="bld-nav-tagline">Amazon price drops</div>
+            <div class="bld-nav-tagline">Current Amazon product picks</div>
           </div>
         </a>
         <div class="bld-desktop-nav" aria-label="Main navigation">
-          <a href="/" class="${currentPath === '/' || currentPath === '/index.html' ? 'active' : ''}">All Deals</a>
-          <a href="/best-seller-deals.html" class="${currentPath.includes('best-seller-deals') ? 'active' : ''}">Best Seller Deals</a>
-          <a href="/#hot-deals">Hot Deals</a>
+          <a href="/" class="${currentPath === '/' || currentPath === '/index.html' ? 'active' : ''}">Product Picks</a>
+          <a href="/best-seller-deals.html" class="${currentPath.includes('best-seller-deals') ? 'active' : ''}">Best Seller Picks</a>
+          <a href="/#deals-section">Current Picks</a>
           <a href="/#categories">Categories</a>
-          <a class="bld-nav-alert-btn" href="/#alerts">Get Deal Alerts</a>
+          <a class="bld-nav-alert-btn" href="/#alerts-box">Get Product Alerts</a>
         </div>
       </div>
     </nav>
