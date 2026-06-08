@@ -120,7 +120,7 @@
     .bld-mobile-drawer-link span{width:26px;height:26px;border-radius:9px;background:var(--accent-light,#e8eef5);display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;}
     .bld-mobile-drawer-all{background:var(--accent-light,#e8eef5);color:var(--accent,#1a3a5c)!important;}
     body.bld-mobile-menu-open{overflow:hidden;}
-    @media (min-width:901px){.bld-mobile-drawer,.bld-mobile-drawer-overlay{display:none!important;}.bld-mega-menu.show{position:fixed!important;top:var(--bld-menu-top,150px)!important;left:50%!important;right:auto!important;transform:translateX(-50%) translateY(0)!important;z-index:10050!important;}}
+    @media (min-width:901px){.bld-mobile-drawer,.bld-mobile-drawer-overlay{display:none!important;}.bld-mega-menu.show{z-index:10050!important;}}
     @media (max-width:700px){.bld-header-search-row{padding:10px 14px 12px;}.bld-header-search{gap:8px;}.bld-header-search input{height:42px;font-size:15px;}.bld-header-search button{height:42px;padding:0 14px;font-size:13px;}}
     @media (max-width:520px){.bld-mobile-actions .bld-alert-btn{display:none;}.bld-mobile-drawer{width:92vw;}.bld-mobile-drawer-title{font-size:21px;}html,body{max-width:100%;overflow-x:hidden;}body:not(.bld-alerts-requested) .bld-alert-overlay,body:not(.bld-alerts-requested) .bld-alert-modal{display:none!important;}}
   `;
@@ -255,13 +255,7 @@
   function initMegaMenu(root) {
     const trigger = root.querySelector('.bld-category-trigger');
     const menu = root.querySelector('.bld-mega-menu');
-    const header = root.querySelector('.bld-header-shell');
     if (!trigger || !menu) return;
-
-    function setMenuPosition() {
-      const rect = trigger.getBoundingClientRect();
-      document.documentElement.style.setProperty('--bld-menu-top', Math.max(0, rect.bottom + 12) + 'px');
-    }
 
     function closeMegaMenu() {
       menu.classList.remove('show');
@@ -270,7 +264,6 @@
     }
 
     function openMegaMenu() {
-      setMenuPosition();
       menu.classList.add('show');
       trigger.setAttribute('aria-expanded', 'true');
       document.body.classList.add('bld-mega-menu-open');
@@ -284,8 +277,6 @@
     });
 
     menu.addEventListener('click', function (event) { event.stopPropagation(); });
-    window.addEventListener('scroll', function () { if (menu.classList.contains('show')) setMenuPosition(); }, { passive: true });
-    window.addEventListener('resize', function () { if (menu.classList.contains('show')) setMenuPosition(); });
     document.addEventListener('click', function (event) { if (!root.contains(event.target) && !menu.contains(event.target)) closeMegaMenu(); });
     document.addEventListener('keydown', function (event) { if (event.key === 'Escape') closeMegaMenu(); });
   }
