@@ -5,6 +5,7 @@
   const NAV_LINKS = [
     { title: 'Product Picks', href: '/#deals-section', icon: '&#9889;', group: 'Featured' },
     { title: 'Categories', href: '/categories/', icon: '&#8594;', group: 'Featured' },
+    { title: 'About Black Lab Deals', href: '/about/', icon: '&#9432;', group: 'Featured' },
     { title: 'Best Seller Picks', href: '/best-seller-deals.html', icon: '&#9733;', group: 'Featured' },
     { title: 'Top 100 Picks', href: '/top-100-amazon-deals-today/', icon: '#', group: 'Featured' },
     { title: 'Picks Under $50', href: '/best-amazon-deals-under-50/', icon: '$', group: 'Featured' },
@@ -174,6 +175,8 @@
               </div>
               <span class="bld-nav-divider" aria-hidden="true"></span>
               <a class="bld-all-link" href="${getHomeAwareHref('#deals-section')}">All Picks</a>
+              <span class="bld-nav-divider" aria-hidden="true"></span>
+              <a class="bld-about-link" href="/about/">About</a>
             </nav>
             <a class="bld-alert-btn" href="${getHomeAwareHref('#alerts-box')}"><span class="bld-alert-icon">&bull;</span> Get Alerts</a>
           </div>
