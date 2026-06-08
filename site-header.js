@@ -259,9 +259,8 @@
     if (!trigger || !menu) return;
 
     function setMenuPosition() {
-      if (!header) return;
-      const rect = header.getBoundingClientRect();
-      document.documentElement.style.setProperty('--bld-menu-top', Math.max(0, rect.bottom + 8) + 'px');
+      const rect = trigger.getBoundingClientRect();
+      document.documentElement.style.setProperty('--bld-menu-top', Math.max(0, rect.bottom + 12) + 'px');
     }
 
     function closeMegaMenu() {
