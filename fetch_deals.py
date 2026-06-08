@@ -199,6 +199,20 @@ def compact_image_url(url, size=160):
     return re.sub(r"\._SL\d+_\.", f"._SL{size}_.", str(url))
 
 
+def product_image(item, fallback=None):
+    """Return the best available Creators API image without erasing a saved image."""
+    try:
+        primary = item.images.primary
+        for size in ("large", "medium", "small", "hi_res"):
+            image_size = getattr(primary, size, None)
+            url = getattr(image_size, "url", None)
+            if url:
+                return compact_image_url(url)
+    except Exception:
+        pass
+    return compact_image_url(fallback)
+
+
 # ---------------------------------------------
 # MEMORY
 # ---------------------------------------------
@@ -319,7 +333,10 @@ def get_amazon_resources():
         GetItemsResource.ITEM_INFO_DOT_TITLE,
         GetItemsResource.ITEM_INFO_DOT_BY_LINE_INFO,
         GetItemsResource.ITEM_INFO_DOT_CLASSIFICATIONS,
+        GetItemsResource.IMAGES_DOT_PRIMARY_DOT_HIGH_RES,
         GetItemsResource.IMAGES_DOT_PRIMARY_DOT_LARGE,
+        GetItemsResource.IMAGES_DOT_PRIMARY_DOT_MEDIUM,
+        GetItemsResource.IMAGES_DOT_PRIMARY_DOT_SMALL,
         GetItemsResource.OFFERS_V2_DOT_LISTINGS_DOT_PRICE,
         GetItemsResource.OFFERS_V2_DOT_LISTINGS_DOT_AVAILABILITY,
         GetItemsResource.OFFERS_V2_DOT_LISTINGS_DOT_CONDITION,
@@ -420,10 +437,7 @@ def build_and_merge(asins, amazon_items, memory):
             raw_category = None
         category = normalize_category(raw_category)
 
-        try:
-            image = compact_image_url(item.images.primary.large.url)
-        except:
-            image = None
+        image = product_image(item, memory.get(asin, {}).get("image"))
 
         try:
             listing       = item.offers_v2.listings[0]
@@ -501,7 +515,7 @@ def main():
     memory = purge_expired(memory)
     print(f"    Memory: {len(memory)} deals after purge.")
 
-    cached_asins = set(memory.keys())
+    cached_asins = {asin for asin, deal in memory.items() if deal.get("image")}
 
     new_asins = get_keepa_deals(KEEPA_API_KEY, cached_asins)
 

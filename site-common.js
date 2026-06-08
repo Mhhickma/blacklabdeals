@@ -102,7 +102,7 @@ function topFilter(d) {
   return true;
 }
 
-function score(d) { return updated(d) / 1000000000 + Math.max(0, 80 - price(d)); }
+function score(d) { return (img(d) ? 1000 : 0) + updated(d) / 1000000000 + Math.max(0, 80 - price(d)); }
 function sorted(a) { return [...a].sort((x, y) => score(y) - score(x)); }
 function shown() {
   let d = allDeals;

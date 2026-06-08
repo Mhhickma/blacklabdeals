@@ -88,6 +88,20 @@ def compact_image_url(url, size=160):
     return re.sub(r"\._SL\d+_\.", f"._SL{size}_.", str(url))
 
 
+def product_image(item, fallback=None):
+    """Return the best available Creators API image without erasing a saved image."""
+    try:
+        primary = item.images.primary
+        for size in ("large", "medium", "small", "hi_res"):
+            image_size = getattr(primary, size, None)
+            url = getattr(image_size, "url", None)
+            if url:
+                return compact_image_url(url)
+    except Exception:
+        pass
+    return compact_image_url(fallback)
+
+
 def parse_time(value):
     if not value:
         return None
@@ -175,7 +189,10 @@ def get_amazon_resources():
         GetItemsResource.ITEM_INFO_DOT_TITLE,
         GetItemsResource.ITEM_INFO_DOT_BY_LINE_INFO,
         GetItemsResource.ITEM_INFO_DOT_CLASSIFICATIONS,
+        GetItemsResource.IMAGES_DOT_PRIMARY_DOT_HIGH_RES,
         GetItemsResource.IMAGES_DOT_PRIMARY_DOT_LARGE,
+        GetItemsResource.IMAGES_DOT_PRIMARY_DOT_MEDIUM,
+        GetItemsResource.IMAGES_DOT_PRIMARY_DOT_SMALL,
         GetItemsResource.OFFERS_V2_DOT_LISTINGS_DOT_PRICE,
         GetItemsResource.OFFERS_V2_DOT_LISTINGS_DOT_AVAILABILITY,
         GetItemsResource.OFFERS_V2_DOT_LISTINGS_DOT_CONDITION,
@@ -283,10 +300,7 @@ def amazon_item_to_deal(asin, item, watch_meta, state_entry, keepa_product, min_
     except Exception:
         raw_category = None
 
-    try:
-        image = compact_image_url(item.images.primary.large.url)
-    except Exception:
-        image = None
+    image = product_image(item, state_entry.get("image"))
 
     try:
         url = item.detail_page_url
@@ -343,6 +357,8 @@ def amazon_item_to_deal(asin, item, watch_meta, state_entry, keepa_product, min_
     new_state["lowestSeenPrice"] = min(price_amount, new_state.get("lowestSeenPrice", price_amount) or price_amount)
     new_state["highestSeenPrice"] = max(price_amount, new_state.get("highestSeenPrice", price_amount) or price_amount)
     new_state["title"] = title
+    if image:
+        new_state["image"] = image
 
     if not qualifies:
         return None, new_state
