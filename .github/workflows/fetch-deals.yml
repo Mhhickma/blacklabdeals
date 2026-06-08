@@ -37,8 +37,22 @@ jobs:
           MAILCHIMP_LIST_ID:          ${{ secrets.MAILCHIMP_LIST_ID }}
           INTERNAL_SECRET:            ${{ secrets.INTERNAL_SECRET }}
         run: python fetch_deals.py
-      - name: Render static deal cards
-        run: python render_homepage_static_deals.py
+      - name: Validate public deal feed
+        run: |
+          python - <<'PY'
+          import json
+
+          with open("deals.json", encoding="utf-8") as handle:
+              data = json.load(handle)
+
+          deals = data.get("deals", [])
+          if not isinstance(deals, list):
+              raise RuntimeError("deals.json does not contain a deals list")
+          if data.get("count") != len(deals):
+              raise RuntimeError("deals.json count does not match the deals list")
+
+          print(f"Validated {len(deals)} public products")
+          PY
       - name: Apply Amazon compliance copy updates
         run: |
           python - <<'PY'
