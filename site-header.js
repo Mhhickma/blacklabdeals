@@ -28,7 +28,14 @@
   function groupedLinks(group) {
     return NAV_LINKS
       .filter(link => link.group === group)
-      .map(link => `<a class="bld-mega-link" href="${link.href}"><span class="bld-mega-icon">${link.icon}</span>${link.title}</a>`)
+      .map(link => `<a class="bld-mega-link" href="${link.href}">${link.title}<span aria-hidden="true">&rarr;</span></a>`)
+      .join('');
+  }
+
+  function featuredLinks() {
+    return NAV_LINKS
+      .filter(link => link.group === 'Featured' && !['Product Picks', 'Categories', 'About Black Lab Deals'].includes(link.title))
+      .map(link => `<a class="bld-mega-feature-link" href="${link.href}">${link.title}</a>`)
       .join('');
   }
 
@@ -42,17 +49,16 @@
   const MEGA_MENU_HTML = `
     <div class="bld-mega-header">
       <div>
-        <div class="bld-mega-title">Shop by Category</div>
-        <div class="bld-mega-subtitle">Find the Amazon deal page that matches what you want.</div>
+        <div class="bld-mega-title">Browse Product Categories</div>
+        <div class="bld-mega-subtitle">Jump directly to the products you are shopping for.</div>
       </div>
-      <div class="bld-mega-pill">Updated Daily</div>
+      <a class="bld-mega-view-all" href="/categories/">View all categories &rarr;</a>
     </div>
     <div class="bld-mega-grid">
-      <div class="bld-mega-column"><h3>Featured</h3>${groupedLinks('Featured')}</div>
       <div class="bld-mega-column"><h3>Popular Categories</h3>${groupedLinks('Popular Categories')}</div>
-      <div class="bld-mega-column"><h3>More</h3>${groupedLinks('More')}</div>
+      <div class="bld-mega-column"><h3>More Categories</h3>${groupedLinks('More')}</div>
     </div>
-    <a class="bld-mega-footer" href="/categories/"><span>View All Categories</span><span>&rarr;</span></a>
+    <div class="bld-mega-footer"><span>Featured</span>${featuredLinks()}<a class="bld-mega-about" href="/about/">About Black Lab Deals</a></div>
   `;
 
   const MOBILE_DRAWER_HTML = `
