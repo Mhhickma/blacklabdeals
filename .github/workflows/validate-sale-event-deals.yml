@@ -1,0 +1,58 @@
+name: Validate Sale Event Deals
+
+on:
+  schedule:
+    - cron: '20 * * * *'
+  workflow_dispatch:
+    inputs:
+      asins_per_run:
+        description: Selected sale ASINs to validate in this run
+        required: false
+        default: '250'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: blacklabdeals-main-writer
+  cancel-in-progress: false
+
+jobs:
+  validate-sale-event-deals:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install Amazon Creators API dependency
+        run: pip install keepa numpy python-amazon-paapi
+      - name: Sync to latest main
+        run: |
+          git fetch origin main
+          git reset --hard origin/main
+      - name: Validate selected sale products
+        env:
+          AFFILIATE_TAG: ${{ secrets.AFFILIATE_TAG }}
+          CREATORS_CREDENTIAL_ID: ${{ secrets.CREATORS_CREDENTIAL_ID }}
+          CREATORS_CREDENTIAL_SECRET: ${{ secrets.CREATORS_CREDENTIAL_SECRET }}
+          SALE_EVENT_ASINS_PER_RUN: ${{ inputs.asins_per_run || '250' }}
+        run: python fetch_sale_event_deals.py
+      - name: Commit fresh validated sale products
+        env:
+          VERCEL_DEPLOY_HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
+        run: |
+          git config user.name "DealDrop Bot"
+          git config user.email "bot@dealdrop.com"
+          git add -f sale_event_deals.json sale_event_state.json
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git commit -m "Validate sale event products $(date -u '+%Y-%m-%d %H:%M UTC')"
+          git push origin main
+          if [ -n "$VERCEL_DEPLOY_HOOK_URL" ]; then
+            curl -fsS -X POST "$VERCEL_DEPLOY_HOOK_URL"
+          fi
