@@ -14,6 +14,9 @@ on:
         description: ASIN sample size
         required: false
         default: '120'
+  push:
+    paths:
+      - '.github/triggers/creators-api-rate-test.txt'
 permissions:
   contents: read
 jobs:
@@ -32,9 +35,9 @@ jobs:
           AFFILIATE_TAG: ${{ secrets.AFFILIATE_TAG }}
           CREATORS_CREDENTIAL_ID: ${{ secrets.CREATORS_CREDENTIAL_ID }}
           CREATORS_CREDENTIAL_SECRET: ${{ secrets.CREATORS_CREDENTIAL_SECRET }}
-          RATE_TEST_LEVELS: ${{ inputs.levels }}
-          RATE_TEST_REQUESTS_PER_LEVEL: ${{ inputs.requests_per_level }}
-          RATE_TEST_SAMPLE_ASINS: ${{ inputs.sample_asins }}
+          RATE_TEST_LEVELS: ${{ inputs.levels || '1,2,3,4' }}
+          RATE_TEST_REQUESTS_PER_LEVEL: ${{ inputs.requests_per_level || '8' }}
+          RATE_TEST_SAMPLE_ASINS: ${{ inputs.sample_asins || '120' }}
         run: python test_creators_api_rate.py
       - name: Upload rate-test report
         if: always()
