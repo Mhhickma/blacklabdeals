@@ -1,5 +1,4 @@
 name: Validate Sale Event Deals
-
 on:
   schedule:
     - cron: '20 * * * *'
@@ -9,14 +8,18 @@ on:
         description: Selected sale ASINs to validate in this run
         required: false
         default: '250'
-
+      import_electronics_asins:
+        description: Import this many ASINs from the Electronics sheet tab before validation
+        required: false
+        default: '0'
+  push:
+    paths:
+      - '.github/triggers/validate-1000-sale-asins.txt'
 permissions:
   contents: write
-
 concurrency:
   group: blacklabdeals-main-writer
   cancel-in-progress: false
-
 jobs:
   validate-sale-event-deals:
     runs-on: ubuntu-latest
@@ -33,12 +36,34 @@ jobs:
         run: |
           git fetch origin main
           git reset --hard origin/main
+      - name: Import selected ASIN sample from spreadsheet
+        env:
+          IMPORT_ASIN_COUNT: ${{ github.event_name == 'push' && '1000' || inputs.import_electronics_asins || '0' }}
+        run: |
+          python - <<'PY'
+          import csv, io, json, os
+          from urllib.parse import quote
+          from urllib.request import Request, urlopen
+          count = int(os.getenv("IMPORT_ASIN_COUNT", "0"))
+          if count <= 0:
+              raise SystemExit(0)
+          sheet_id = "15kLY4nPg-ydq9kcqUcSTrzttQxtCkeXGoU2HoO4KTkc"
+          query = quote(f"select A limit {count + 101}")
+          url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/gviz/tq?tqx=out:csv&sheet=Electronics&tq={query}"
+          text = urlopen(Request(url, headers={"User-Agent": "BlackLabDeals-SaleImport/1.0"}), timeout=180).read().decode("utf-8-sig", errors="replace")
+          rows = list(csv.reader(io.StringIO(text)))
+          asins = list(dict.fromkeys(row[0].strip() for row in rows[1:] if row and row[0].strip()))[:count]
+          with open("sale_event_watchlist.json", "w", encoding="utf-8") as handle:
+              json.dump({"description": "Selected sale-event ASINs imported from the Electronics sheet tab.", "asins": asins}, handle, indent=2)
+              handle.write("\n")
+          print(f"Imported {len(asins)} ASINs into sale_event_watchlist.json")
+          PY
       - name: Validate selected sale products
         env:
           AFFILIATE_TAG: ${{ secrets.AFFILIATE_TAG }}
           CREATORS_CREDENTIAL_ID: ${{ secrets.CREATORS_CREDENTIAL_ID }}
           CREATORS_CREDENTIAL_SECRET: ${{ secrets.CREATORS_CREDENTIAL_SECRET }}
-          SALE_EVENT_ASINS_PER_RUN: ${{ inputs.asins_per_run || '250' }}
+          SALE_EVENT_ASINS_PER_RUN: ${{ github.event_name == 'push' && '1000' || inputs.asins_per_run || '250' }}
           BEST_SELLER_AMAZON_CONCURRENT_BATCHES: '1'
           BEST_SELLER_AMAZON_REQUEST_DELAY_SECONDS: '1'
         run: python fetch_sale_event_deals.py
@@ -48,7 +73,7 @@ jobs:
         run: |
           git config user.name "DealDrop Bot"
           git config user.email "bot@dealdrop.com"
-          git add -f sale_event_deals.json sale_event_state.json
+          git add -f sale_event_watchlist.json sale_event_deals.json sale_event_state.json
           if git diff --staged --quiet; then
             echo "No changes to commit"
             exit 0
