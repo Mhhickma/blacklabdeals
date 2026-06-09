@@ -3,6 +3,7 @@
 import json
 import os
 from datetime import datetime, timedelta, timezone
+from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
 
 from fetch_best_seller_deals import compact_image_url, get_amazon_items, iso_now
 
@@ -10,6 +11,7 @@ WATCHLIST_FILE = "sale_event_watchlist.json"
 STATE_FILE = "sale_event_state.json"
 OUTPUT_FILE = "sale_event_deals.json"
 TTL_HOURS = 23
+SALE_EVENT_AFFILIATE_TAG = os.getenv("SALE_EVENT_AFFILIATE_TAG", "blacklabdealsprime-20")
 ASINS_PER_RUN = int(os.getenv("SALE_EVENT_ASINS_PER_RUN", "250"))
 
 
@@ -71,6 +73,10 @@ def item_to_product(asin, item, previous):
         link = item.detail_page_url
     except Exception:
         link = f"https://www.amazon.com/dp/{asin}"
+    parsed_link = urlparse(link)
+    link_query = dict(parse_qsl(parsed_link.query))
+    link_query["tag"] = SALE_EVENT_AFFILIATE_TAG
+    link = urlunparse(parsed_link._replace(query=urlencode(link_query)))
     timestamp = iso_now()
     return {
         "asin": asin, "title": title, "brand": brand, "cat": category,
