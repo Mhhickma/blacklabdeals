@@ -1,0 +1,44 @@
+name: Test Creators API Rate
+on:
+  workflow_dispatch:
+    inputs:
+      levels:
+        description: Comma-separated concurrency levels
+        required: false
+        default: '1,2,3,4'
+      requests_per_level:
+        description: Requests sent at each level
+        required: false
+        default: '8'
+      sample_asins:
+        description: ASIN sample size
+        required: false
+        default: '120'
+permissions:
+  contents: read
+jobs:
+  test-creators-api-rate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install Creators API dependency
+        run: pip install python-amazon-paapi
+      - name: Run controlled rate test
+        env:
+          AFFILIATE_TAG: ${{ secrets.AFFILIATE_TAG }}
+          CREATORS_CREDENTIAL_ID: ${{ secrets.CREATORS_CREDENTIAL_ID }}
+          CREATORS_CREDENTIAL_SECRET: ${{ secrets.CREATORS_CREDENTIAL_SECRET }}
+          RATE_TEST_LEVELS: ${{ inputs.levels }}
+          RATE_TEST_REQUESTS_PER_LEVEL: ${{ inputs.requests_per_level }}
+          RATE_TEST_SAMPLE_ASINS: ${{ inputs.sample_asins }}
+        run: python test_creators_api_rate.py
+      - name: Upload rate-test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: creators-api-rate-test-report
+          path: creators_api_rate_test_report.json
