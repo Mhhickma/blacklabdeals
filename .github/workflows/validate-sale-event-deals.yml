@@ -39,6 +39,8 @@ jobs:
           CREATORS_CREDENTIAL_ID: ${{ secrets.CREATORS_CREDENTIAL_ID }}
           CREATORS_CREDENTIAL_SECRET: ${{ secrets.CREATORS_CREDENTIAL_SECRET }}
           SALE_EVENT_ASINS_PER_RUN: ${{ inputs.asins_per_run || '250' }}
+          BEST_SELLER_AMAZON_CONCURRENT_BATCHES: '1'
+          BEST_SELLER_AMAZON_REQUEST_DELAY_SECONDS: '1'
         run: python fetch_sale_event_deals.py
       - name: Commit fresh validated sale products
         env:
