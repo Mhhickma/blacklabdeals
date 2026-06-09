@@ -1,4 +1,5 @@
 name: Validate Sale Event Deals
+
 on:
   schedule:
     - cron: '20 * * * *'
@@ -15,11 +16,14 @@ on:
   push:
     paths:
       - '.github/triggers/validate-1000-sale-asins.txt'
+
 permissions:
   contents: write
+
 concurrency:
   group: blacklabdeals-main-writer
   cancel-in-progress: false
+
 jobs:
   validate-sale-event-deals:
     runs-on: ubuntu-latest
@@ -27,11 +31,14 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+
       - name: Install Amazon Creators API dependency
         run: pip install keepa numpy python-amazon-paapi
+
       - name: Sync to latest main
         run: |
           git fetch origin main
@@ -44,6 +51,7 @@ jobs:
           import csv, io, json, os
           from urllib.parse import quote
           from urllib.request import Request, urlopen
+
           count = int(os.getenv("IMPORT_ASIN_COUNT", "0"))
           if count <= 0:
               raise SystemExit(0)
@@ -58,15 +66,18 @@ jobs:
               handle.write("\n")
           print(f"Imported {len(asins)} ASINs into sale_event_watchlist.json")
           PY
+
       - name: Validate selected sale products
         env:
           AFFILIATE_TAG: ${{ secrets.AFFILIATE_TAG }}
+          SALE_EVENT_AFFILIATE_TAG: blacklabdealsprime-20
           CREATORS_CREDENTIAL_ID: ${{ secrets.CREATORS_CREDENTIAL_ID }}
           CREATORS_CREDENTIAL_SECRET: ${{ secrets.CREATORS_CREDENTIAL_SECRET }}
           SALE_EVENT_ASINS_PER_RUN: ${{ github.event_name == 'push' && '1000' || inputs.asins_per_run || '250' }}
           BEST_SELLER_AMAZON_CONCURRENT_BATCHES: '1'
           BEST_SELLER_AMAZON_REQUEST_DELAY_SECONDS: '1'
         run: python fetch_sale_event_deals.py
+
       - name: Commit fresh validated sale products
         env:
           VERCEL_DEPLOY_HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
