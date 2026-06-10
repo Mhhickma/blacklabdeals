@@ -1,0 +1,89 @@
+name: Preload Sale Event Spreadsheet
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/triggers/preload-sale-event.txt'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: blacklabdeals-main-writer
+  cancel-in-progress: false
+
+jobs:
+  preload:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Build pending sale catalog from every sheet tab
+        run: |
+          python - <<'PY'
+          import csv, io, json, re
+          from datetime import datetime, timezone
+          from pathlib import Path
+          from urllib.parse import parse_qsl, quote, urlencode, urlparse, urlunparse
+          from urllib.request import Request, urlopen
+
+          sheet_id = '15kLY4nPg-ydq9kcqUcSTrzttQxtCkeXGoU2HoO4KTkc'
+          tag = 'blacklabdealsprime-20'
+          tabs = ['Electronics','Furniture','Health & Personal Care','Home','Home Entertainment','Home Improvement','Kitchen','Lawn and Garden','Office Products','Outdoors','PC','Pet Products','Sports','Tools','Toys','Video Devices','Wireless']
+          out = Path('sale-event-review-7f3k9')
+          out.mkdir(exist_ok=True)
+          for path in out.glob('*.json'):
+              path.unlink()
+          categories, basics, total = [], {}, 0
+
+          def clean(value):
+              return str(value or '').strip()
+          def slug(value):
+              return re.sub(r'[^a-z0-9]+','-',value.lower()).strip('-')
+          def iso(value):
+              try:
+                  return datetime.fromisoformat(value.replace('Z','+00:00')).astimezone(timezone.utc).isoformat().replace('+00:00','Z')
+              except Exception:
+                  return ''
+          def link(row):
+              raw = row.get('asin_url') or f"https://www.amazon.com/dp/{row['asin']}"
+              parsed = urlparse(raw if raw.startswith(('http://','https://')) else 'https://' + raw.lstrip('/'))
+              query = dict(parse_qsl(parsed.query)); query['tag'] = tag
+              return urlunparse(parsed._replace(query=urlencode(query)))
+          def write_category(name, products):
+              files=[]
+              for start in range(0,len(products),5000):
+                  filename=f'{slug(name)}-{start//5000+1}.json'
+                  (out/filename).write_text(json.dumps(products[start:start+5000],separators=(',',':')),encoding='utf-8')
+                  files.append(filename)
+              return {'name':name,'count':len(products),'files':files}
+
+          for tab in tabs:
+              url=f'https://docs.google.com/spreadsheets/d/{sheet_id}/gviz/tq?tqx=out:csv&sheet={quote(tab)}'
+              text=urlopen(Request(url,headers={'User-Agent':'BlackLabDeals-SalePreload/1.0'}),timeout=180).read().decode('utf-8-sig',errors='replace')
+              products={}
+              for row in csv.DictReader(io.StringIO(text)):
+                  asin=clean(row.get('asin'))
+                  if not asin or asin in products: continue
+                  product={'asin':asin,'title':clean(row.get('asin_name')) or asin,'link':link(row),'category':tab,'startsAt':iso(row.get('deal_start_datetime','')),'endsAt':iso(row.get('deal_end_datetime',''))}
+                  products[asin]=product
+                  if 'amazon basics' in product['title'].lower(): basics.setdefault(asin,{**product,'category':'Amazon Basics'})
+              values=list(products.values()); categories.append(write_category(tab,values)); total+=len(values)
+              print(tab,len(values))
+          categories.insert(0,write_category('Amazon Basics',list(basics.values())))
+          manifest={'source':'Black Lab Deals sale planning sheet','generatedAt':datetime.now(timezone.utc).isoformat().replace('+00:00','Z'),'count':total,'categories':categories}
+          (out/'manifest.json').write_text(json.dumps(manifest,separators=(',',':')),encoding='utf-8')
+          print('Total category entries',total,'Amazon Basics',len(basics))
+          PY
+      - name: Commit pending sale catalog
+        env:
+          VERCEL_DEPLOY_HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
+        run: |
+          git config user.name "DealDrop Bot"
+          git config user.email "bot@dealdrop.com"
+          git add -f sale-event-review-7f3k9/*.json
+          git commit -m "Preload sale event spreadsheet catalog $(date -u '+%Y-%m-%d %H:%M UTC')"
+          git push origin main
+          if [ -n "$VERCEL_DEPLOY_HOOK_URL" ]; then curl -fsS -X POST "$VERCEL_DEPLOY_HOOK_URL"; fi
