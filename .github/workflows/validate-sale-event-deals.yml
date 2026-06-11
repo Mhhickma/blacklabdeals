@@ -13,6 +13,14 @@ on:
         description: Import this many balanced ASINs from all spreadsheet category tabs before validation
         required: false
         default: '0'
+      sample_offset_per_category:
+        description: Skip this many ASINs in each category for a fresh test sample
+        required: false
+        default: '0'
+      concurrent_requests:
+        description: Concurrent Creator API request workers
+        required: false
+        default: '1'
   push:
     paths:
       - '.github/triggers/validate-1000-sale-asins.txt'
@@ -44,9 +52,10 @@ jobs:
           git fetch origin main
           git reset --hard origin/main
 
-      - name: Import balanced ASIN sample from spreadsheet
+      - name: Import fresh balanced ASIN sample from spreadsheet
         env:
           IMPORT_ASIN_COUNT: ${{ github.event_name == 'push' && '1000' || inputs.import_electronics_asins || '0' }}
+          IMPORT_OFFSET_PER_CATEGORY: ${{ github.event_name == 'push' && '100' || inputs.sample_offset_per_category || '0' }}
         run: |
           python - <<'PY'
           import csv, io, json, os
@@ -54,28 +63,24 @@ jobs:
           from urllib.request import Request, urlopen
 
           count = int(os.getenv("IMPORT_ASIN_COUNT", "0"))
+          offset = int(os.getenv("IMPORT_OFFSET_PER_CATEGORY", "0"))
           if count <= 0:
               raise SystemExit(0)
           sheet_id = "15kLY4nPg-ydq9kcqUcSTrzttQxtCkeXGoU2HoO4KTkc"
-          tabs = [
-              "Electronics", "Furniture", "Health & Personal Care", "Home",
-              "Home Entertainment", "Home Improvement", "Kitchen", "Lawn and Garden",
-              "Office Products", "Outdoors", "PC", "Pet Products", "Sports", "Tools",
-              "Toys", "Video Devices", "Wireless",
-          ]
+          tabs = ["Electronics","Furniture","Health & Personal Care","Home","Home Entertainment","Home Improvement","Kitchen","Lawn and Garden","Office Products","Outdoors","PC","Pet Products","Sports","Tools","Toys","Video Devices","Wireless"]
           base, remainder = divmod(count, len(tabs))
           pools, selected, seen = {}, [], set()
           category_counts = {tab: 0 for tab in tabs}
           for index, tab in enumerate(tabs):
               quota = base + (1 if index < remainder else 0)
-              query = quote(f"select A limit {quota + count + 101}")
+              query = quote(f"select A limit {offset + quota + count + 101}")
               url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/gviz/tq?tqx=out:csv&sheet={quote(tab)}&tq={query}"
-              text = urlopen(Request(url, headers={"User-Agent": "BlackLabDeals-SaleImport/1.0"}), timeout=180).read().decode("utf-8-sig", errors="replace")
+              text = urlopen(Request(url, headers={"User-Agent":"BlackLabDeals-SaleSpeedTest/1.0"}), timeout=180).read().decode("utf-8-sig", errors="replace")
               rows = list(csv.reader(io.StringIO(text)))
-              pools[tab] = list(dict.fromkeys(row[0].strip().upper() for row in rows[1:] if row and len(row[0].strip()) == 10))
+              all_asins = list(dict.fromkeys(row[0].strip().upper() for row in rows[1:] if row and len(row[0].strip()) == 10))
+              pools[tab] = all_asins[offset:]
               for asin in pools[tab]:
-                  if category_counts[tab] >= quota:
-                      break
+                  if category_counts[tab] >= quota: break
                   if asin not in seen:
                       selected.append(asin); seen.add(asin); category_counts[tab] += 1
           while len(selected) < count:
@@ -83,41 +88,60 @@ jobs:
               for tab in tabs:
                   for asin in pools[tab]:
                       if asin not in seen:
-                          selected.append(asin); seen.add(asin); category_counts[tab] += 1; added = True
-                          break
-                  if len(selected) >= count:
-                      break
-              if not added:
-                  break
+                          selected.append(asin); seen.add(asin); category_counts[tab] += 1; added = True; break
+                  if len(selected) >= count: break
+              if not added: break
           with open("sale_event_watchlist.json", "w", encoding="utf-8") as handle:
-              json.dump({"description": "Balanced sale-event ASIN sample imported from all spreadsheet category tabs.", "categoryCounts": category_counts, "asins": selected}, handle, indent=2)
-              handle.write("\n")
-          print(f"Imported {len(selected)} balanced ASINs into sale_event_watchlist.json: {category_counts}")
+              json.dump({"description":"Fresh balanced launch-speed test sample.","offsetPerCategory":offset,"categoryCounts":category_counts,"asins":selected}, handle, indent=2); handle.write("\n")
+          print(f"Imported {len(selected)} fresh balanced ASINs with offset {offset}: {category_counts}")
           PY
 
-      - name: Validate selected sale products
+      - name: Validate selected sale products at launch speed
         env:
           AFFILIATE_TAG: ${{ secrets.AFFILIATE_TAG }}
           SALE_EVENT_AFFILIATE_TAG: blacklabdealsprime-20
           CREATORS_CREDENTIAL_ID: ${{ secrets.CREATORS_CREDENTIAL_ID }}
           CREATORS_CREDENTIAL_SECRET: ${{ secrets.CREATORS_CREDENTIAL_SECRET }}
           SALE_EVENT_ASINS_PER_RUN: ${{ github.event_name == 'push' && '1000' || inputs.asins_per_run || '250' }}
-          BEST_SELLER_AMAZON_CONCURRENT_BATCHES: '1'
+          BEST_SELLER_AMAZON_CONCURRENT_BATCHES: ${{ github.event_name == 'push' && '2' || inputs.concurrent_requests || '1' }}
           BEST_SELLER_AMAZON_REQUEST_DELAY_SECONDS: '1'
-        run: python fetch_sale_event_deals.py
+        run: |
+          started=$(date +%s)
+          python fetch_sale_event_deals.py 2>&1 | tee sale_event_speed_test.log
+          finished=$(date +%s)
+          python - "$started" "$finished" <<'PY'
+          import json, re, sys
+          start, finish = map(int, sys.argv[1:3])
+          watch = json.load(open('sale_event_watchlist.json', encoding='utf-8'))
+          feed = json.load(open('sale_event_deals.json', encoding='utf-8'))
+          log = open('sale_event_speed_test.log', encoding='utf-8').read()
+          report = {
+              'requestedAsins': len(watch.get('asins', [])),
+              'returnedProducts': len(feed.get('deals', [])),
+              'returnedPrices': sum(bool(p.get('price')) for p in feed.get('deals', [])),
+              'returnedImages': sum(bool(p.get('image')) for p in feed.get('deals', [])),
+              'failedBatches': len(re.findall(r'Amazon batch failed', log)),
+              'durationSeconds': finish - start,
+              'concurrentRequests': 2,
+              'requestDelaySeconds': 1,
+              'estimatedRequests': (len(watch.get('asins', [])) + 9) // 10,
+          }
+          json.dump(report, open('sale_event_speed_test_report.json','w',encoding='utf-8'), indent=2)
+          print(json.dumps(report, indent=2))
+          PY
 
-      - name: Commit fresh validated sale products
+      - name: Commit fresh validated sale products and speed report
         env:
           VERCEL_DEPLOY_HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
         run: |
           git config user.name "DealDrop Bot"
           git config user.email "bot@dealdrop.com"
-          git add -f sale_event_watchlist.json sale_event_deals.json sale_event_state.json
+          git add -f sale_event_watchlist.json sale_event_deals.json sale_event_state.json sale_event_speed_test_report.json
           if git diff --staged --quiet; then
             echo "No changes to commit"
             exit 0
           fi
-          git commit -m "Validate sale event products $(date -u '+%Y-%m-%d %H:%M UTC')"
+          git commit -m "Run balanced 1000-ASIN sale speed test"
           git push origin main
           if [ -n "$VERCEL_DEPLOY_HOOK_URL" ]; then
             curl -fsS -X POST "$VERCEL_DEPLOY_HOOK_URL"
