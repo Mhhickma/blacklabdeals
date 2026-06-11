@@ -64,18 +64,31 @@ jobs:
               "Toys", "Video Devices", "Wireless",
           ]
           base, remainder = divmod(count, len(tabs))
-          selected = []
-          category_counts = {}
+          pools, selected, seen = {}, [], set()
+          category_counts = {tab: 0 for tab in tabs}
           for index, tab in enumerate(tabs):
               quota = base + (1 if index < remainder else 0)
-              query = quote(f"select A limit {quota + 101}")
+              query = quote(f"select A limit {quota + count + 101}")
               url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/gviz/tq?tqx=out:csv&sheet={quote(tab)}&tq={query}"
               text = urlopen(Request(url, headers={"User-Agent": "BlackLabDeals-SaleImport/1.0"}), timeout=180).read().decode("utf-8-sig", errors="replace")
               rows = list(csv.reader(io.StringIO(text)))
-              asins = list(dict.fromkeys(row[0].strip().upper() for row in rows[1:] if row and len(row[0].strip()) == 10))[:quota]
-              selected.extend(asins)
-              category_counts[tab] = len(asins)
-          selected = list(dict.fromkeys(selected))[:count]
+              pools[tab] = list(dict.fromkeys(row[0].strip().upper() for row in rows[1:] if row and len(row[0].strip()) == 10))
+              for asin in pools[tab]:
+                  if category_counts[tab] >= quota:
+                      break
+                  if asin not in seen:
+                      selected.append(asin); seen.add(asin); category_counts[tab] += 1
+          while len(selected) < count:
+              added = False
+              for tab in tabs:
+                  for asin in pools[tab]:
+                      if asin not in seen:
+                          selected.append(asin); seen.add(asin); category_counts[tab] += 1; added = True
+                          break
+                  if len(selected) >= count:
+                      break
+              if not added:
+                  break
           with open("sale_event_watchlist.json", "w", encoding="utf-8") as handle:
               json.dump({"description": "Balanced sale-event ASIN sample imported from all spreadsheet category tabs.", "categoryCounts": category_counts, "asins": selected}, handle, indent=2)
               handle.write("\n")
