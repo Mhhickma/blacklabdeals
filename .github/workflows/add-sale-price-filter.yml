@@ -1,0 +1,61 @@
+name: Add Sale Price Filter
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/add-sale-price-filter.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: blacklabdeals-main-writer
+  cancel-in-progress: false
+
+jobs:
+  update-sale-page:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Sync to latest main
+        run: |
+          git fetch origin main
+          git reset --hard origin/main
+      - name: Add verified price filters and sorting
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('sale-event-review-7f3k9/index.html')
+          text = path.read_text(encoding='utf-8')
+          text = text.replace('@media(min-width:900px){.shell{padding:24px}.row{grid-template-columns:2fr 1fr auto}', '@media(min-width:900px){.shell{padding:24px}.row{grid-template-columns:2fr 1fr 1fr auto}')
+          old_controls = '<select id="sort" aria-label="Sort products"><option value="featured">Spreadsheet order</option><option value="name">Product name: A to Z</option><option value="start">Sale starting soonest</option><option value="end">Sale ending soonest</option></select><button class="reset"'
+          new_controls = '<select id="price-filter" aria-label="Filter by verified Amazon price"><option value="all">All products</option><option value="verified">Verified prices only</option><option value="under-25">Under $25</option><option value="25-50">$25 to $50</option><option value="50-100">$50 to $100</option><option value="100-plus">$100 and up</option></select><select id="sort" aria-label="Sort products"><option value="featured">Spreadsheet order</option><option value="name">Product name: A to Z</option><option value="price-low">Verified price: Low to High</option><option value="price-high">Verified price: High to Low</option><option value="start">Sale starting soonest</option><option value="end">Sale ending soonest</option></select><button class="reset"'
+          text = text.replace(old_controls, new_controls)
+          old_apply = "function apply(){let q=$('search').value.trim().toLowerCase(),sort=$('sort').value;shown=products.filter(p=>!q||`${p.title} ${p.asin}`.toLowerCase().includes(q));if(sort==='name')shown.sort((a,b)=>a.title.localeCompare(b.title));if(sort==='start')shown.sort((a,b)=>(a.startsAt||'9999').localeCompare(b.startsAt||'9999'));if(sort==='end')shown.sort((a,b)=>(a.endsAt||'9999').localeCompare(b.endsAt||'9999'));page=1;render()}"
+          new_apply = "function apply(){let q=$('search').value.trim().toLowerCase(),sort=$('sort').value,pf=$('price-filter').value;shown=products.filter(p=>{let amount=Number(verified[p.asin]?.price_amount),has=Number.isFinite(amount)&&amount>0,priceMatch=pf==='all'||(pf==='verified'&&has)||(pf==='under-25'&&has&&amount<25)||(pf==='25-50'&&has&&amount>=25&&amount<50)||(pf==='50-100'&&has&&amount>=50&&amount<100)||(pf==='100-plus'&&has&&amount>=100);return priceMatch&&(!q||`${p.title} ${p.asin}`.toLowerCase().includes(q))});if(sort==='name')shown.sort((a,b)=>a.title.localeCompare(b.title));if(sort==='price-low')shown.sort((a,b)=>Number(verified[a.asin]?.price_amount||Infinity)-Number(verified[b.asin]?.price_amount||Infinity));if(sort==='price-high')shown.sort((a,b)=>Number(verified[b.asin]?.price_amount||-1)-Number(verified[a.asin]?.price_amount||-1));if(sort==='start')shown.sort((a,b)=>(a.startsAt||'9999').localeCompare(b.startsAt||'9999'));if(sort==='end')shown.sort((a,b)=>(a.endsAt||'9999').localeCompare(b.endsAt||'9999'));page=1;render()}"
+          text = text.replace(old_apply, new_apply)
+          text = text.replace("$('search').oninput=apply;$('sort').onchange=apply;", "$('search').oninput=apply;$('price-filter').onchange=apply;$('sort').onchange=apply;")
+          text = text.replace("$('reset').onclick=()=>{$('search').value='';$('sort').value='featured';apply()}", "$('reset').onclick=()=>{$('search').value='';$('price-filter').value='all';$('sort').value='featured';apply()}")
+          if 'id="price-filter"' not in text or "sort==='price-low'" not in text:
+              raise SystemExit('Could not add price controls')
+          path.write_text(text, encoding='utf-8')
+          PY
+      - name: Commit and deploy
+        env:
+          VERCEL_DEPLOY_HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
+        run: |
+          git config user.name "DealDrop Bot"
+          git config user.email "bot@dealdrop.com"
+          git add sale-event-review-7f3k9/index.html
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git commit -m "Add verified Amazon price filters"
+          git push origin main
+          if [ -n "$VERCEL_DEPLOY_HOOK_URL" ]; then
+            curl -fsS -X POST "$VERCEL_DEPLOY_HOOK_URL"
+          fi
