@@ -1,0 +1,45 @@
+name: Update Sale About Copy
+
+on:
+  push:
+    paths:
+      - '.github/workflows/update-sale-about-copy.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: blacklabdeals-main-writer
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Replace About copy
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('sale-event-review-7f3k9/index.html')
+          text = path.read_text(encoding='utf-8')
+          old_css = '.about p{margin:0;color:#595954}.about-points{display:flex;flex-wrap:wrap;gap:7px;margin-top:13px}.about-points span{border-radius:999px;background:#eef4fa;color:#1a3a5c;padding:6px 10px;font-size:11px;font-weight:900}'
+          new_css = '.about p{margin:0 0 10px;color:#595954}.about-note{margin:12px 0 0;padding:12px 14px 12px 32px;border-radius:12px;background:#eef4fa;color:#263b50}.about-note li{margin:6px 0}'
+          old_html = '<div><div class="about-kicker">About Matt &amp; Black Lab Deals</div><h2 id="about-title">Real product research, organized for easier shopping</h2><p>Hi, I’m Matt, the person behind Black Lab Deals. I organize upcoming Amazon sale products by category, preload the products selected for review, and use Amazon’s Creators API to verify product information before verified details are shown. Final price, availability, and promotion terms should always be confirmed on Amazon.</p><div class="about-points"><span>Products organized by category</span><span>Amazon verification workflow</span><span>Clear affiliate disclosure</span></div></div>'
+          new_html = '<div><div class="about-kicker">About Matt &amp; Black Lab Deals</div><h2 id="about-title">Hi, I’m Matt, the person behind Black Lab Deals.</h2><p>I’ve been professionally searching for and sharing Amazon deals since 2023. Black Lab Deals is built to make upcoming Amazon sale events easier to browse, compare, and review.</p><p><strong>A quick note about the deals:</strong></p><ul class="about-note"><li>These are some of the best deals sorted from over 1,000,000 potential Amazon deals.</li><li>Products are organized to make it easier to find deals worth checking out.</li><li>Prices, coupons, availability, and discounts can change quickly.</li><li>Please check all final details 100% directly on Amazon before purchasing.</li></ul></div>'
+          if old_css not in text or old_html not in text:
+              raise SystemExit('Expected About section was not found')
+          path.write_text(text.replace(old_css, new_css).replace(old_html, new_html), encoding='utf-8')
+          PY
+      - name: Commit and deploy
+        env:
+          VERCEL_DEPLOY_HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
+        run: |
+          git config user.name "DealDrop Bot"
+          git config user.email "bot@dealdrop.com"
+          git add sale-event-review-7f3k9/index.html
+          git commit -m "Update sale page About copy"
+          git push origin main
+          if [ -n "$VERCEL_DEPLOY_HOOK_URL" ]; then curl -fsS -X POST "$VERCEL_DEPLOY_HOOK_URL"; fi
