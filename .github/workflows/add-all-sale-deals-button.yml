@@ -1,0 +1,58 @@
+name: Add All Sale Deals Button
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/add-all-sale-deals-button.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: blacklabdeals-main-writer
+  cancel-in-progress: false
+
+jobs:
+  update-sale-page:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Sync to latest main
+        run: |
+          git fetch origin main
+          git reset --hard origin/main
+      - name: Add deduplicated all-products view
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('sale-event-review-7f3k9/index.html')
+          text = path.read_text(encoding='utf-8')
+          old_load = "async function load(name){current=name;let mine=++token,cat=manifest.categories.find(c=>c.name===name);document.querySelectorAll('#cats button').forEach(b=>b.classList.toggle('active',b.dataset.cat===name));$('grid').innerHTML='<div class=\"empty\">Loading spreadsheet category...</div>';$('count').textContent=`Loading ${cat.count.toLocaleString()} products...`;let chunks=await Promise.all(cat.files.map(f=>fetch(f).then(r=>r.json())));if(mine!==token)return;products=chunks.flat();apply()}"
+          new_load = "async function load(name){current=name;let mine=++token,isAll=name==='All Sale Deals',cats=isAll?manifest.categories.filter(c=>c.name!=='Amazon Basics'):[manifest.categories.find(c=>c.name===name)];document.querySelectorAll('#cats button').forEach(b=>b.classList.toggle('active',b.dataset.cat===name));$('grid').innerHTML='<div class=\"empty\">Loading spreadsheet category...</div>';$('count').textContent=isAll?`Loading all ${manifest.count.toLocaleString()} sale products...`:`Loading ${cats[0].count.toLocaleString()} products...`;let files=cats.flatMap(c=>c.files),chunks=await Promise.all(files.map(f=>fetch(f).then(r=>r.json())));if(mine!==token)return;let flat=chunks.flat();products=isAll?[...new Map(flat.map(p=>[p.asin,p])).values()]:flat;apply()}"
+          text = text.replace(old_load, new_load)
+          old_init = "$('cats').innerHTML=data.categories.map((c,i)=>`<button type=\"button\" class=\"${i?'':'active'}\" data-cat=\"${esc(c.name)}\">${esc(c.name)} (${c.count.toLocaleString()})</button>`).join('');$('updated').textContent=`Preloaded ${data.count.toLocaleString()} category entries - Last updated ${date(data.generatedAt)}`;load(data.categories[0].name)"
+          new_init = "$('cats').innerHTML=`<button type=\"button\" class=\"active\" data-cat=\"All Sale Deals\">All Sale Deals (${data.count.toLocaleString()})</button>`+data.categories.map(c=>`<button type=\"button\" data-cat=\"${esc(c.name)}\">${esc(c.name)} (${c.count.toLocaleString()})</button>`).join('');$('updated').textContent=`Preloaded ${data.count.toLocaleString()} category entries - Last updated ${date(data.generatedAt)}`;load('All Sale Deals')"
+          text = text.replace(old_init, new_init)
+          if "name==='All Sale Deals'" not in text or 'All Sale Deals (${data.count.toLocaleString()})' not in text:
+              raise SystemExit('Could not add All Sale Deals view')
+          path.write_text(text, encoding='utf-8')
+          PY
+      - name: Commit and deploy
+        env:
+          VERCEL_DEPLOY_HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
+        run: |
+          git config user.name "DealDrop Bot"
+          git config user.email "bot@dealdrop.com"
+          git add sale-event-review-7f3k9/index.html
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git commit -m "Add all sale deals button"
+          git push origin main
+          if [ -n "$VERCEL_DEPLOY_HOOK_URL" ]; then
+            curl -fsS -X POST "$VERCEL_DEPLOY_HOOK_URL"
+          fi
