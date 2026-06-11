@@ -1,0 +1,118 @@
+name: Refresh Sale Preview Data
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/triggers/refresh-sale-preview-data.txt'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: blacklabdeals-main-writer
+  cancel-in-progress: false
+
+jobs:
+  refresh-sale-preview-data:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Sync to latest main
+        run: |
+          git fetch origin main
+          git reset --hard origin/main
+
+      - name: Rebuild sale category data from current spreadsheet
+        run: |
+          python - <<'PY'
+          import csv, json, re
+          from datetime import datetime, timezone
+          from pathlib import Path
+          from urllib.parse import parse_qsl, quote, urlencode, urlparse, urlunparse
+          from urllib.request import Request, urlopen
+
+          sheet_id = '15kLY4nPg-ydq9kcqUcSTrzttQxtCkeXGoU2HoO4KTkc'
+          tabs = ['Electronics','Furniture','Health & Personal Care','Home','Home Entertainment','Home Improvement','Kitchen','Lawn and Garden','Office Products','Outdoors','PC','Pet Products','Sports','Tools','Toys','Video Devices','Wireless']
+          output = Path('sale-event-review-7f3k9')
+          chunk_size = 5000
+
+          def slug(value):
+              return re.sub(r'[^a-z0-9]+', '-', value.lower()).strip('-')
+
+          def clean(value):
+              text = str(value or '').strip()
+              if any(marker in text for marker in ('Ã¢','Ã‚','Ãƒ')):
+                  try: text = text.encode('latin-1').decode('utf-8')
+                  except Exception: pass
+              return text
+
+          def iso(value):
+              try: return datetime.fromisoformat(value.replace('Z','+00:00')).astimezone(timezone.utc).isoformat().replace('+00:00','Z')
+              except Exception: return ''
+
+          def link(row):
+              raw = row.get('asin_url') or f"https://www.amazon.com/dp/{row['asin']}"
+              parsed = urlparse(raw if raw.startswith(('http://','https://')) else 'https://' + raw.lstrip('/'))
+              query = dict(parse_qsl(parsed.query)); query['tag'] = 'blacklabdealsprime-20'
+              return urlunparse(parsed._replace(query=urlencode(query)))
+
+          for old in output.glob('*.json'):
+              old.unlink()
+          categories, basics, total = [], {}, 0
+          for tab in tabs:
+              url = f'https://docs.google.com/spreadsheets/d/{sheet_id}/gviz/tq?tqx=out:csv&sheet={quote(tab)}'
+              request = Request(url, headers={'User-Agent':'BlackLabDeals-SalePreview/1.0'})
+              text = urlopen(request, timeout=180).read().decode('utf-8-sig', errors='replace')
+              rows = list(csv.DictReader(text.splitlines()))
+              products = {}
+              for row in rows:
+                  asin = row.get('asin','').strip().upper()
+                  if not asin: continue
+                  product = {'asin':asin,'title':clean(row.get('asin_name')) or asin,'link':link(row),'category':tab,'startsAt':iso(row.get('deal_start_datetime','')),'endsAt':iso(row.get('deal_end_datetime',''))}
+                  products.setdefault(asin, product)
+              values = list(products.values())
+              for product in values:
+                  if 'amazon basics' in product['title'].lower():
+                      basics.setdefault(product['asin'], {**product, 'category':'Amazon Basics'})
+              files = []
+              for start in range(0, len(values), chunk_size):
+                  filename = f'{slug(tab)}-{start // chunk_size + 1}.json'
+                  (output / filename).write_text(json.dumps(values[start:start+chunk_size], separators=(',',':')), encoding='utf-8')
+                  files.append(filename)
+              categories.append({'name':tab,'count':len(values),'files':files}); total += len(values)
+
+          basic_values = list(basics.values()); basic_files = []
+          for start in range(0, len(basic_values), chunk_size):
+              filename = f'amazon-basics-{start // chunk_size + 1}.json'
+              (output / filename).write_text(json.dumps(basic_values[start:start+chunk_size], separators=(',',':')), encoding='utf-8')
+              basic_files.append(filename)
+          categories.insert(0, {'name':'Amazon Basics','count':len(basic_values),'files':basic_files})
+          manifest = {'source':'Black Lab Deals sale planning sheet','generatedAt':datetime.now(timezone.utc).isoformat().replace('+00:00','Z'),'count':total,'categories':categories}
+          (output / 'manifest.json').write_text(json.dumps(manifest, separators=(',',':')), encoding='utf-8')
+          print(json.dumps({'total':total,'amazonBasics':len(basic_values),'categories':{c['name']:c['count'] for c in categories}}, indent=2))
+          PY
+
+      - name: Commit refreshed sale category data
+        env:
+          VERCEL_DEPLOY_HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
+        run: |
+          git config user.name "DealDrop Bot"
+          git config user.email "bot@dealdrop.com"
+          git add -f sale-event-review-7f3k9/*.json
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git commit -m "Refresh sale preview category counts"
+          git push origin main
+          if [ -n "$VERCEL_DEPLOY_HOOK_URL" ]; then
+            curl -fsS -X POST "$VERCEL_DEPLOY_HOOK_URL"
+          fi
