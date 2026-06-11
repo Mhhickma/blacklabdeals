@@ -1,0 +1,53 @@
+name: Show Verified Sale Prices
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/show-verified-sale-prices.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: blacklabdeals-main-writer
+  cancel-in-progress: false
+
+jobs:
+  update-sale-page:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Sync to latest main
+        run: |
+          git fetch origin main
+          git reset --hard origin/main
+      - name: Display prices only from verified Creator API records
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('sale-event-review-7f3k9/index.html')
+          text = path.read_text(encoding='utf-8')
+          text = text.replace('.card h2{font-size:14px;line-height:1.4;margin:10px 0;overflow-wrap:anywhere}', '.card h2{font-size:14px;line-height:1.4;margin:10px 0;overflow-wrap:anywhere}.verified-price{margin:0 0 10px;color:#1a3a5c}.verified-price small{display:block;color:#777;font-size:11px;font-weight:700}.verified-price strong{font-size:20px}.verified-price time{display:block;color:#777;font-size:10px}')
+          text = text.replace("status=v?'Amazon verified':'Pending Amazon verification';return", "status=v?'Amazon verified':'Pending Amazon verification',price=v?.price?`<div class=\\\"verified-price\\\"><small>Current Amazon price</small><strong>${esc(v.price)}</strong><time>Verified through Amazon Creators API ${esc(new Date(v.updated_at||v.seen_at).toLocaleString())}</time></div>`:'';return")
+          text = text.replace('<h2>${esc(p.title)}</h2><div class=\\\"dates\\\">', '<h2>${esc(p.title)}</h2>${price}<div class=\\\"dates\\\">')
+          path.write_text(text, encoding='utf-8')
+          PY
+      - name: Commit and deploy
+        env:
+          VERCEL_DEPLOY_HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
+        run: |
+          git config user.name "DealDrop Bot"
+          git config user.email "bot@dealdrop.com"
+          git add sale-event-review-7f3k9/index.html
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git commit -m "Show Creator API prices on verified sale cards"
+          git push origin main
+          if [ -n "$VERCEL_DEPLOY_HOOK_URL" ]; then
+            curl -fsS -X POST "$VERCEL_DEPLOY_HOOK_URL"
+          fi
