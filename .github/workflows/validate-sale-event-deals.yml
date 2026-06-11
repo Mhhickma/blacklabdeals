@@ -10,7 +10,7 @@ on:
         required: false
         default: '250'
       import_electronics_asins:
-        description: Import this many ASINs from the Electronics sheet tab before validation
+        description: Import this many balanced ASINs from all spreadsheet category tabs before validation
         required: false
         default: '0'
   push:
@@ -43,7 +43,8 @@ jobs:
         run: |
           git fetch origin main
           git reset --hard origin/main
-      - name: Import selected ASIN sample from spreadsheet
+
+      - name: Import balanced ASIN sample from spreadsheet
         env:
           IMPORT_ASIN_COUNT: ${{ github.event_name == 'push' && '1000' || inputs.import_electronics_asins || '0' }}
         run: |
@@ -56,15 +57,29 @@ jobs:
           if count <= 0:
               raise SystemExit(0)
           sheet_id = "15kLY4nPg-ydq9kcqUcSTrzttQxtCkeXGoU2HoO4KTkc"
-          query = quote(f"select A limit {count + 101}")
-          url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/gviz/tq?tqx=out:csv&sheet=Electronics&tq={query}"
-          text = urlopen(Request(url, headers={"User-Agent": "BlackLabDeals-SaleImport/1.0"}), timeout=180).read().decode("utf-8-sig", errors="replace")
-          rows = list(csv.reader(io.StringIO(text)))
-          asins = list(dict.fromkeys(row[0].strip() for row in rows[1:] if row and row[0].strip()))[:count]
+          tabs = [
+              "Electronics", "Furniture", "Health & Personal Care", "Home",
+              "Home Entertainment", "Home Improvement", "Kitchen", "Lawn and Garden",
+              "Office Products", "Outdoors", "PC", "Pet Products", "Sports", "Tools",
+              "Toys", "Video Devices", "Wireless",
+          ]
+          base, remainder = divmod(count, len(tabs))
+          selected = []
+          category_counts = {}
+          for index, tab in enumerate(tabs):
+              quota = base + (1 if index < remainder else 0)
+              query = quote(f"select A limit {quota + 101}")
+              url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/gviz/tq?tqx=out:csv&sheet={quote(tab)}&tq={query}"
+              text = urlopen(Request(url, headers={"User-Agent": "BlackLabDeals-SaleImport/1.0"}), timeout=180).read().decode("utf-8-sig", errors="replace")
+              rows = list(csv.reader(io.StringIO(text)))
+              asins = list(dict.fromkeys(row[0].strip().upper() for row in rows[1:] if row and len(row[0].strip()) == 10))[:quota]
+              selected.extend(asins)
+              category_counts[tab] = len(asins)
+          selected = list(dict.fromkeys(selected))[:count]
           with open("sale_event_watchlist.json", "w", encoding="utf-8") as handle:
-              json.dump({"description": "Selected sale-event ASINs imported from the Electronics sheet tab.", "asins": asins}, handle, indent=2)
+              json.dump({"description": "Balanced sale-event ASIN sample imported from all spreadsheet category tabs.", "categoryCounts": category_counts, "asins": selected}, handle, indent=2)
               handle.write("\n")
-          print(f"Imported {len(asins)} ASINs into sale_event_watchlist.json")
+          print(f"Imported {len(selected)} balanced ASINs into sale_event_watchlist.json: {category_counts}")
           PY
 
       - name: Validate selected sale products
