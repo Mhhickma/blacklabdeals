@@ -1,0 +1,47 @@
+name: Use Prescanned Sale Data
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/use-prescanned-sale-data.yml'
+
+permissions:
+  contents: write
+concurrency:
+  group: blacklabdeals-main-writer
+  cancel-in-progress: false
+jobs:
+  update-page:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - name: Sync to latest main
+        run: |
+          git fetch origin main
+          git reset --hard origin/main
+      - name: Use persistent images and fresh Creator API prices
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('sale-event-review-7f3k9/index.html'); s=p.read_text(encoding='utf-8')
+          old="let v=verified[p.asin],image=v?.image?`<img src=\"${esc(v.image)}\" alt=\"${esc(p.title)}\" loading=\"lazy\" decoding=\"async\">`:'<div class=\"image-pending\">Product image will appear after Amazon verification</div>',status=v?'Amazon verified':'Pending Amazon verification',price=v?.price?`<div class=\\\"verified-price\\\"><small>Current Amazon price</small><strong>${esc(v.price)}</strong><time>Verified through Amazon Creators API ${esc(new Date(v.updated_at||v.seen_at).toLocaleString())}</time></div>`:'';return"
+          new="let live=verified[p.asin],saved=p.amazon,freshSaved=saved&&Date.now()-new Date(saved.updated_at).getTime()<23*60*60*1000,v=live||(freshSaved?saved:null),approved=live||saved,image=approved?.image?`<img src=\"${esc(approved.image)}\" alt=\"${esc(p.title)}\" loading=\"lazy\" decoding=\"async\">`:'<div class=\"image-pending\">Product image will appear after Amazon verification</div>',status=approved?'Amazon verified':'Pending Amazon verification',price=v?.price?`<div class=\\\"verified-price\\\"><small>Current Amazon price</small><strong>${esc(v.price)}</strong><time>Verified through Amazon Creators API ${esc(new Date(v.updated_at||v.seen_at).toLocaleString())}</time></div>`:'';return"
+          s=s.replace(old,new)
+          old_filter="let amount=Number(verified[p.asin]?.price_amount),has=Number.isFinite(amount)&&amount>0"
+          new_filter="let saved=p.amazon,freshSaved=saved&&Date.now()-new Date(saved.updated_at).getTime()<23*60*60*1000,amount=Number(verified[p.asin]?.price_amount||(freshSaved?saved.price_amount:0)),has=Number.isFinite(amount)&&amount>0"
+          s=s.replace(old_filter,new_filter)
+          if 'freshSaved=saved&&Date.now()' not in s: raise SystemExit('Could not add prescan data support')
+          p.write_text(s,encoding='utf-8')
+          PY
+      - name: Commit and deploy
+        env:
+          VERCEL_DEPLOY_HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
+        run: |
+          git config user.name "DealDrop Bot"
+          git config user.email "bot@dealdrop.com"
+          git add sale-event-review-7f3k9/index.html
+          git commit -m "Display prescanned Amazon images and fresh prices"
+          git push origin main
+          if [ -n "$VERCEL_DEPLOY_HOOK_URL" ]; then curl -fsS -X POST "$VERCEL_DEPLOY_HOOK_URL"; fi
