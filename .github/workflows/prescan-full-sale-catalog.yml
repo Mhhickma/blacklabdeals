@@ -1,0 +1,70 @@
+name: Prescan Full Sale Catalog
+
+on:
+  schedule:
+    # June 12, 2026: every 30 minutes from 10:00 AM through 3:30 PM Eastern.
+    - cron: '0,30 14-19 12 6 *'
+  workflow_dispatch:
+    inputs:
+      asins_per_run:
+        description: Balanced ASINs to prescan in this segment
+        required: false
+        default: '20000'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: blacklabdeals-main-writer
+  cancel-in-progress: false
+
+jobs:
+  prescan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 355
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install Amazon Creators API dependency
+        run: pip install keepa numpy python-amazon-paapi
+      - name: Sync to latest main
+        run: |
+          git fetch origin main
+          git reset --hard origin/main
+      - name: Enforce one-time June 12, 2026 prescan window
+        if: github.event_name == 'schedule'
+        run: |
+          python - <<'PY'
+          from datetime import datetime, timezone
+          now = datetime.now(timezone.utc)
+          if now.year != 2026 or now.month != 6 or now.day != 12 or not 14 <= now.hour < 21:
+              raise SystemExit(f'Outside the one-time prescan window: {now.isoformat()}')
+          PY
+      - name: Run balanced prescan segment
+        env:
+          AFFILIATE_TAG: ${{ secrets.AFFILIATE_TAG }}
+          SALE_EVENT_AFFILIATE_TAG: blacklabdealsprime-20
+          CREATORS_CREDENTIAL_ID: ${{ secrets.CREATORS_CREDENTIAL_ID }}
+          CREATORS_CREDENTIAL_SECRET: ${{ secrets.CREATORS_CREDENTIAL_SECRET }}
+          SALE_PRESCAN_ASINS_PER_RUN: ${{ inputs.asins_per_run || '20000' }}
+          BEST_SELLER_AMAZON_CONCURRENT_BATCHES: '2'
+          BEST_SELLER_AMAZON_REQUEST_DELAY_SECONDS: '1'
+        run: python prescan_sale_event_catalog.py
+      - name: Commit prescan progress and Amazon-approved catalog data
+        env:
+          VERCEL_DEPLOY_HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
+        run: |
+          git config user.name "DealDrop Bot"
+          git config user.email "bot@dealdrop.com"
+          git add -f sale-event-review-7f3k9/*.json sale_event_prescan_state.json sale_event_prescan_report.json
+          if git diff --staged --quiet; then
+            echo "No prescan changes to commit"
+            exit 0
+          fi
+          git commit -m "Prescan balanced sale catalog segment"
+          git push origin main
+          if [ -n "$VERCEL_DEPLOY_HOOK_URL" ]; then curl -fsS -X POST "$VERCEL_DEPLOY_HOOK_URL"; fi
