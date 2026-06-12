@@ -1,0 +1,42 @@
+name: Repair Electronics Brand Filter
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/repair-electronics-brand-filter.yml'
+permissions:
+  contents: write
+concurrency:
+  group: electronics-brand-filter-writer
+  cancel-in-progress: false
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - name: Sync latest main
+        run: |
+          git fetch origin main
+          git reset --hard origin/main
+      - name: Repair brand-filter initialization
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('sale-event-review-7f3k9/index.html'); s=p.read_text(encoding='utf-8')
+          s=s.replace(".then(([data,v,b])=>{brandData=b;{manifest=data;", ".then(([data,v,b])=>{brandData=b;manifest=data;")
+          if 'id="brands"' not in s: raise SystemExit('Missing brands navigation')
+          if '.then(([data,v,b])=>{brandData=b;manifest=data;' not in s: raise SystemExit('Brand initialization repair failed')
+          p.write_text(s,encoding='utf-8')
+          PY
+      - name: Commit and deploy repair
+        env:
+          VERCEL_DEPLOY_HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
+        run: |
+          git config user.name "DealDrop Bot"
+          git config user.email "bot@dealdrop.com"
+          git add sale-event-review-7f3k9/index.html
+          git commit -m "Repair Electronics brand filter initialization"
+          git pull --rebase origin main
+          git push origin main
+          if [ -n "$VERCEL_DEPLOY_HOOK_URL" ]; then curl -fsS -X POST "$VERCEL_DEPLOY_HOOK_URL"; fi
