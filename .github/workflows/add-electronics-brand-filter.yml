@@ -1,0 +1,70 @@
+name: Add Electronics Brand Filter
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/add-electronics-brand-filter.yml'
+
+permissions:
+  contents: write
+concurrency:
+  group: electronics-brand-filter-writer
+  cancel-in-progress: false
+jobs:
+  build-brand-filter:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - name: Sync latest main
+        run: |
+          git fetch origin main
+          git reset --hard origin/main
+      - name: Build Electronics brand metadata and filter UI
+        run: |
+          python - <<'PY'
+          import csv, io, json
+          from collections import Counter
+          from pathlib import Path
+          from urllib.parse import quote
+          from urllib.request import Request, urlopen
+          sheet='15kLY4nPg-ydq9kcqUcSTrzttQxtCkeXGoU2HoO4KTkc'; tab='Electronics'
+          url=f'https://docs.google.com/spreadsheets/d/{sheet}/gviz/tq?tqx=out:csv&sheet={quote(tab)}'
+          rows=list(csv.DictReader(io.StringIO(urlopen(Request(url,headers={'User-Agent':'BlackLabDeals-BrandFilter/1.0'}),timeout=180).read().decode('utf-8-sig',errors='replace'))))
+          by_asin={}; labels={}
+          for row in rows:
+              asin=row.get('asin','').strip().upper(); brand=row.get('brand','').strip()
+              if asin and brand:
+                  key=brand.casefold(); by_asin.setdefault(asin,key); labels.setdefault(key,brand)
+          counts=Counter(by_asin.values()); eligible={k for k,v in counts.items() if v>=20}
+          data={'category':'Electronics','minimumAsins':20,'brands':[{'key':k,'name':labels[k],'count':counts[k]} for k in sorted(eligible,key=lambda k:(-counts[k],labels[k].lower()))],'byAsin':{a:b for a,b in by_asin.items() if b in eligible}}
+          Path('sale-event-review-7f3k9/electronics-brands.json').write_text(json.dumps(data,separators=(',',':')),encoding='utf-8')
+          p=Path('sale-event-review-7f3k9/index.html'); s=p.read_text(encoding='utf-8')
+          s=s.replace('.cats button.active{background:#1a3a5c;color:#fff}', '.cats button.active{background:#1a3a5c;color:#fff}.brands{display:none;flex-wrap:wrap;gap:7px;margin:-5px 0 15px;padding:12px;border-radius:14px;background:#eef4fa}.brands.visible{display:flex}.brands button{border:1px solid #bfd3e6;border-radius:999px;background:#fff;color:#1a3a5c;padding:7px 11px;font:800 11px Arial;cursor:pointer}.brands button.active{background:#1a3a5c;color:#fff}')
+          s=s.replace('<nav class="cats" id="cats" aria-label="Spreadsheet sale categories"></nav><section class="controls">', '<nav class="cats" id="cats" aria-label="Spreadsheet sale categories"></nav><nav class="brands" id="brands" aria-label="Electronics brands"></nav><section class="controls">')
+          s=s.replace("let manifest,products=[],shown=[],page=1,token=0,current='',verified={};", "let manifest,products=[],shown=[],page=1,token=0,current='',verified={},brandData={brands:[],byAsin:{}},selectedBrand='';")
+          s=s.replace("shown=products.filter(p=>{let saved=", "shown=products.filter(p=>{let brandMatch=!selectedBrand||brandData.byAsin[p.asin]===selectedBrand,saved=")
+          s=s.replace("return priceMatch&&(!q||", "return brandMatch&&priceMatch&&(!q||")
+          s=s.replace("async function load(name){current=name;", "function renderBrands(){let show=current==='Electronics'&&brandData.brands.length;$('brands').classList.toggle('visible',show);$('brands').innerHTML=show?`<button type=\"button\" class=\"${selectedBrand?'':'active'}\" data-brand=\"\">All Electronics Brands</button>`+brandData.brands.map(b=>`<button type=\"button\" class=\"${selectedBrand===b.key?'active':''}\" data-brand=\"${esc(b.key)}\">${esc(b.name)} (${b.count.toLocaleString()})</button>`).join(''):''}async function load(name){current=name;selectedBrand='';renderBrands();")
+          s=s.replace("products=isAll?[...new Map(flat.map(p=>[p.asin,p])).values()]:flat;apply()", "products=isAll?[...new Map(flat.map(p=>[p.asin,p])).values()]:flat;renderBrands();apply()")
+          s=s.replace("Promise.all([fetch('manifest.json'", "Promise.all([fetch('manifest.json'")
+          s=s.replace("fetch('/sale_event_deals.json',{cache:'no-store'}).then(r=>r.json()).catch(()=>({deals:[]}))]).then(([data,v])=>", "fetch('/sale_event_deals.json',{cache:'no-store'}).then(r=>r.json()).catch(()=>({deals:[]})),fetch('electronics-brands.json',{cache:'no-store'}).then(r=>r.json()).catch(()=>({brands:[],byAsin:{}}))]).then(([data,v,b])=>{brandData=b;")
+          s=s.replace("}).catch(()=>{$('grid')", "}).catch(()=>{$('grid')",1)
+          s=s.replace("$('cats').onclick=e=>{let b=e.target.closest('button');if(b)load(b.dataset.cat)};", "$('cats').onclick=e=>{let b=e.target.closest('button');if(b)load(b.dataset.cat)};$('brands').onclick=e=>{let b=e.target.closest('button');if(!b)return;selectedBrand=b.dataset.brand;renderBrands();apply()};")
+          s=s.replace("$('reset').onclick=()=>{$('search').value='';", "$('reset').onclick=()=>{$('search').value='';selectedBrand='';renderBrands();")
+          if 'id="brands"' not in s or 'electronics-brands.json' not in s or 'brandMatch' not in s: raise SystemExit('Brand filter patch failed')
+          p.write_text(s,encoding='utf-8')
+          print(json.dumps(data['brands'],indent=2))
+          PY
+      - name: Commit and deploy Electronics brand filter
+        env:
+          VERCEL_DEPLOY_HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
+        run: |
+          git config user.name "DealDrop Bot"
+          git config user.email "bot@dealdrop.com"
+          git add sale-event-review-7f3k9/index.html sale-event-review-7f3k9/electronics-brands.json
+          git commit -m "Add Electronics brands with 20 or more ASINs"
+          git pull --rebase origin main
+          git push origin main
+          if [ -n "$VERCEL_DEPLOY_HOOK_URL" ]; then curl -fsS -X POST "$VERCEL_DEPLOY_HOOK_URL"; fi
