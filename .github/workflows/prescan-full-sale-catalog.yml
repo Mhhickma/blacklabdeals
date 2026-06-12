@@ -15,7 +15,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: blacklabdeals-main-writer
+  group: sale-catalog-prescan-writer
   cancel-in-progress: false
 
 jobs:
@@ -66,5 +66,6 @@ jobs:
             exit 0
           fi
           git commit -m "Prescan balanced sale catalog segment"
+          git pull --rebase origin main
           git push origin main
           if [ -n "$VERCEL_DEPLOY_HOOK_URL" ]; then curl -fsS -X POST "$VERCEL_DEPLOY_HOOK_URL"; fi
