@@ -2,7 +2,6 @@ name: Prescan Full Sale Catalog
 
 on:
   schedule:
-    # June 12, 2026: every 30 minutes from 10:00 AM through 3:30 PM Eastern.
     - cron: '0,30 14-19 12 6 *'
   workflow_dispatch:
     inputs:
@@ -10,6 +9,9 @@ on:
         description: Balanced ASINs to prescan in this segment
         required: false
         default: '20000'
+  push:
+    paths:
+      - '.github/triggers/start-sale-prescan.txt'
 
 permissions:
   contents: write
@@ -41,7 +43,7 @@ jobs:
           python - <<'PY'
           from datetime import datetime, timezone
           now = datetime.now(timezone.utc)
-          if now.year != 2026 or now.month != 6 or now.day != 12 or not 14 <= now.hour < 21:
+          if now.year != 2026 or now.month != 6 or now.day != 12 or not 14 <= now.hour < 22:
               raise SystemExit(f'Outside the one-time prescan window: {now.isoformat()}')
           PY
       - name: Run balanced prescan segment
