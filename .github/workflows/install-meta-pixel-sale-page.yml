@@ -1,0 +1,42 @@
+name: Install Meta Pixel on sale page
+
+on:
+  push:
+    paths:
+      - '.github/workflows/install-meta-pixel-sale-page.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Add Meta Pixel and events
+        shell: python
+        run: |
+          from pathlib import Path
+          path=Path('sale-event-review-7f3k9/index.html')
+          s=path.read_text(encoding='utf-8')
+          if '1642712089209011' in s:
+              raise SystemExit('Meta Pixel already installed')
+          s=s.replace('<meta name="robots" content="noindex,nofollow,noarchive,nosnippet"><title>', '<meta name="robots" content="noindex,nofollow,noarchive,nosnippet"><meta name="meta-pixel-id" content="1642712089209011"><title>')
+          anchor="const date=s=>s?new Date(s).toLocaleDateString([],{month:'short',day:'numeric',year:'numeric',timeZone:'UTC'}):'Not provided';"
+          tracking="function metaTrack(event,params={}){if(typeof fbq==='function')fbq('trackCustom',event,params)}function loadMetaPixel(){let pixel=document.querySelector('meta[name=\\\"meta-pixel-id\\\"]')?.content.trim();if(!pixel)return;!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};n.queue=[];t=b.createElement(e);t.async=true;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init',pixel);fbq('track','PageView')}"
+          if anchor not in s: raise SystemExit('date anchor missing')
+          s=s.replace(anchor,anchor+tracking)
+          s=s.replace("$('cats').onclick=e=>{let b=e.target.closest('button');if(b)load(b.dataset.cat)};", "$('cats').onclick=e=>{let b=e.target.closest('button');if(b){metaTrack('CategorySelected',{category:b.dataset.cat});load(b.dataset.cat)}};")
+          s=s.replace("$('category-select').onchange=e=>load(e.target.value);", "$('category-select').onchange=e=>{metaTrack('CategorySelected',{category:e.target.value});load(e.target.value)};")
+          s=s.replace("$('brand-select').onchange=e=>{selectedBrand=e.target.value;renderBrands();apply()};", "$('brand-select').onchange=e=>{selectedBrand=e.target.value;metaTrack('BrandSelected',{category:current,brand:selectedBrand||'all'});renderBrands();apply()};")
+          s=s.replace("$('prev').onclick=()=>{page--;render()};", "$('grid').onclick=e=>{let card=e.target.closest('a.card');if(card)metaTrack('AmazonOutboundClick',{category:current,brand:selectedBrand||'all',destination:card.href})};$('prev').onclick=()=>{page--;render()};")
+          s=s.replace("$('next').onclick=async()=>{let total=Math.max(1,Math.ceil(shown.length/SIZE));if(page>=total&&allHasMore){await loadNextAll(true)}else{page++;render()}};", "$('next').onclick=async()=>{let total=Math.max(1,Math.ceil(shown.length/SIZE));if(page>=total&&allHasMore){await loadNextAll(true)}else{page++;render()}};loadMetaPixel();")
+          path.write_text(s,encoding='utf-8')
+      - name: Commit tracking update
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add sale-event-review-7f3k9/index.html
+          git diff --cached --quiet || git commit -m "Install Meta Pixel and sale interaction events"
+          git push
