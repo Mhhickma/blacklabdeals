@@ -1,0 +1,43 @@
+name: Alphabetize Sale Brand Lists
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/alphabetize-sale-brands.yml'
+permissions:
+  contents: write
+concurrency:
+  group: all-category-brand-filter-writer
+  cancel-in-progress: false
+jobs:
+  alphabetize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - name: Sync latest main
+        run: |
+          git fetch origin main
+          git reset --hard origin/main
+      - name: Alphabetize brands by display name
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          path=Path('sale-event-review-7f3k9/category-brands.json')
+          data=json.loads(path.read_text(encoding='utf-8'))
+          for category in data.get('categories',{}).values():
+              category['brands'].sort(key=lambda b:b.get('name','').casefold())
+          path.write_text(json.dumps(data,separators=(',',':')),encoding='utf-8')
+          PY
+      - name: Commit and deploy alphabetized brands
+        env:
+          VERCEL_DEPLOY_HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
+        run: |
+          git config user.name "DealDrop Bot"
+          git config user.email "bot@dealdrop.com"
+          git add sale-event-review-7f3k9/category-brands.json
+          git commit -m "Alphabetize sale category brand lists"
+          git pull --rebase origin main
+          git push origin main
+          if [ -n "$VERCEL_DEPLOY_HOOK_URL" ]; then curl -fsS -X POST "$VERCEL_DEPLOY_HOOK_URL"; fi
