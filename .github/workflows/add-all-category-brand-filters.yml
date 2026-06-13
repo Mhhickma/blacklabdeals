@@ -1,0 +1,67 @@
+name: Add All Category Brand Filters
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/add-all-category-brand-filters.yml'
+permissions:
+  contents: write
+concurrency:
+  group: all-category-brand-filter-writer
+  cancel-in-progress: false
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - name: Sync latest main
+        run: |
+          git fetch origin main
+          git reset --hard origin/main
+      - name: Build all-category spreadsheet brand metadata
+        run: |
+          python - <<'PY'
+          import csv, io, json
+          from collections import Counter
+          from pathlib import Path
+          from urllib.parse import quote
+          from urllib.request import Request,urlopen
+          sheet='15kLY4nPg-ydq9kcqUcSTrzttQxtCkeXGoU2HoO4KTkc'; minimum=15
+          tabs=['Electronics','Furniture','Health & Personal Care','Home','Home Entertainment','Home Improvement','Kitchen','Lawn and Garden','Office Products','Outdoors','PC','Pet Products','Sports','Tools','Toys','Video Devices','Wireless']
+          categories={}
+          for tab in tabs:
+              url=f'https://docs.google.com/spreadsheets/d/{sheet}/gviz/tq?tqx=out:csv&sheet={quote(tab)}'
+              rows=list(csv.DictReader(io.StringIO(urlopen(Request(url,headers={'User-Agent':'BlackLabDeals-AllBrandFilters/1.0'}),timeout=240).read().decode('utf-8-sig',errors='replace'))))
+              by_asin={}; labels={}
+              for row in rows:
+                  asin=row.get('asin','').strip().upper(); brand=row.get('brand','').strip()
+                  if asin and brand:
+                      key=brand.casefold(); by_asin.setdefault(asin,key); labels.setdefault(key,brand)
+              counts=Counter(by_asin.values()); eligible={k for k,v in counts.items() if v>=minimum}
+              if eligible: categories[tab]={'brands':[{'key':k,'name':labels[k],'count':counts[k]} for k in sorted(eligible,key=lambda k:(-counts[k],labels[k].lower()))],'byAsin':{a:b for a,b in by_asin.items() if b in eligible}}
+          data={'minimumAsins':minimum,'categories':categories}
+          Path('sale-event-review-7f3k9/category-brands.json').write_text(json.dumps(data,separators=(',',':')),encoding='utf-8')
+          p=Path('sale-event-review-7f3k9/index.html'); s=p.read_text(encoding='utf-8')
+          s=s.replace('aria-label="Electronics brands"','aria-label="Product brands"')
+          s=s.replace("brandData={brands:[],byAsin:{}}", "brandData={categories:{}}")
+          s=s.replace("brandData.byAsin[p.asin]===selectedBrand", "brandData.categories[current]?.byAsin?.[p.asin]===selectedBrand")
+          start=s.index('function renderBrands(){'); end=s.index('async function load(name)',start)
+          new_render="function renderBrands(){let data=brandData.categories[current],show=current!=='All Sale Deals'&&data?.brands?.length;$('brands').classList.toggle('visible',!!show);$('brands').innerHTML=show?`<button type=\"button\" class=\"${selectedBrand?'':'active'}\" data-brand=\"\">All ${esc(current)} Brands</button>`+data.brands.map(b=>`<button type=\"button\" class=\"${selectedBrand===b.key?'active':''}\" data-brand=\"${esc(b.key)}\">${esc(b.name)} (${b.count.toLocaleString()})</button>`).join(''):''}"
+          s=s[:start]+new_render+s[end:]
+          s=s.replace("fetch('electronics-brands.json',{cache:'no-store'}).then(r=>r.json()).catch(()=>({brands:[],byAsin:{}}))", "fetch('category-brands.json',{cache:'no-store'}).then(r=>r.json()).catch(()=>({categories:{}}))")
+          if 'category-brands.json' not in s or 'brandData.categories[current]' not in s: raise SystemExit('All-category brand patch failed')
+          p.write_text(s,encoding='utf-8')
+          print(json.dumps({k:len(v['brands']) for k,v in categories.items()},indent=2))
+          PY
+      - name: Commit and deploy all-category brand filters
+        env:
+          VERCEL_DEPLOY_HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
+        run: |
+          git config user.name "DealDrop Bot"
+          git config user.email "bot@dealdrop.com"
+          git add sale-event-review-7f3k9/index.html sale-event-review-7f3k9/category-brands.json
+          git commit -m "Add brands with 15 or more ASINs to sale categories"
+          git pull --rebase origin main
+          git push origin main
+          if [ -n "$VERCEL_DEPLOY_HOOK_URL" ]; then curl -fsS -X POST "$VERCEL_DEPLOY_HOOK_URL"; fi
