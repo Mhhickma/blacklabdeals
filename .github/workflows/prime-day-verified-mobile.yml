@@ -1,0 +1,63 @@
+name: Apply verified-only mobile sale page
+
+on:
+  push:
+    paths:
+      - '.github/workflows/prime-day-verified-mobile.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch sale preview
+        shell: python
+        run: |
+          from pathlib import Path
+
+          path = Path('sale-event-review-7f3k9/index.html')
+          s = path.read_text(encoding='utf-8')
+
+          s = s.replace('.brand-mobile select{width:100%;min-width:0;border:1px solid #bfd3e6;border-radius:10px;background:#fff;padding:12px;font:800 14px Arial;color:#1a3a5c}', '.brand-mobile select,.category-mobile select{width:100%;min-width:0;border:1px solid #bfd3e6;border-radius:10px;background:#fff;padding:12px;font:800 14px Arial;color:#1a3a5c}.category-mobile,.filter-toggle{display:none}')
+          s = s.replace('@media(max-width:619px){.brands.visible{display:none}.brand-mobile.visible{display:block}.cats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.cats button{white-space:normal;padding:9px 7px}.about-images img{height:145px}}', '@media(max-width:619px){.shell{padding:10px}.hero h1{font-size:34px}.about{padding:12px}.about-images img{height:120px}.cats{display:none}.category-mobile{display:block;margin:4px 0 10px}.brands.visible{display:none}.brand-mobile.visible{display:block;margin:0 0 10px}.filter-toggle{display:block;position:sticky;top:8px;z-index:30;width:100%;border:0;border-radius:10px;background:#1a3a5c;color:#fff;padding:12px;font:900 14px Arial;margin:0 0 10px}.controls{display:none;position:sticky;top:58px;z-index:29;background:#f9f8f5;box-shadow:0 8px 20px #0002}.controls.open{display:block}.row{gap:8px}.grid{gap:10px}.image{height:155px}.card-body{padding:13px}.pager{position:sticky;bottom:8px;z-index:20;background:#f9f8f5ee;border-radius:999px;padding:7px;margin:16px 0}.pager button{padding:10px 15px}}')
+
+          s = s.replace('<div class="note"><strong>Hidden review page:</strong> Spreadsheet products are preloaded for preparation. Cards marked pending have not yet been checked through Amazon Creators API.</div>', '<div class="note"><strong>Hidden review page:</strong> Only products with a current price returned by the Amazon Creators API are displayed.</div>')
+          s = s.replace('<div class="disclosure">Prices and availability are not displayed for pending products. Check Amazon for the current price, availability, and promotion terms before purchasing.</div>', '<div class="disclosure">Prices shown were returned by the Amazon Creators API and can change at any time. Check Amazon for the current price, availability, and promotion terms before purchasing.</div>')
+          s = s.replace('<p>Browse preselected spreadsheet products by sale category. Amazon verification can be run later.</p>', '<p>Browse preselected sale products with current pricing verified through the Amazon Creators API.</p>')
+          s = s.replace('<nav class="cats" id="cats" aria-label="Spreadsheet sale categories"></nav>', '<nav class="cats" id="cats" aria-label="Spreadsheet sale categories"></nav><div class="category-mobile"><select id="category-select" aria-label="Choose a sale category"></select></div>')
+          s = s.replace('<section class="controls">', '<button class="filter-toggle" id="filter-toggle" type="button" aria-expanded="false">Filters &amp; Sort</button><section class="controls" id="controls">')
+          s = s.replace('<option value="all">All products</option><option value="verified">Verified prices only</option>', '<option value="all">All verified prices</option>')
+          s = s.replace('<button class="reset" id="reset" type="button">Reset</button>', '<button class="reset" id="reset" type="button">Clear All</button>')
+
+          s = s.replace("let manifest,products=[],shown=[],page=1,token=0,current='',verified={},brandData={categories:{}},selectedBrand='';", "let manifest,products=[],shown=[],page=1,token=0,current='',verified={},brandData={categories:{}},selectedBrand='',allFiles=[],allFileIndex=0,allHasMore=false,allLoading=false;")
+          s = s.replace("priceMatch=pf==='all'||(pf==='verified'&&has)||(pf==='under-25'&&has&&amount<25)", "priceMatch=pf==='all'||(pf==='under-25'&&has&&amount<25)")
+          s = s.replace("return brandMatch&&priceMatch&&(!q||", "return has&&brandMatch&&priceMatch&&(!q||")
+          s = s.replace("approved=live||saved,image=approved?.image?", "approved=v,image=approved?.image?")
+          s = s.replace("status=approved?'Amazon verified':'Pending Amazon verification',price=", "status='Amazon verified',price=")
+          s = s.replace("'<div class=\"empty\">No matching products in this spreadsheet category.</div>'", "'<div class=\"empty\">No products with a current Amazon Creators API price match these filters.</div>'")
+          s = s.replace("$('count').textContent=`${shown.length.toLocaleString()} products in ${current}`;", "$('count').textContent=`${shown.length.toLocaleString()} verified-price products loaded in ${current}${allHasMore?' - more load as you continue':''}`;")
+          s = s.replace("$('next').disabled=page>=total}", "$('next').disabled=page>=total&&!allHasMore}")
+
+          old_load = "async function load(name){current=name;selectedBrand='';renderBrands();let mine=++token,isAll=name==='All Sale Deals',cats=isAll?manifest.categories.filter(c=>c.name!=='Amazon Basics'):[manifest.categories.find(c=>c.name===name)];document.querySelectorAll('#cats button').forEach(b=>b.classList.toggle('active',b.dataset.cat===name));$('grid').innerHTML='<div class=\"empty\">Loading spreadsheet category...</div>';$('count').textContent=isAll?`Loading all ${manifest.count.toLocaleString()} sale products...`:`Loading ${cats[0].count.toLocaleString()} products...`;let files=cats.flatMap(c=>c.files),chunks=await Promise.all(files.map(f=>fetch(f).then(r=>r.json())));if(mine!==token)return;let flat=chunks.flat();products=isAll?[...new Map(flat.map(p=>[p.asin,p])).values()]:flat;renderBrands();apply()}"
+          new_load = "async function loadNextAll(){if(allLoading||!allHasMore)return;allLoading=true;$('count').textContent='Loading more verified-price products...';let chunk=await fetch(allFiles[allFileIndex++]).then(r=>r.json());products=[...new Map([...products,...chunk].map(p=>[p.asin,p])).values()];allHasMore=allFileIndex<allFiles.length;allLoading=false;apply()}async function load(name){current=name;selectedBrand='';renderBrands();let mine=++token,isAll=name==='All Sale Deals',cats=isAll?manifest.categories.filter(c=>c.name!=='Amazon Basics'):[manifest.categories.find(c=>c.name===name)];document.querySelectorAll('#cats button').forEach(b=>b.classList.toggle('active',b.dataset.cat===name));if($('category-select'))$('category-select').value=name;$('grid').innerHTML='<div class=\"empty\">Loading verified-price products...</div>';$('count').textContent=isAll?'Loading the first group of verified-price sale products...':`Loading ${cats[0].count.toLocaleString()} catalog products...`;let files=cats.flatMap(c=>c.files),chunks;if(isAll){allFiles=files;allFileIndex=0;products=[];allHasMore=allFiles.length>0;await loadNextAll();return}else{allFiles=[];allFileIndex=0;allHasMore=false;chunks=await Promise.all(files.map(f=>fetch(f).then(r=>r.json())))}if(mine!==token)return;products=chunks.flat();renderBrands();apply()}"
+          if old_load not in s:
+              raise SystemExit('load function pattern not found')
+          s = s.replace(old_load, new_load)
+
+          s = s.replace("$('cats').innerHTML=`<button type=\"button\" class=\"active\" data-cat=\"All Sale Deals\">All Sale Deals (${data.count.toLocaleString()})</button>`+data.categories.map(c=>`<button type=\"button\" data-cat=\"${esc(c.name)}\">${esc(c.name)} (${c.count.toLocaleString()})</button>`).join('');", "$('cats').innerHTML=`<button type=\"button\" class=\"active\" data-cat=\"All Sale Deals\">All Sale Deals (${data.count.toLocaleString()})</button>`+data.categories.map(c=>`<button type=\"button\" data-cat=\"${esc(c.name)}\">${esc(c.name)} (${c.count.toLocaleString()})</button>`).join('');$('category-select').innerHTML=`<option value=\"All Sale Deals\">All Sale Deals</option>`+data.categories.map(c=>`<option value=\"${esc(c.name)}\">${esc(c.name)}</option>`).join('');")
+          s = s.replace("$('cats').onclick=e=>{let b=e.target.closest('button');if(b)load(b.dataset.cat)};", "$('cats').onclick=e=>{let b=e.target.closest('button');if(b)load(b.dataset.cat)};$('category-select').onchange=e=>load(e.target.value);$('filter-toggle').onclick=()=>{let open=$('controls').classList.toggle('open');$('filter-toggle').setAttribute('aria-expanded',String(open));$('filter-toggle').textContent=open?'Close Filters':'Filters & Sort'};")
+          s = s.replace("$('reset').onclick=()=>{$('search').value='';selectedBrand='';renderBrands();$('price-filter').value='all';$('sort').value='featured';apply()};", "$('reset').onclick=()=>{$('search').value='';selectedBrand='';$('price-filter').value='all';$('sort').value='featured';$('controls').classList.remove('open');$('filter-toggle').setAttribute('aria-expanded','false');$('filter-toggle').textContent='Filters & Sort';load('All Sale Deals')};")
+          s = s.replace("$('next').onclick=()=>{page++;render()};", "$('next').onclick=async()=>{let total=Math.max(1,Math.ceil(shown.length/SIZE));if(page>=total&&allHasMore){await loadNextAll()}else{page++;render()}};")
+
+          path.write_text(s, encoding='utf-8')
+      - name: Commit updated page
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add sale-event-review-7f3k9/index.html
+          git diff --cached --quiet || git commit -m "Require verified prices and optimize sale page mobile"
+          git push
