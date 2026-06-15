@@ -2,11 +2,12 @@ name: Prescan Full Sale Catalog
 
 on:
   schedule:
-    - cron: '0,30 14-23 12 6 *'
+    - cron: '30 12-23 15 6 *'
+    - cron: '0 13-23 15 6 *'
   workflow_dispatch:
     inputs:
       asins_per_run:
-        description: Balanced ASINs to prescan continuously
+        description: Balanced ASINs to scan continuously
         required: false
         default: '150000'
   push:
@@ -35,15 +36,15 @@ jobs:
         run: |
           git fetch origin main
           git reset --hard origin/main
-      - name: Enforce one-time June 12, 2026 prescan window
+      - name: Enforce one-time June 15, 2026 full pricing window
         if: github.event_name == 'schedule'
         run: |
           python - <<'PY'
           from datetime import datetime, timezone
           now=datetime.now(timezone.utc)
-          if now.year!=2026 or now.month!=6 or now.day!=12: raise SystemExit(f'Outside one-time prescan date: {now.isoformat()}')
+          if now.year!=2026 or now.month!=6 or now.day!=15: raise SystemExit(f'Outside one-time full pricing date: {now.isoformat()}')
           PY
-      - name: Run all remaining ASINs continuously at launch pace
+      - name: Run all remaining ASINs continuously at proven launch pace
         env:
           AFFILIATE_TAG: ${{ secrets.AFFILIATE_TAG }}
           SALE_EVENT_AFFILIATE_TAG: blacklabdealsprime-20
@@ -53,7 +54,7 @@ jobs:
           BEST_SELLER_AMAZON_CONCURRENT_BATCHES: '2'
           BEST_SELLER_AMAZON_REQUEST_DELAY_SECONDS: '1'
         run: python prescan_sale_event_catalog.py
-      - name: Commit complete prescan progress and Amazon-approved catalog data
+      - name: Commit pricing progress and Amazon-approved catalog data
         env:
           VERCEL_DEPLOY_HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
         run: |
@@ -61,7 +62,7 @@ jobs:
           git config user.email "bot@dealdrop.com"
           git add -f sale-event-review-7f3k9/*.json sale_event_prescan_state.json sale_event_prescan_report.json
           if git diff --staged --quiet; then exit 0; fi
-          git commit -m "Prescan remaining balanced sale catalog"
+          git commit -m "Refresh balanced sale catalog pricing"
           git pull --rebase origin main
           git push origin main
           if [ -n "$VERCEL_DEPLOY_HOOK_URL" ]; then curl -fsS -X POST "$VERCEL_DEPLOY_HOOK_URL"; fi
