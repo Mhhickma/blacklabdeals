@@ -1,28 +1,10 @@
 {
-  "mode": "balanced-full-prescan",
-  "categoryCursors": {
-    "Electronics": 3106,
-    "Furniture": 23060,
-    "Health & Personal Care": 10542,
-    "Home": 64974,
-    "Home Entertainment": 342,
-    "Home Improvement": 16018,
-    "Kitchen": 15302,
-    "Lawn and Garden": 9980,
-    "Office Products": 6458,
-    "Outdoors": 5447,
-    "PC": 4620,
-    "Pet Products": 8422,
-    "Sports": 26006,
-    "Tools": 4234,
-    "Toys": 11994,
-    "Video Devices": 13,
-    "Wireless": 11703
-  },
-  "completedAsins": 222221,
+  "mode": "balanced-full-pricing-refresh",
+  "categoryCursors": {},
+  "completedAsins": 0,
   "totalAsins": 222221,
-  "remainingAsins": 0,
-  "runs": 7,
-  "lastRunAt": "2026-06-13T00:36:55.793993+00:00",
-  "complete": true
+  "remainingAsins": 222221,
+  "runs": 0,
+  "scheduledStartAt": "2026-06-15T12:30:00Z",
+  "complete": false
 }
