@@ -17,6 +17,7 @@ jobs:
       - name: Add note
         shell: python
         run: |
+          import re
           from pathlib import Path
           path=Path('sale-event-review-7f3k9/index.html')
           s=path.read_text(encoding='utf-8')
@@ -30,7 +31,7 @@ jobs:
               s=s.replace(disclosure, note_css)
 
           note='<section class="deal-quality-note" aria-labelledby="deal-quality-title"><h2 id="deal-quality-title">Deal Quality Note</h2><p>Products with displayed prices have been checked against our sale-planning data. When a current Amazon API price is shown, it is at or below the lowest price in our year-to-date planning data.</p><p>Prices and availability can change quickly. Always confirm final price, coupons, and availability on Amazon before purchasing.</p></section>'
-          s=s.replace(note, '')
+          s=re.sub(r'<section class="deal-quality-note" aria-labelledby="deal-quality-title">.*?</section>', '', s, flags=re.S)
           top_marker='<section class="hero"><h1>Amazon Sale Event Product Picks</h1>'
           if top_marker not in s:
               raise SystemExit('top hero marker not found')
