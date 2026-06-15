@@ -1,0 +1,41 @@
+name: Add shareable sale filter URLs
+
+on:
+  push:
+    paths:
+      - '.github/workflows/add-shareable-sale-filter-urls.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Add URL filter state
+        shell: python
+        run: |
+          from pathlib import Path
+          path=Path('sale-event-review-7f3k9/index.html')
+          s=path.read_text(encoding='utf-8')
+          anchor="const date=s=>s?new Date(s).toLocaleDateString([],{month:'short',day:'numeric',year:'numeric',timeZone:'UTC'}):'Not provided';"
+          addition="function setUrlState(replace=false){let u=new URL(location.href);current&&current!=='All Sale Deals'?u.searchParams.set('category',current):u.searchParams.delete('category');selectedBrand?u.searchParams.set('brand',selectedBrand):u.searchParams.delete('brand');history[replace?'replaceState':'pushState']({},'',u)}function requestedState(){let u=new URL(location.href);return{category:u.searchParams.get('category')||'All Sale Deals',brand:u.searchParams.get('brand')||''}}"
+          if addition not in s:
+              if anchor not in s: raise SystemExit('date anchor not found')
+              s=s.replace(anchor,anchor+addition)
+          s=s.replace("async function load(name){current=name;selectedBrand='';renderBrands();", "async function load(name,brand='',updateUrl=true){current=name;selectedBrand=brand;renderBrands();if(updateUrl)setUrlState();")
+          s=s.replace("$('updated').textContent=`Preloaded ${data.count.toLocaleString()} category entries - Last updated ${date(data.generatedAt)}`;load('All Sale Deals')", "$('updated').textContent=`Preloaded ${data.count.toLocaleString()} category entries - Last updated ${date(data.generatedAt)}`;let requested=requestedState(),valid=requested.category==='All Sale Deals'||data.categories.some(c=>c.name===requested.category);load(valid?requested.category:'All Sale Deals',requested.brand,false);setUrlState(true)")
+          s=s.replace("selectedBrand=b.dataset.brand;renderBrands();apply()", "selectedBrand=b.dataset.brand;setUrlState();renderBrands();apply()")
+          s=s.replace("selectedBrand=e.target.value;metaTrack('BrandSelected'", "selectedBrand=e.target.value;setUrlState();metaTrack('BrandSelected'")
+          s=s.replace("$('reset').onclick=()=>{$('search').value='';selectedBrand='';", "$('reset').onclick=()=>{$('search').value='';selectedBrand='';")
+          s=s.replace("$('next').onclick=async()=>{let total=Math.max(1,Math.ceil(shown.length/SIZE));if(page>=total&&allHasMore){await loadNextAll(true)}else{page++;render()}};loadMetaPixel();", "$('next').onclick=async()=>{let total=Math.max(1,Math.ceil(shown.length/SIZE));if(page>=total&&allHasMore){await loadNextAll(true)}else{page++;render()}};window.onpopstate=()=>{let requested=requestedState();load(requested.category,requested.brand,false)};loadMetaPixel();")
+          path.write_text(s,encoding='utf-8')
+      - name: Commit URL update
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add sale-event-review-7f3k9/index.html
+          git diff --cached --quiet || git commit -m "Add shareable sale category and brand URLs"
+          git push
