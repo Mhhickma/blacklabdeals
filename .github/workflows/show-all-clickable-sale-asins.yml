@@ -1,0 +1,41 @@
+name: Show all sale ASINs as clickable cards
+
+on:
+  push:
+    paths:
+      - '.github/workflows/show-all-clickable-sale-asins.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Show catalog cards while protecting price freshness
+        shell: python
+        run: |
+          from pathlib import Path
+          path=Path('sale-event-review-7f3k9/index.html')
+          s=path.read_text(encoding='utf-8')
+          s=s.replace('<strong>Hidden review page:</strong> Only products with a current price returned by the Amazon Creators API are displayed.','<strong>Sale catalog:</strong> Fresh prices are displayed only when returned by the Amazon Creators API. Products awaiting a pricing refresh remain available to check directly on Amazon.')
+          s=s.replace('<p>Browse preselected sale products with current pricing verified through the Amazon Creators API.</p>','<p>Browse preselected sale products. Fresh pricing appears after verification through the Amazon Creators API.</p>')
+          s=s.replace('<option value="all">All verified prices</option>','<option value="all">All products</option>')
+          s=s.replace("return has&&brandMatch&&priceMatch&&(!q||", "return brandMatch&&priceMatch&&(!q||")
+          old="v=live||(freshSaved?saved:null),approved=v,image=approved?.image?`<img src=\"${esc(approved.image)}\" alt=\"${esc(p.title)}\" loading=\"lazy\" decoding=\"async\">`:'<div class=\"image-pending\">Product image will appear after Amazon verification</div>',status='Amazon verified',price=v?.price?`<div class=\\\"verified-price\\\"><small>Current Amazon price</small><strong>${esc(v.price)}</strong><time>Verified through Amazon Creators API ${esc(new Date(v.updated_at||v.seen_at).toLocaleString())}</time></div>`:'';"
+          new="v=live||(freshSaved?saved:null),approved=v,image=approved?.image?`<img src=\"${esc(approved.image)}\" alt=\"${esc(p.title)}\" loading=\"lazy\" decoding=\"async\">`:'<div class=\"image-pending\">Check product details on Amazon</div>',status=v?'Amazon price verified':'Pricing refresh pending',price=v?.price?`<div class=\\\"verified-price\\\"><small>Current Amazon price</small><strong>${esc(v.price)}</strong><time>Verified through Amazon Creators API ${esc(new Date(v.updated_at||v.seen_at).toLocaleString())}</time></div>`:'<div class=\\\"verified-price\\\"><small>Current price</small><strong>Check on Amazon</strong></div>';"
+          if old not in s: raise SystemExit('render pricing pattern not found')
+          s=s.replace(old,new)
+          s=s.replace("'<div class=\"empty\">No products with a current Amazon Creators API price match these filters.</div>'", "'<div class=\"empty\">No products match these filters.</div>'")
+          s=s.replace("$('count').textContent=`${shown.length.toLocaleString()} verified-price products loaded in ${current}${allHasMore?' - more load as you continue':''}`;", "$('count').textContent=`${shown.length.toLocaleString()} products loaded in ${current}${allHasMore?' - more load as you continue':''}`;")
+          s=s.replace("$('grid').innerHTML='<div class=\"empty\">Loading verified-price products...</div>';", "$('grid').innerHTML='<div class=\"empty\">Loading sale products...</div>';")
+          path.write_text(s,encoding='utf-8')
+      - name: Commit page update
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add sale-event-review-7f3k9/index.html
+          git diff --cached --quiet || git commit -m "Show every sale ASIN as a clickable card"
+          git push
