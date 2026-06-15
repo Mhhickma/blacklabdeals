@@ -1,11 +1,13 @@
-"""Balanced, resumable Amazon Creators API prescan for the hidden sale catalog."""
+"""Balanced, resumable Amazon Creators API pricing refresh for the sale catalog."""
 import json, os
+from datetime import datetime
 from pathlib import Path
 from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
+from zoneinfo import ZoneInfo
 from fetch_best_seller_deals import compact_image_url, get_amazon_items, iso_now
 
 CATALOG=Path('sale-event-review-7f3k9'); MANIFEST=CATALOG/'manifest.json'; STATE=Path('sale_event_prescan_state.json'); REPORT=Path('sale_event_prescan_report.json')
-BATCH_SIZE=int(os.getenv('SALE_PRESCAN_ASINS_PER_RUN','20000')); TAG=os.getenv('SALE_EVENT_AFFILIATE_TAG','blacklabdealsprime-20')
+BATCH_SIZE=int(os.getenv('SALE_PRESCAN_ASINS_PER_RUN','25000')); TAG=os.getenv('SALE_EVENT_AFFILIATE_TAG','blacklabdealsprime-20'); DAILY_REFRESH=os.getenv('SALE_PRESCAN_DAILY_REFRESH','0')=='1'
 def load(path,default):
     try:return json.loads(Path(path).read_text(encoding='utf-8'))
     except (FileNotFoundError,json.JSONDecodeError):return default
@@ -29,7 +31,12 @@ def product_from_item(asin,item,previous):
     return {'title':title,'image':image,'price':price,'price_amount':amount,'currency':currency,'availability':availability,'link':urlunparse(parsed._replace(query=urlencode(query))),'updated_at':iso_now()}
 def main():
     manifest=load(MANIFEST,{}); all_categories=manifest.get('categories',[]); scan_categories=[c for c in all_categories if c.get('name')!='Amazon Basics']
-    state=load(STATE,{'categoryCursors':{},'completedAsins':0,'runs':0}); cursors=state.get('categoryCursors',{}); stores={}; locations={}; pools={c['name']:[] for c in scan_categories}
+    state=load(STATE,{'categoryCursors':{},'completedAsins':0,'runs':0})
+    now_et=datetime.now(ZoneInfo('America/New_York')); today=now_et.date().isoformat()
+    if DAILY_REFRESH and now_et.hour>=3 and state.get('dailyRefreshDate')!=today:
+        state={'mode':'balanced-daily-pricing-refresh','categoryCursors':{},'completedAsins':0,'runs':0,'dailyRefreshDate':today,'dailyRefreshStartedAt':iso_now(),'complete':False}
+        print(f'Reset full catalog for daily 3 AM Eastern pricing refresh: {today}')
+    cursors=state.get('categoryCursors',{}); stores={}; locations={}; pools={c['name']:[] for c in scan_categories}
     for category in all_categories:
         name=category['name']
         for filename in category.get('files',[]):
@@ -51,7 +58,7 @@ def main():
             if len(selected)>=BATCH_SIZE:break
         active=next_active
     if not selected:
-        state.update({'complete':True,'completedAt':iso_now(),'categoryCursors':cursors}); save(STATE,state); print('Prescan already complete'); return
+        state.update({'complete':True,'completedAt':iso_now(),'categoryCursors':cursors}); save(STATE,state); print('Daily pricing refresh already complete'); return
     items=get_amazon_items(selected); returned=prices=images=0; touched=set(); successful=set()
     for asin in selected:
         verified=None
@@ -64,7 +71,7 @@ def main():
     returned=len(successful); prices=sum(bool(product_from_item(a,items.get(a),{}).get('price')) for a in successful); images=sum(bool(product_from_item(a,items.get(a),{}).get('image')) for a in successful)
     for filename in touched:save(CATALOG/filename,stores[filename],compact=True)
     completed=sum(min(int(cursors.get(n,0)),len(pools[n])) for n in pools); total=sum(len(a) for a in pools.values())
-    state={'mode':'balanced-full-prescan','categoryCursors':cursors,'completedAsins':completed,'totalAsins':total,'remainingAsins':max(0,total-completed),'runs':int(state.get('runs',0))+1,'lastRunAt':iso_now(),'complete':completed>=total}
-    report={'selected':len(selected),'returnedProducts':returned,'returnedPrices':prices,'returnedImages':images,'completedAsins':completed,'totalAsins':total,'remainingAsins':max(0,total-completed),'updatedAt':iso_now()}
+    state={'mode':'balanced-daily-pricing-refresh','categoryCursors':cursors,'completedAsins':completed,'totalAsins':total,'remainingAsins':max(0,total-completed),'runs':int(state.get('runs',0))+1,'lastRunAt':iso_now(),'dailyRefreshDate':state.get('dailyRefreshDate',today),'dailyRefreshStartedAt':state.get('dailyRefreshStartedAt',iso_now()),'complete':completed>=total}
+    report={'selected':len(selected),'returnedProducts':returned,'returnedPrices':prices,'returnedImages':images,'completedAsins':completed,'totalAsins':total,'remainingAsins':max(0,total-completed),'dailyRefreshDate':state['dailyRefreshDate'],'updatedAt':iso_now()}
     save(STATE,state); save(REPORT,report); print(json.dumps(report,indent=2))
 if __name__=='__main__':main()
