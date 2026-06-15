@@ -41,7 +41,7 @@ jobs:
           SALE_EVENT_AFFILIATE_TAG: blacklabdealsprime-20
           CREATORS_CREDENTIAL_ID: ${{ secrets.CREATORS_CREDENTIAL_ID }}
           CREATORS_CREDENTIAL_SECRET: ${{ secrets.CREATORS_CREDENTIAL_SECRET }}
-          SALE_PRESCAN_ASINS_PER_RUN: ${{ inputs.asins_per_run || '25000' }}
+          SALE_PRESCAN_ASINS_PER_RUN: ${{ github.event_name == 'push' && '200000' || inputs.asins_per_run || '25000' }}
           SALE_PRESCAN_DAILY_REFRESH: '1'
           BEST_SELLER_AMAZON_CONCURRENT_BATCHES: '2'
           BEST_SELLER_AMAZON_REQUEST_DELAY_SECONDS: '1'
