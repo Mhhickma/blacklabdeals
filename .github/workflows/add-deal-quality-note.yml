@@ -29,11 +29,13 @@ jobs:
           expanded='.note,.disclosure,.deal-quality-note{border:1px solid #bfd3e6;border-radius:12px;background:#f1f7fc;padding:13px 15px;margin-bottom:12px;color:#173b60}'
           s=s.replace(base, expanded)
           disclosure='.disclosure{border-color:#d9c376;background:#fff9e8;color:#574a24}'
-          note_css='.disclosure{border-color:#d9c376;background:#fff9e8;color:#574a24}.deal-quality-note{border-color:#b8d6c1;background:#f1fbf4;color:#183f25}.deal-quality-note h2{margin:0 0 6px;font:900 16px Arial}.deal-quality-note p{margin:0 0 7px}.deal-quality-note p:last-child{margin-bottom:0}'
+          note_css='.disclosure{border-color:#d9c376;background:#fff9e8;color:#574a24}.deal-quality-note{border-color:#b8d6c1;background:#f1fbf4;color:#183f25}.deal-quality-note h2{margin:0 0 6px;font:900 16px Arial}.deal-quality-note p{margin:0 0 7px}.deal-quality-note p:last-child{margin-bottom:0}.deal-quality-note ul{margin:0;padding-left:20px}.deal-quality-note li{margin:5px 0}'
           if '.deal-quality-note{border-color:#b8d6c1' not in s:
               s=s.replace(disclosure, note_css)
+          elif '.deal-quality-note ul{' not in s:
+              s=s.replace('.deal-quality-note p:last-child{margin-bottom:0}', '.deal-quality-note p:last-child{margin-bottom:0}.deal-quality-note ul{margin:0;padding-left:20px}.deal-quality-note li{margin:5px 0}')
 
-          note='<section class="deal-quality-note" aria-labelledby="deal-quality-title"><h2 id="deal-quality-title">Deal Quality Note</h2><p>Products with displayed prices have been checked against our sale-planning data. When a current Amazon API price is shown, it is at or below the lowest price in our year-to-date planning data.</p><p>Prices and availability can change quickly. Always confirm final price, coupons, and availability on Amazon before purchasing.</p></section>'
+          note='<section class="deal-quality-note" aria-labelledby="deal-quality-title"><h2 id="deal-quality-title">How These Deals Were Selected</h2><ul><li>We started with over 1,000,000 potential products.</li><li>Using price history, sale-planning data, and hands-on deal-finding experience, we narrowed that list down to 222,221 items we believe offer the best value.</li><li>Products with displayed prices have been checked against our sale-planning data.</li><li>When a current Amazon API price is shown, it is at or below the lowest price found in our year-to-date planning data.</li><li>Prices, coupons, availability, and promotions can change quickly.</li><li>Always confirm the final price, coupon status, and availability directly on Amazon before purchasing.</li></ul></section>'
           s=re.sub(r'<section class="deal-quality-note" aria-labelledby="deal-quality-title">.*?</section>', '', s, flags=re.S)
           top_marker='<section class="hero"><h1>Amazon Sale Event Product Picks</h1>'
           if top_marker not in s:
@@ -45,5 +47,5 @@ jobs:
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           git add sale-event-review-7f3k9/index.html
-          git diff --cached --quiet || git commit -m "Remove redundant sale page notices"
+          git diff --cached --quiet || git commit -m "Update sale deal selection note"
           git push
