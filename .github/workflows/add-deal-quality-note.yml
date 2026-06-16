@@ -23,7 +23,9 @@ jobs:
           s=path.read_text(encoding='utf-8')
 
           s=s.replace('<div class="note"><strong>Live sale deals:</strong> Only products with a current price returned by the Amazon Creators API are displayed.</div>', '')
+          s=s.replace('<div class="disclosure"><strong>As an Amazon Associate, Black Lab Deals earns from qualifying purchases.</strong></div>', '')
           s=s.replace('<div class="disclosure">Prices shown were returned by the Amazon Creators API and can change at any time. Check Amazon for the current price, availability, and promotion terms before purchasing.</div>', '')
+          s=s.replace('<section class="hero"><h1>Amazon Sale Event Product Picks</h1><p>Browse preselected sale products. Fresh pricing appears after verification through the Amazon Creators API.</p></section>', '<section class="hero"><h1>Amazon Sale Event Product Picks</h1></section>')
 
           base='.note,.disclosure{border:1px solid #bfd3e6;border-radius:12px;background:#f1f7fc;padding:13px 15px;margin-bottom:12px;color:#173b60}'
           expanded='.note,.disclosure,.deal-quality-note{border:1px solid #bfd3e6;border-radius:12px;background:#f1f7fc;padding:13px 15px;margin-bottom:12px;color:#173b60}'
@@ -36,7 +38,7 @@ jobs:
           elif '.deal-quality-note{display:grid' not in s:
               s=s.replace('</style>', note_css.replace(disclosure, '')+'</style>')
 
-          note='<section class="deal-quality-note" aria-labelledby="deal-quality-title"><div><p class="selection-kicker">Curated sale list</p><h2 id="deal-quality-title">How These Deals Were Selected</h2><p>We use price history, sale-planning data, and hands-on deal-finding experience to narrow a very large Amazon product pool into a more useful list to browse.</p></div><div class="selection-stats" aria-label="Deal selection summary"><div class="selection-stat"><strong>1,000,000+</strong><span>potential products reviewed</span></div><div class="selection-stat"><strong>222,221</strong><span>items selected for this sale list</span></div><div class="selection-stat"><strong>Amazon API</strong><span>current prices checked before display</span></div></div><ul><li>Products with displayed prices have been checked against our sale-planning data.</li><li>When a current Amazon API price is shown, it is at or below the lowest price found in our year-to-date planning data.</li><li>Prices, coupons, availability, and promotions can change quickly.</li><li>Always confirm the final price, coupon status, and availability directly on Amazon before purchasing.</li></ul></section>'
+          note='<section class="deal-quality-note" aria-labelledby="deal-quality-title"><div><p class="selection-kicker">Curated sale list</p><h2 id="deal-quality-title">How These Deals Were Selected</h2><p>We use price history, sale-planning data, and hands-on deal-finding experience to narrow a very large Amazon product pool into a more useful list to browse.</p></div><div class="selection-stats" aria-label="Deal selection summary"><div class="selection-stat"><strong>1,000,000+</strong><span>potential products reviewed</span></div><div class="selection-stat"><strong>222,221</strong><span>items selected for this sale list</span></div><div class="selection-stat"><strong>Amazon API</strong><span>current prices checked before display</span></div></div><ul><li>As an Amazon Associate, Black Lab Deals earns from qualifying purchases.</li><li>Products with displayed prices have been checked against our sale-planning data.</li><li>When a current Amazon API price is shown, it is at or below the lowest price found in our year-to-date planning data.</li><li>Prices, coupons, availability, and promotions can change quickly.</li><li>Always confirm the final price, coupon status, and availability directly on Amazon before purchasing.</li></ul></section>'
           s=re.sub(r'<section class="deal-quality-note" aria-labelledby="deal-quality-title">.*?</section>', '', s, flags=re.S)
           about_marker='<section class="about" aria-labelledby="about-title">'
           if about_marker not in s:
@@ -48,5 +50,5 @@ jobs:
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           git add sale-event-review-7f3k9/index.html
-          git diff --cached --quiet || git commit -m "Restyle sale deal selection section"
+          git diff --cached --quiet || git commit -m "Move affiliate disclosure into selection bullets"
           git push
