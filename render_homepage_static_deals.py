@@ -87,6 +87,20 @@ def compact_image_url(value: object, size: int = 160) -> str:
     return re.sub(r"\._SL\d+_\.", f"._SL{size}_.", str(value or ""))
 
 
+def asin_image_url(deal: dict, size: int = 160) -> str:
+    asin = str(deal.get("asin") or deal.get("ASIN") or "").strip().upper()
+    if not re.fullmatch(r"[A-Z0-9]{10}", asin):
+        return ""
+    link = str(deal.get("link") or deal.get("amazon_url") or deal.get("url") or "")
+    tag_match = re.search(r"[?&]tag=([^&#]+)", link)
+    tag = tag_match.group(1) if tag_match else "sawdustsavings-20"
+    return (
+        "https://ws-na.amazon-adsystem.com/widgets/q"
+        f"?_encoding=UTF8&MarketPlace=US&ASIN={asin}"
+        f"&ServiceVersion=20070822&ID=AsinImage&WS=1&Format=_SL{size}_&tag={tag}"
+    )
+
+
 def pct(deal: dict) -> int:
     for key in ("pct", "drop_percent", "discount_percent", "discountPercent", "percent_off", "percentOff"):
         try:
@@ -133,7 +147,7 @@ def sorted_deals(deals: list[dict]) -> list[dict]:
 
 
 def deal_image(deal: dict, class_name: str = "") -> str:
-    image = deal.get("image") or deal.get("image_url") or deal.get("imageUrl") or deal.get("thumbnail")
+    image = deal.get("image") or deal.get("image_url") or deal.get("imageUrl") or deal.get("thumbnail") or asin_image_url(deal)
     card_title = title(deal)
     class_attr = f' class="{class_name}"' if class_name else ""
     if image:
