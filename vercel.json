@@ -130,6 +130,32 @@
       "dest": "https://raw.githubusercontent.com/Mhhickma/blacklabdeals/main/best_seller_deals.json"
     },
     {
+      "src": "/sale-event-review-7f3k9",
+      "status": 308,
+      "headers": {
+        "Location": "/amazon-sale-deals/"
+      }
+    },
+    {
+      "src": "/sale-event-review-7f3k9/",
+      "status": 308,
+      "headers": {
+        "Location": "/amazon-sale-deals/"
+      }
+    },
+    {
+      "src": "/amazon-sale-deals",
+      "dest": "/sale-event-review-7f3k9/index.html"
+    },
+    {
+      "src": "/amazon-sale-deals/",
+      "dest": "/sale-event-review-7f3k9/index.html"
+    },
+    {
+      "src": "/amazon-sale-deals/(.*)",
+      "dest": "/sale-event-review-7f3k9/$1"
+    },
+    {
       "src": "/top-100-amazon-deals-today",
       "dest": "/top-100-amazon-deals-today/index.html"
     },
