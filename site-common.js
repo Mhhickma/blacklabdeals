@@ -106,8 +106,9 @@ function score(d) { return (img(d) ? 1000 : 0) + updated(d) / 1000000000 + Math.
 function sorted(a) { return [...a].sort((x, y) => score(y) - score(x)); }
 function shown() {
   let d = allDeals;
-  if (MODE === 'top100') d = d.filter(topFilter).slice(0, DEALS_LIMIT);
-  return sorted(d);
+  d = sorted(MODE === 'top100' ? d.filter(topFilter) : d);
+  if (MODE === 'top100') d = d.slice(0, DEALS_LIMIT);
+  return d;
 }
 
 function ensureDealCount() {

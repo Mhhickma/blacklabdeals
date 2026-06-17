@@ -88,6 +88,10 @@ PUBLIC_PRODUCT_FIELDS = (
 def public_product(product):
     return {key: product.get(key) for key in PUBLIC_PRODUCT_FIELDS if product.get(key) is not None}
 
+
+def has_product_image(product):
+    return bool(product.get("image"))
+
 # ---------------------------------------------
 # TITLE DECODER
 # Keepa returns titles as int arrays in deals endpoint
@@ -237,7 +241,7 @@ def purge_expired(memory):
     before = len(memory)
     memory = {
         asin: public_product(deal) for asin, deal in memory.items()
-        if datetime.fromisoformat(deal.get("seen_at", now_str)) > cutoff
+        if datetime.fromisoformat(deal.get("seen_at", now_str)) > cutoff and has_product_image(deal)
     }
     purged = before - len(memory)
     if purged:
@@ -438,6 +442,10 @@ def build_and_merge(asins, amazon_items, memory):
         category = normalize_category(raw_category)
 
         image = product_image(item, memory.get(asin, {}).get("image"))
+        if not image:
+            print(f"    Skipping {asin} - no product image available")
+            skip_count += 1
+            continue
 
         try:
             listing       = item.offers_v2.listings[0]
@@ -530,7 +538,7 @@ def main():
     save_memory(memory)
 
     all_deals = sorted(
-        [public_product(deal) for deal in memory.values()],
+        [public_product(deal) for deal in memory.values() if has_product_image(deal)],
         key=lambda d: d.get("updated_at", d.get("seen_at", "")),
         reverse=True
     )[:MAX_DISPLAY]
