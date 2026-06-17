@@ -2,7 +2,7 @@ name: Prescan Full Sale Catalog
 
 on:
   schedule:
-    - cron: '0 7,19 23-25 6 *'
+    - cron: '0 7 18-27 6 *'
   workflow_dispatch:
     inputs:
       asins_per_run:
@@ -44,9 +44,9 @@ jobs:
           SALE_PRESCAN_ASINS_PER_RUN: ${{ github.event_name == 'schedule' && '250000' || github.event_name == 'push' && '250000' || inputs.asins_per_run || '250000' }}
           SALE_PRESCAN_DAILY_REFRESH: '1'
           SALE_EVENT_REFRESH_WINDOWS: '1'
-          SALE_EVENT_REFRESH_START_DATE: '2026-06-23'
-          SALE_EVENT_REFRESH_END_DATE: '2026-06-25'
-          SALE_EVENT_REFRESH_STOP_AT: '2026-06-26T00:00:00-04:00'
+          SALE_EVENT_REFRESH_START_DATE: '2026-06-18'
+          SALE_EVENT_REFRESH_END_DATE: '2026-06-27'
+          SALE_EVENT_REFRESH_STOP_AT: '2026-06-28T00:00:00-04:00'
           BEST_SELLER_AMAZON_CONCURRENT_BATCHES: '2'
           BEST_SELLER_AMAZON_REQUEST_DELAY_SECONDS: '1'
         run: python prescan_sale_event_catalog.py
