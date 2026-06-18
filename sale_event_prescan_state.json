@@ -1,5 +1,5 @@
 {
-  "mode": "balanced-daily-pricing-refresh",
+  "mode": "balanced-sale-event-pricing-refresh",
   "categoryCursors": {
     "Electronics": 1643,
     "Furniture": 1643,
@@ -23,8 +23,9 @@
   "totalAsins": 222221,
   "remainingAsins": 197221,
   "runs": 1,
-  "lastRunAt": "2026-06-16T11:38:58.077577+00:00",
-  "dailyRefreshDate": "2026-06-16",
-  "dailyRefreshStartedAt": "2026-06-16T10:57:09.513991+00:00",
+  "lastRunAt": "2026-06-18T22:24:07.401444+00:00",
+  "dailyRefreshDate": "2026-06-18",
+  "refreshPeriod": "2026-06-18-pm",
+  "dailyRefreshStartedAt": "2026-06-18T21:42:19.446131+00:00",
   "complete": false
 }
