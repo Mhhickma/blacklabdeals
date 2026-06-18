@@ -200,7 +200,13 @@ def compact_image_url(url, size=160):
     return re.sub(r"\._SL\d+_\.", f"._SL{size}_.", str(url))
 
 
-def product_image(item, fallback=None):
+def asin_image_url(asin, size=160):
+    if not asin:
+        return None
+    return f"https://m.media-amazon.com/images/P/{asin}.01._SL{size}_.jpg"
+
+
+def product_image(item, asin=None, fallback=None):
     """Return the best available Creators API image without erasing a saved image."""
     try:
         primary = item.images.primary
@@ -211,7 +217,7 @@ def product_image(item, fallback=None):
                 return compact_image_url(url)
     except Exception:
         pass
-    return compact_image_url(fallback)
+    return compact_image_url(fallback) or asin_image_url(asin)
 
 
 # ---------------------------------------------
@@ -438,7 +444,7 @@ def build_and_merge(asins, amazon_items, memory):
             raw_category = None
         category = normalize_category(raw_category)
 
-        image = product_image(item, memory.get(asin, {}).get("image"))
+        image = product_image(item, asin, memory.get(asin, {}).get("image"))
 
         try:
             listing       = item.offers_v2.listings[0]
