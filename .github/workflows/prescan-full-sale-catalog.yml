@@ -23,7 +23,6 @@ jobs:
   prescan:
     if: ${{ github.event_name != 'push' || !contains(github.event.head_commit.message, '[stop-prescan]') }}
     runs-on: ubuntu-latest
-    timeout-minutes: 355
     steps:
       - uses: actions/checkout@v4
         with:
@@ -55,7 +54,7 @@ jobs:
         run: |
           git config user.name "DealDrop Bot"
           git config user.email "bot@dealdrop.com"
-          for checkpoint in $(seq 1 10); do
+          for checkpoint in $(seq 1 16); do
             python prescan_sale_event_catalog.py
             git add -f sale-event-review-7f3k9/*.json sale_event_prescan_state.json sale_event_prescan_report.json
             if git diff --staged --quiet; then
