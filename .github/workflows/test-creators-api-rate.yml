@@ -5,15 +5,19 @@ on:
       levels:
         description: Comma-separated concurrency levels
         required: false
-        default: '1,2,3,4'
+        default: '2,3,4'
       requests_per_level:
-        description: Requests sent at each level
+        description: Requests sent at each level when no timed duration is set
         required: false
         default: '8'
       sample_asins:
         description: ASIN sample size
         required: false
-        default: '120'
+        default: '1200'
+      seconds_per_level:
+        description: Timed seconds to run each concurrency level
+        required: false
+        default: '300'
   push:
     paths:
       - '.github/triggers/creators-api-rate-test.txt'
@@ -22,7 +26,7 @@ permissions:
 jobs:
   test-creators-api-rate:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -35,9 +39,10 @@ jobs:
           AFFILIATE_TAG: ${{ secrets.AFFILIATE_TAG }}
           CREATORS_CREDENTIAL_ID: ${{ secrets.CREATORS_CREDENTIAL_ID }}
           CREATORS_CREDENTIAL_SECRET: ${{ secrets.CREATORS_CREDENTIAL_SECRET }}
-          RATE_TEST_LEVELS: ${{ inputs.levels || '1,2,3,4' }}
+          RATE_TEST_LEVELS: ${{ inputs.levels || '2,3,4' }}
           RATE_TEST_REQUESTS_PER_LEVEL: ${{ inputs.requests_per_level || '8' }}
-          RATE_TEST_SAMPLE_ASINS: ${{ inputs.sample_asins || '120' }}
+          RATE_TEST_SAMPLE_ASINS: ${{ inputs.sample_asins || '1200' }}
+          RATE_TEST_SECONDS_PER_LEVEL: ${{ inputs.seconds_per_level || '300' }}
         run: python test_creators_api_rate.py
       - name: Upload rate-test report
         if: always()
