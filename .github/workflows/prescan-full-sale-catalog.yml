@@ -2,8 +2,10 @@ name: Prescan Full Sale Catalog
 
 on:
   schedule:
-    - cron: '0 7 19-27 6 *'
-    - cron: '5 16 19-27 6 *'
+    - cron: '5 7 23-27 6 *'
+    - cron: '30 13 23-27 6 *'
+    - cron: '5 16 23-27 6 *'
+    - cron: '5 20 23-27 6 *'
   workflow_dispatch:
     inputs:
       asins_per_run:
@@ -45,7 +47,7 @@ jobs:
           SALE_PRESCAN_ASINS_PER_RUN: ${{ inputs.asins_per_run || '25000' }}
           SALE_PRESCAN_DAILY_REFRESH: '1'
           SALE_EVENT_REFRESH_WINDOWS: '1'
-          SALE_EVENT_REFRESH_START_DATE: '2026-06-19'
+          SALE_EVENT_REFRESH_START_DATE: '2026-06-23'
           SALE_EVENT_REFRESH_END_DATE: '2026-06-27'
           SALE_EVENT_REFRESH_STOP_AT: '2026-06-28T00:00:00-04:00'
           BEST_SELLER_AMAZON_CONCURRENT_BATCHES: '2'
@@ -54,7 +56,7 @@ jobs:
         run: |
           git config user.name "DealDrop Bot"
           git config user.email "bot@dealdrop.com"
-          for checkpoint in $(seq 1 16); do
+          for checkpoint in $(seq 1 6); do
             python prescan_sale_event_catalog.py
             git add -f sale-event-review-7f3k9/*.json sale_event_prescan_state.json sale_event_prescan_report.json
             if git diff --staged --quiet; then
