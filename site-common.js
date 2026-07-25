@@ -1,4 +1,4 @@
-﻿const MODE = document.body.dataset.mode || 'all';
+const MODE = document.body.dataset.mode || 'all';
 const PAGE_CATEGORY = (document.body.dataset.category || '').toLowerCase().trim();
 const PAGE_CATEGORY_LABEL = document.body.dataset.categoryLabel || '';
 const DEALS_PER_PAGE = 50;
@@ -29,7 +29,15 @@ function title(d) { return d.title || d.name || d.product_title || d.productTitl
 function optimizeDealImage(src) {
   return String(src || '').replace(/\._SL\d+_\./, '._SL160_.');
 }
-function img(d) { return optimizeDealImage(d.image || d.image_url || d.imageUrl || d.img || d.thumbnail || ''); }
+function asinImageUrl(d) {
+  const asin = String(d.asin || d.ASIN || '').trim().toUpperCase();
+  if (!/^[A-Z0-9]{10}$/.test(asin)) return '';
+  const tag = new URLSearchParams(link(d).split('?')[1] || '').get('tag') || 'sawdustsavings-20';
+  return `https://ws-na.amazon-adsystem.com/widgets/q?_encoding=UTF8&MarketPlace=US&ASIN=${encodeURIComponent(asin)}&ServiceVersion=20070822&ID=AsinImage&WS=1&Format=_SL160_&tag=${encodeURIComponent(tag)}`;
+}
+function img(d) {
+  return optimizeDealImage(d.image || d.image_url || d.imageUrl || d.img || d.thumbnail || asinImageUrl(d));
+}
 function link(d) { return d.amazon_url || d.url || d.link || d.affiliate_url || d.affiliateUrl || d.product_url || '#'; }
 function price(d) { return Number(d.price_amount ?? d.current_price ?? d.currentPrice ?? d.price ?? d.sale_price ?? 0) || 0; }
 function cat(d) { return String(d.cat || d.category || d.product_category || 'Amazon products'); }
