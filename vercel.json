@@ -30,87 +30,6 @@
       ]
     },
     {
-      "source": "/(.*).jpg",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=31536000, immutable"
-        }
-      ]
-    },
-    {
-      "source": "/(.*).jpeg",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=31536000, immutable"
-        }
-      ]
-    },
-    {
-      "source": "/(.*).png",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=31536000, immutable"
-        }
-      ]
-    },
-    {
-      "source": "/(.*).webp",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=31536000, immutable"
-        }
-      ]
-    },
-    {
-      "source": "/(.*).gif",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=31536000, immutable"
-        }
-      ]
-    },
-    {
-      "source": "/(.*).ico",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=31536000, immutable"
-        }
-      ]
-    },
-    {
-      "source": "/(.*).svg",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=31536000, immutable"
-        }
-      ]
-    },
-    {
-      "source": "/manifest.json",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=86400"
-        }
-      ]
-    },
-    {
-      "source": "/(deals|best_seller_deals).json",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=300, s-maxage=300, stale-while-revalidate=600"
-        }
-      ]
-    },
-    {
       "source": "/(.*).html",
       "headers": [
         {
@@ -118,94 +37,24 @@
           "value": "public, max-age=0, must-revalidate"
         }
       ]
+    },
+    {
+      "source": "/(.*).json",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store"
+        }
+      ]
     }
   ],
   "routes": [
-    {
-      "src": "/deals.json",
-      "dest": "https://raw.githubusercontent.com/Mhhickma/blacklabdeals/main/deals.json"
-    },
-    {
-      "src": "/best_seller_deals.json",
-      "dest": "https://raw.githubusercontent.com/Mhhickma/blacklabdeals/main/best_seller_deals.json"
-    },
-    {
-      "src": "/sale-event-review-7f3k9",
-      "status": 308,
-      "headers": {
-        "Location": "/amazon-sale-deals/"
-      }
-    },
-    {
-      "src": "/sale-event-review-7f3k9/",
-      "status": 308,
-      "headers": {
-        "Location": "/amazon-sale-deals/"
-      }
-    },
-    {
-      "src": "/amazon-sale-deals",
-      "dest": "/sale-event-review-7f3k9/index.html"
-    },
-    {
-      "src": "/amazon-sale-deals/",
-      "dest": "/sale-event-review-7f3k9/index.html"
-    },
-    {
-      "src": "/amazon-sale-deals/(.*)",
-      "dest": "/sale-event-review-7f3k9/$1"
-    },
-    {
-      "src": "/top-100-amazon-deals-today",
-      "dest": "/top-100-amazon-deals-today/index.html"
-    },
-    {
-      "src": "/top-100-amazon-deals-today/",
-      "dest": "/top-100-amazon-deals-today/index.html"
-    },
-    {
-      "src": "/best-amazon-home-kitchen-deals",
-      "dest": "/best-amazon-home-kitchen-deals/index.html"
-    },
-    {
-      "src": "/best-amazon-home-kitchen-deals/",
-      "dest": "/best-amazon-home-kitchen-deals/index.html"
-    },
-    {
-      "src": "/best-amazon-tool-deals",
-      "dest": "/best-amazon-tool-deals/index.html"
-    },
-    {
-      "src": "/best-amazon-tool-deals/",
-      "dest": "/best-amazon-tool-deals/index.html"
-    },
-    {
-      "src": "/best-amazon-deals-under-50",
-      "dest": "/best-amazon-deals-under-50/index.html"
-    },
-    {
-      "src": "/best-amazon-deals-under-50/",
-      "dest": "/best-amazon-deals-under-50/index.html"
-    },
-    {
-      "src": "/images/pages/top-100-amazon-deals-today.png",
-      "dest": "/top-100-amazon-deals-today/top-100-deals-found-on-amazon-right-now-black-lab-deals.jpg"
-    },
-    {
-      "src": "/images/pages/best-amazon-home-kitchen-deals.png",
-      "dest": "/home-kitchen-deals-banner.jpg"
-    },
-    {
-      "src": "/images/pages/best-amazon-deals-under-50.png",
-      "dest": "/under50image.jpg"
-    },
-    {
-      "src": "/",
-      "dest": "/index.html"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/$1"
-    }
+    { "src": "/", "dest": "/index.html" },
+    { "src": "/categories", "dest": "/categories/index.html" },
+    { "src": "/categories/", "dest": "/categories/index.html" },
+    { "src": "/about", "dest": "/about/index.html" },
+    { "src": "/about/", "dest": "/about/index.html" },
+    { "src": "/search.html", "dest": "/search.html" },
+    { "src": "/(.*)", "dest": "/$1" }
   ]
 }
